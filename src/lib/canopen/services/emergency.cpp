@@ -43,7 +43,7 @@ QString Emergency::type() const
 void Emergency::parseFrame(const QCanBusFrame &frame)
 {
     uint16_t errorCode;
-    u_int8_t errorClass;
+    uint8_t errorClass;
     QByteArray errorDesc;
 
     QByteArray payload = frame.payload();

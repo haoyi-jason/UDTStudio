@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
+    bms \
     lib \
     tools \
     udtstudio
