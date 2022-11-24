@@ -45,6 +45,8 @@ public:
 
     virtual QCanBusFrame readFrame();
     virtual bool writeFrame(const QCanBusFrame &qtframe);
+    void setAddress(const QString &address);
+
 
 signals:
     void framesReceived();

@@ -27,6 +27,7 @@
 #include "busnodestreeview.h"
 #include "nodemanagerwidget.h"
 
+
 class UDTGUI_EXPORT BusNodesManagerView : public QWidget
 {
     Q_OBJECT
@@ -43,6 +44,8 @@ public:
     BusNodesTreeView *busNodeTreeView() const;
     BusManagerWidget *busManagerWidget() const;
     NodeManagerWidget *nodeManagerWidget() const;
+
+
 
     void saveState(QSettings &settings);
     void restoreState(QSettings &settings);

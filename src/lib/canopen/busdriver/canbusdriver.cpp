@@ -65,3 +65,8 @@ const QString &CanBusDriver::adress() const
 {
     return _adress;
 }
+
+void CanBusDriver::setAddress(const QString &address)
+{
+    _adress = address;
+}

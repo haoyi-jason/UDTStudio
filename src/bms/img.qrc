@@ -1,0 +1,65 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>img/udtstudio.ico</file>
+        <file>img/q15option.png</file>
+        <file>img/icons8-cancel.png</file>
+        <file>img/icons8-checked-checkbox.png</file>
+        <file>img/icons8-unchecked-checkbox.png</file>
+        <file>img/icons8-connected.png</file>
+        <file>img/icons8-connection-status-on.png</file>
+        <file>img/icons8-delete.png</file>
+        <file>img/icons8-disconnected.png</file>
+        <file>img/icons8-import.png</file>
+        <file>img/icons8-play.png</file>
+        <file>img/icons8-process.png</file>
+        <file>img/icons8-record.png</file>
+        <file>img/icons8-reset.png</file>
+        <file>img/icons8-save-close.png</file>
+        <file>img/icons8-search-database.png</file>
+        <file>img/icons8-settings.png</file>
+        <file>img/icons8-stepper-motor.png</file>
+        <file>img/icons8-stop.png</file>
+        <file>img/icons8-sync.png</file>
+        <file>img/icons8-sync1.png</file>
+        <file>img/icons8-update.png</file>
+        <file>img/icons8-broom.png</file>
+        <file>img/icons8-speed.png</file>
+        <file>img/icons8-line-chart.png</file>
+        <file>img/icons8-about.png</file>
+        <file>img/icons8-export.png</file>
+        <file>img/icons8-exit.png</file>
+        <file>img/icons8-paint-palette.png</file>
+        <file>img/icons8-system-information.png</file>
+        <file>img/icons8-copy.png</file>
+        <file>img/icons8-import-file.png</file>
+        <file>img/icons8-restore-page.png</file>
+        <file>img/icons8-sort-desc.png</file>
+        <file>img/icons8-video-trimming.png</file>
+        <file>img/icons8-screenshot.png</file>
+        <file>img/icons8-lock.png</file>
+        <file>img/icons8-unlock.png</file>
+        <file>img/icons8-statistics.png</file>
+        <file>img/icons8-pdo-transfer.png</file>
+        <file>img/icons8-diagram.png</file>
+    </qresource>
+    <qresource prefix="/diagram">
+        <file>img/diagrams/402VLDiagram.png</file>
+        <file>img/diagrams/402IPDiagram.png</file>
+        <file>img/diagrams/402TQDiagram.png</file>
+        <file>img/diagrams/402PPDiagram.png</file>
+        <file>img/diagrams/402CPDiagram.png</file>
+        <file>img/diagrams/402DTYDiagram.png</file>
+    </qresource>
+    <qresource prefix="/uBoards">
+        <file alias="udt.png">img/uBoards/udt.png</file>
+        <file alias="ugu.png">img/uBoards/ugu.png</file>
+        <file alias="uio.png">img/uBoards/uio.png</file>
+        <file alias="umc.png">img/uBoards/umc.png</file>
+        <file alias="upm.png">img/uBoards/upm.png</file>
+        <file alias="uss.png">img/uBoards/uss.png</file>
+        <file alias="uuc.png">img/uBoards/uuc.png</file>
+        <file alias="unknown.png">img/uBoards/unknown.png</file>
+        <file alias="usb.png">img/uBoards/icons8-usb.png</file>
+        <file alias="ethernet.png">img/uBoards/icons8-ethernet.png</file>
+    </qresource>
+</RCC>

@@ -23,6 +23,7 @@
 #include <QLCDNumber>
 #include <QLabel>
 #include <QMenu>
+#include <QtGui>
 
 IndexLCDNumber::IndexLCDNumber(const NodeObjectId &objId)
     : AbstractIndexWidget(objId)
@@ -30,13 +31,16 @@ IndexLCDNumber::IndexLCDNumber(const NodeObjectId &objId)
     setObjId(objId);
 
     _widget = this;
+    _openWire = false;
+    _balancing = false;
 
     QHBoxLayout *hlayout = new QHBoxLayout();
     hlayout->setContentsMargins(0, 0, 0, 0);
     hlayout->setSpacing(0);
 
     _lcdNumber = new QLCDNumber();
-    _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;");
+    _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:red; background-color:green");
+    _lcdNumber->setSegmentStyle(QLCDNumber::Flat);
     _label = new QLabel();
     _label->setStyleSheet("margin-left: 0; padding-left: 0;font: italic;");
 
@@ -44,6 +48,18 @@ IndexLCDNumber::IndexLCDNumber(const NodeObjectId &objId)
     hlayout->addWidget(_label);
 
     setLayout(hlayout);
+
+//    QPalette p = _lcdNumber->palette();
+//    p.setColor(p.WindowText,QColor(255,0,0));
+//    p.setColor(p.Background,QColor(0,255,0));
+//    p.setColor(p.Light,QColor(255,0,0));
+//    p.setColor(p.Dark,QColor(0,255,0));
+
+//    _lcdNumber->setPalette(p);
+
+//    setMinValue(900);
+//    setMaxValue(1100);
+//    setDisplayValue(1200, DisplayAttribute::Normal);
 }
 
 void IndexLCDNumber::mouseDoubleClickEvent(QMouseEvent *event)
@@ -96,6 +112,7 @@ void IndexLCDNumber::setDisplayValue(const QVariant &value, AbstractIndexWidget:
     else if (_hint == AbstractIndexWidget::DisplayDirectValue)
     {
         _lcdNumber->display(value.toInt());
+
     }
     else
     {
@@ -106,9 +123,71 @@ void IndexLCDNumber::setDisplayValue(const QVariant &value, AbstractIndexWidget:
     {
         _label->setText(unit());
     }
+
+    if(_openWire){
+        switch(inBound(value)){
+        case BoundTooLow:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:blue;background-color:red;");
+            break;
+        case BoundTooHigh:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:red;background-color:red;");
+            break;
+        default:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:black;background-color:red;");
+            break;
+        }
+    }
+    else if(_balancing){
+        switch(inBound(value)){
+        case BoundTooLow:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:blue;background-color:green;");
+            break;
+        case BoundTooHigh:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:red;background-color:green;");
+            break;
+        default:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:black;background-color:green;");
+            break;
+        }
+    }
+    else{
+
+        switch(inBound(value)){
+        case BoundTooLow:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:blue;background-color:cyan;");
+            break;
+        case BoundTooHigh:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:red;background-color:cyan;");
+            break;
+        default:
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:black;background-color:cyan;");
+            break;
+        }
+    }
 }
 
 bool IndexLCDNumber::isEditing() const
 {
     return false;
 }
+
+bool IndexLCDNumber::isOpenWire() const
+{
+    return _openWire;
+}
+
+bool IndexLCDNumber::isBalancing() const
+{
+    return _balancing;
+}
+
+void IndexLCDNumber::setOpenWire(bool state)
+{
+    _openWire = state;
+}
+
+void IndexLCDNumber::setBalancing(bool state)
+{
+    _balancing = state;
+}
+

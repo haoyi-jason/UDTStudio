@@ -60,10 +60,13 @@ public:
     ServiceDispatcher *dispatcher() const;
     Sync *sync() const;
 
+    QString driverAddress() const;
+
 public slots:
     void exploreBus();
     void stopAll();
     void setBusName(const QString &busName);
+    void setDriverAddress(const QString &address);
 
 signals:
     void frameAvailable(int id);

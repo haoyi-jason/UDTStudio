@@ -70,10 +70,25 @@ void CanOpenBus::setBusName(const QString &busName)
 {
     bool changed = (_busName != busName);
     _busName = busName;
+
     if (changed)
     {
         emit busNameChanged(_busName);
     }
+}
+
+void CanOpenBus::setDriverAddress(const QString &address)
+{
+    if(_canBusDriver == nullptr){
+        return;
+    }
+
+    _canBusDriver->setAddress(address);
+}
+
+QString CanOpenBus::driverAddress() const
+{
+    return _canBusDriver->adress();
 }
 
 CanOpen *CanOpenBus::canOpen() const

@@ -32,19 +32,23 @@ class IndexLCDNumber : public QWidget, public AbstractIndexWidget
     Q_OBJECT
 public:
     IndexLCDNumber(const NodeObjectId &objId = NodeObjectId());
-
+    bool isOpenWire() const;
+    bool isBalancing() const;
+    void setOpenWire(bool state);
+    void setBalancing(bool state);
 private:
     QLCDNumber *_lcdNumber;
     QLabel *_label;
+    bool _openWire;
+    bool _balancing;
 
-    // QWidget interface
 protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
 
-    // AbstractIndexWidget interface
+
 protected:
     void setDisplayValue(const QVariant &value, DisplayAttribute flags) override;
     bool isEditing() const override;
