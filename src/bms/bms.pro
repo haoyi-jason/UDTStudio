@@ -35,13 +35,14 @@ SOURCES += \
         bcu/bcupdomappingwidget.cpp \
         bcu/bms_bcumanagerwidget.cpp \
         bcu/bms_nodemanagerwidget.cpp \
-        bms_busmanagerwidget.cpp \
-        bms_busnodemanagerview.cpp \
-        bms_busnodetreeview.cpp \
+        system/login.cpp \
+        widgets/bms_busmanagerwidget.cpp \
+        widgets/bms_busnodemanagerview.cpp \
+        widgets/bms_busnodetreeview.cpp \
         bms_ui/focusededitor.cpp \
         bms_ui/numberpad.cpp \
-        bmsstack.cpp \
-        bmsstackmodel.cpp \
+        system/bmsstack.cpp \
+        system/bmsstackmodel.cpp \
         bmsstackview.cpp \
         busdriver/canbusvci.cpp \
         canFrameListView/bms_canframelistview.cpp \
@@ -49,9 +50,11 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         screen/bcuscreenwidget.cpp \
+        screen/bms_eventviewer.cpp \
         screen/nodescreenbcu.cpp \
         screen/nodescreenpack.cpp \
         system/bms_alarmcriteria.cpp \
+        system/bms_eventmodel.cpp \
         system/bms_logger.cpp \
         system/bms_systemconfigwidget.cpp \
         system/bms_systemmanagerwidget.cpp \
@@ -66,22 +69,25 @@ HEADERS += \
         bcu/bcupdomappingwidget.h \
         bcu/bms_bcumanagerwidget.h \
         bcu/bms_nodemanagerwidget.h \
-        bms_busmanagerwidget.h \
-        bms_busnodemanagerview.h \
-        bms_busnodetreeview.h \
+        system/login.h \
+        widgets/bms_busmanagerwidget.h \
+        widgets/bms_busnodemanagerview.h \
+        widgets/bms_busnodetreeview.h \
         bms_ui/focusededitor.h \
         bms_ui/numberpad.h \
-        bmsstack.h \
-        bmsstackmodel.h \
+        system/bmsstack.h \
+        system/bmsstackmodel.h \
         bmsstackview.h \
         busdriver/canbusvci.h \
         canFrameListView/bms_canframelistview.h \
         canFrameListView/bms_canframemodel.h \
         mainwindow.h \
         screen/bcuscreenwidget.h \
+        screen/bms_eventviewer.h \
         screen/nodescreenbcu.h \
         screen/nodescreenpack.h \
         system/bms_alarmcriteria.h \
+        system/bms_eventmodel.h \
         system/bms_logger.h \
         system/bms_systemconfigwidget.h \
         system/bms_systemmanagerwidget.h \

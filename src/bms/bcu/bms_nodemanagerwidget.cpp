@@ -128,8 +128,8 @@ void BMS_NodeManagerWidget::stop()
 
 void BMS_NodeManagerWidget::resetCom()
 {
-    if(_node != nullptr){
-        _node->sendResetComm();
+    if(_bcu != nullptr){
+        _bcu->reConfig();
         updateData();
     }
 }
@@ -138,6 +138,7 @@ void BMS_NodeManagerWidget::resetNode()
 {
     if(_node != nullptr){
         _node->sendResetNode();
+        _bcu->resetError();
         updateData();
     }
 }
@@ -189,6 +190,7 @@ void BMS_NodeManagerWidget::setNodeName()
 void BMS_NodeManagerWidget::select()
 {
     //qDebug()<<Q_FUNC_INFO;
+    _bcu->readConfig();
     emit nodeSelected(_bcu);
 }
 
@@ -218,6 +220,7 @@ void BMS_NodeManagerWidget::createWidgets()
 
     _actionSelect = _toolBar->addAction(tr("SEL"));
     _actionSelect->setCheckable(false);
+    _actionSelect->setIcon(QIcon(":/icons/img/icons8-system-information.png"));
     connect(_actionSelect,&QAction::triggered,this,&BMS_NodeManagerWidget::select);
 
     _actionPreop = _groupNmt->addAction(tr("Pre operationnal"));
@@ -238,17 +241,24 @@ void BMS_NodeManagerWidget::createWidgets()
     _actionStop->setStatusTip(tr("Request node to go in stop mode"));
     connect(_actionStop, &QAction::triggered, this, &BMS_NodeManagerWidget::stop);
 
-//    _actionResetCom = _groupNmt->addAction(tr("Reset communication"));
-//    _actionResetCom->setCheckable(true);
-//    _actionResetCom->setIcon(QIcon(":/icons/img/icons8-process.png"));
-//    _actionResetCom->setStatusTip(tr("Request node to reset com. parameters"));
-//    connect(_actionResetCom, &QAction::triggered, this, &BMS_NodeManagerWidget::resetCom);
-
-//    _actionReset = _groupNmt->addAction(tr("Reset node"));
+//    _actionReset = _groupNmt->addAction(tr("Reset"));
 //    _actionReset->setCheckable(true);
-//    _actionReset->setIcon(QIcon(":/icons/img/icons8-reset.png"));
-//    _actionReset->setStatusTip(tr("Request node to reset all values"));
-//    connect(_actionReset, &QAction::triggered, this, &BMS_NodeManagerWidget::resetNode);
+//    _actionReset->setIcon(QIcon(":/icons/img/icons8-sync.png"));
+//    _actionReset->setStatusTip(tr("Reread bcu config"));
+//    connect(_actionReset, &QAction::triggered, this, &BMS_NodeManagerWidget::resetCom);
+
+    _actionResetCom = _groupNmt->addAction(tr("Reconfig "));
+    _actionResetCom->setCheckable(true);
+    _actionResetCom->setIcon(QIcon(":/icons/img/icons8-sync.png"));
+    _actionResetCom->setStatusTip(tr("Reread bcu config"));
+//    _actionResetCom->setStatusTip(tr("Request node to reset com. parameters"));
+    connect(_actionResetCom, &QAction::triggered, this, &BMS_NodeManagerWidget::resetCom);
+
+    _actionReset = _groupNmt->addAction(tr("Reset node"));
+    _actionReset->setCheckable(true);
+    _actionReset->setIcon(QIcon(":/icons/img/icons8-reset.png"));
+    _actionReset->setStatusTip(tr("Request node to reset all values"));
+    connect(_actionReset, &QAction::triggered, this, &BMS_NodeManagerWidget::resetNode);
 
 //    _actionStartPoll = _groupNmt->addAction(tr("Poll"));
 //    _actionStartPoll->setStatusTip(tr("Poll BCU"));
@@ -257,7 +267,7 @@ void BMS_NodeManagerWidget::createWidgets()
     _toolBar->addActions(_groupNmt->actions());
 
     _statusLabel = new QLabel("Status");
-    _toolBar->addWidget(_statusLabel);
+    //_toolBar->addWidget(_statusLabel);
 
     // Remove node
     _actionRemoveNode = new QAction(tr("Remove node"));

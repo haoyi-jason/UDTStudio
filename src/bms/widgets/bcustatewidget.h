@@ -8,7 +8,7 @@
 #include "nodeodsubscriber.h"
 
 #include <QLabel>
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 
 class NodeObjectId;
 class IndexLabel;

@@ -76,19 +76,24 @@ void BMS_Logger::stopLog()
 
 void BMS_Logger::log()
 {
-    QString fileName = _logPath + "/" + QDateTime::currentDateTime().toString("yyyyMMdd.log");
-    QFile f(fileName);
-    QTextStream ds(&f);
-    if(f.size() == 0){ // new file
+//    QString fileName = _logPath + "/" + QDateTime::currentDateTime().toString("yyyyMMdd.log");
+//    QFile f(fileName);
+//    f.open(QIODevice::ReadWrite);
+//    QTextStream ds(&f);
 
-    }
-    // generate log data
-    QString dt = QDateTime::currentDateTime().toString("yyyy/MM/dd,hh:mm:ss");
+//    if(f.size() == 0){ // new file
+
+//    }
+//    // generate log data
+//    QString dt = QDateTime::currentDateTime().toString("yyyy/MM/dd,hh:mm:ss");
 
     foreach(BCU *b, _bcuList){
-
+        if(b->status() == Node::Status::STARTED && b->isConfigReady()){
+            generateRecord(b);
+        }
     }
 
+    //f.close();
 }
 
 void BMS_Logger::writeRecord(QString record)
@@ -102,24 +107,30 @@ QString BMS_Logger::generateHeader(BCU *bcu)
     QString header = "";
     header += "Date,Time";
     header += ",總壓(V),電流(A),狀態,最高電芯電壓, 最低電芯電壓, 最高電芯位置, 最低電芯位置, 壓差(mv)";
-    header += ",最高溫,最低溫, 最高溫位置, 最低溫位置\n";
+    header += ",最高溫,最低溫, 最高溫位置, 最低溫位置";
     for(int i=0;i<bcu->nofPacks();i++){
         for(int j=0;j<bcu->nofCellsPerPack();j++){
-            header += QString(",V(%1)(%2)(mV)").arg(i).arg(j);
+            header += QString(",V[%1][%2](mV)").arg(i+1).arg(j+1);
         }
         for(int j=0;j<bcu->nofNtcsPerPack();j++){
-            header += QString(",T(%1)(%2)(%3C)").arg(i).arg(j).arg(QChar(0xb0));
+            header += QString(",T[%1][%2](%3C)").arg(i).arg(j).arg(QChar(0xb0));
         }
     }
+    header += "\n";
     return header;
 }
 
 void BMS_Logger::generateRecord(BCU *bcu)
 {
     if(bcu == nullptr) return;
-    QString fileName =QString("%1/BCU[%2]-%3.log").arg(_recordPath).arg(bcu->nodeId()).arg(QDateTime::currentDateTime().toString("yyyyMMdd"));
+    QString fileName =QString("%1/BCU[%2]-%3.log").arg(_recordPath).arg(bcu->nodeId()).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hh"));
     QFile f(fileName);
+    f.open(QIODevice::ReadWrite| QIODevice::Append);
     QTextStream ds(&f);
+
+    if(f.size() == 0){ // new file
+        ds << generateHeader(bcu);
+    }
 
     QString dt = QDateTime::currentDateTime().toString("yyyy/MM/dd,hh:mm:ss");
     ds << dt;
@@ -150,5 +161,10 @@ void BMS_Logger::generateRecord(BCU *bcu)
 
 void BMS_Logger::logEvent(QString event)
 {
-
+    QString fileName =QString("%1/events/event%2.log").arg(_recordPath).arg(QDateTime::currentDateTime().toString("yyyyMMdd"));
+    QFile f(fileName);
+    f.open(QIODevice::ReadWrite | QIODevice::Append);
+    QTextStream ds(&f);
+    ds << event;
+    f.close();
 }

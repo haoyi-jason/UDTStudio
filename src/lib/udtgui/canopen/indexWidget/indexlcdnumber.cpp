@@ -154,13 +154,13 @@ void IndexLCDNumber::setDisplayValue(const QVariant &value, AbstractIndexWidget:
 
         switch(inBound(value)){
         case BoundTooLow:
-            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:blue;background-color:cyan;");
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:blue;");
             break;
         case BoundTooHigh:
-            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:red;background-color:cyan;");
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:red;");
             break;
         default:
-            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:black;background-color:cyan;");
+            _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:black;");
             break;
         }
     }

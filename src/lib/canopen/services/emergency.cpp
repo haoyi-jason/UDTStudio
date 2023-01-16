@@ -54,4 +54,5 @@ void Emergency::parseFrame(const QCanBusFrame &frame)
     request >> errorClass;
     errorDesc = payload.mid(3);
     qDebug() << "Emergency" << errorCode << errorClass << errorDesc;
+    emit emergency(errorCode,errorClass,errorDesc);
 }

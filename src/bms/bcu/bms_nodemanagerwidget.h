@@ -9,7 +9,7 @@
 #include <QPushButton>
 
 #include "node.h"
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 
 
 class BMS_NodeManagerWidget : public QWidget

@@ -11,7 +11,7 @@
 #include <QProgressBar>
 #include <QSlider>
 
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 
 class IndexCheckBox;
 class NodeObjectId;
@@ -31,6 +31,8 @@ public slots:
     void setBCU(BCU *bcu);
     void setCellRange(qint16 low, qint16 high);
     void setNtcRange(qint16 low, qint16 high);
+    void setBalanceMask(uint16_t mask);
+    void setOpenWireMask(uint16_t mask);
 
 
 private:

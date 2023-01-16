@@ -108,7 +108,7 @@ void DataLoggerManagerWidget::exportAllCSVData()
         return;
     }
 
-    QString path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/UDTStudio/";
+    QString path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/HYMCWV7/";
     QDir().mkdir(path);
     path += QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
     path += "_data.csv";

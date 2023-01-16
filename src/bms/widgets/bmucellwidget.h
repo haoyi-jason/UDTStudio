@@ -6,7 +6,7 @@
 #include <QStackedWidget>
 #include <QLCDNumber>
 
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 class BmuCellWidget:public QWidget
 {
     Q_OBJECT

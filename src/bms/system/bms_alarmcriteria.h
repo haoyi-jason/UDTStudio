@@ -7,11 +7,20 @@
 class WAState
 {
 public:
+    enum Type{
+        TYPE_NONE,
+        TYPE_WARNING,
+        TYPE_ALARM,
+    };
+
     explicit WAState();
     bool isSet;
     bool isReset;
     QDateTime setTime;
     QDateTime resetTime;
+    bool isTransition;
+    Type actionType;
+    double value;
 };
 
 class SetResetPair
@@ -25,7 +34,7 @@ public:
     };
 
     explicit SetResetPair(double set, double reset, Comparator compare);
-    void validate(double value, WAState *state);
+    void validate(double value, WAState *state, WAState::Type type);
     void setDuration(int secs);
 
 private:
@@ -69,12 +78,26 @@ public:
     bool isSocAlarm() const;
     bool isSocWarning() const;
 
+    bool isWarning();
+    bool isAlarm();
+    bool isEvent();
+
     void resetState();
 
     void set_cell_voltage_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
     void set_cell_temperature_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
     void set_soc_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
 
+    int maxCvPos() const;
+    int minCvPos() const;
+    int maxCtPos() const;
+    int minCtPos() const;
+    double maxCv() const;
+    double minCv() const;
+    double maxCt() const;
+    double minCt() const;
+
+    QString eventString();
 
 signals:
 
@@ -102,6 +125,18 @@ private:
     QList<WAState *> _cvStates;
     QList<WAState *> _ctStates;
     WAState *_socStates;
+
+    int _maxCvPos,_minCvPos;
+    int _maxCtPos,_minCtPos;
+    double _maxCv,_minCv;
+    double _maxCt,_minCt;
+
+    bool _isCvEvent;
+    bool _isCtEvent;
+    bool _isSocEvent;
+
+    QString _eventString;
+
 };
 
 #endif // BMS_ALARMCRITERIA_H

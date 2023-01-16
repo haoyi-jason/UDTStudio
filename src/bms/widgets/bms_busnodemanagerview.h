@@ -11,7 +11,6 @@
 //#include "nodemanagerwidget.h"
 #include "bcu/bms_bcumanagerwidget.h"
 #include "system/bms_systemmanagerwidget.h"
-
 #include <QActionGroup>
 #include <QThread>>
 
@@ -62,6 +61,7 @@ public slots:
     void start();
     void stop();
     void single();
+    void scanBus();
 
 protected:
     void createWidgets();
@@ -82,6 +82,7 @@ protected:
     QAction *_actionSingle;
     QAction *_actionStart;
     QAction *_actionStop;
+    QAction *_actionScan;
 
 private:
     BMS_Poller *_poller;
@@ -104,10 +105,12 @@ protected:
 signals:
     void started();
     void finished();
+    void error();
 
 private:
     bool _stop;
     int _interval;
+    QQueue<BCU*> _bcuQueue;
 };
 
 #endif // BUSNODEMANAGERVIEW_H

@@ -31,6 +31,11 @@ void BMS_SystemManagerWidget::createWidgets()
     connect(button,&QPushButton::clicked,this,&BMS_SystemManagerWidget::buttonClicked);
     layout->addWidget(button);
 
+    button = new QPushButton("Events");
+    button->setProperty("ID", 4);
+    connect(button,&QPushButton::clicked,this,&BMS_SystemManagerWidget::buttonClicked);
+    layout->addWidget(button);
+
     setLayout(layout);
 
 }
@@ -41,17 +46,6 @@ void BMS_SystemManagerWidget::buttonClicked()
     QPushButton *btn = (QPushButton*)sender();
 
     int id = btn->property("ID").toInt();
-
-//    switch(id){
-//    case 1:
-//        break;
-//    case 2:
-//        break;
-//    case 3:
-//        break;
-//    default:break;
-//    }
-
-    qDebug()<<Q_FUNC_INFO<<" ID:"<<id;
+//    qDebug()<<Q_FUNC_INFO<<" ID:"<<id;
     emit validFunction(id);
 }

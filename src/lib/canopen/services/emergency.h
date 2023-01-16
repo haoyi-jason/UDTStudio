@@ -35,6 +35,8 @@ public:
 
     void parseFrame(const QCanBusFrame &frame) override;
 
+signals:
+    void emergency(uint16_t errorCode, uint8_t errorClass, QByteArray errorDesc);
 private:
     uint32_t _cobId;
 };

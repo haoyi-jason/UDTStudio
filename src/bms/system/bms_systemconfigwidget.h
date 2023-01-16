@@ -9,7 +9,8 @@
 #include <QGroupBox>
 #include <QStackedWidget>
 #include "bms_ui/focusededitor.h"
-
+#include "screen/bms_eventviewer.h"
+#include "system/bms_eventmodel.h"
 
 class BMS_SystemConfigWidget : public QStackedWidget
 {
@@ -23,6 +24,7 @@ private:
     QWidget *createHardwareWidget();
     QWidget *createBCUWidget();
     QWidget *createAlarmWidget();
+    QWidget *createEventViewWidget();
 
     void loadSettings();
     void saveSettings(QString section, QString key , QString value);
@@ -73,6 +75,9 @@ private:
     FocusedEditor *_balancingVoltage;
     FocusedEditor *_balancingTime;
     FocusedEditor *_balancingHystersis;
+    FocusedEditor *_balancingVoltageMin;
+    FocusedEditor *_balancingVoltageMax;
+    FocusedEditor *_balancingVoltageFaultDiff;
 
     // alarm
     QGroupBox *_grpAlarm;
@@ -80,6 +85,8 @@ private:
     QList<FocusedEditor*> _alarmEdits; // high-set, high-reset, low-set, low-reset, duration
     QList<QLabel*> _alarmLabels;
 
+    // events
+    BMS_EventModel *_evtModel;
 
 };
 

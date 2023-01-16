@@ -244,7 +244,7 @@ AbstractIndexWidget::Bound AbstractIndexWidget::inBound(const QVariant &value)
 {
     QVariant min = (_minValue.isValid()) ? _minValue : _minType;
     QVariant max = (_maxValue.isValid()) ? _maxValue : _maxType;
-    qDebug()<<Q_FUNC_INFO<<QString("%1:%2:%3").arg(_minValue.toDouble()).arg(value.toDouble()).arg(_maxValue.toDouble());
+    //qDebug()<<Q_FUNC_INFO<<QString("%1:%2:%3").arg(_minValue.toDouble()).arg(value.toDouble()).arg(_maxValue.toDouble());
 
     if (value.toDouble() > max.toDouble())
     {

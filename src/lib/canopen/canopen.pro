@@ -64,7 +64,8 @@ SOURCES += \
     $$PWD/profile/p402/modehm.cpp \
     $$PWD/profile/p402/modepc.cpp \
     $$PWD/profile/p402/modecstca.cpp \
-    $$PWD/profile/p402/modetc.cpp
+    $$PWD/profile/p402/modetc.cpp \
+    busdriver/canbusvci.cpp
 
 HEADERS += \
     $$PWD/canopen.h \
@@ -121,7 +122,8 @@ HEADERS += \
     $$PWD/profile/p402/modehm.h \
     $$PWD/profile/p402/modepc.h \
     $$PWD/profile/p402/modecstca.h \
-    $$PWD/profile/p402/modetc.h
+    $$PWD/profile/p402/modetc.h \
+    busdriver/canbusvci.h
 
 unix:{
     SOURCES += $$PWD/busdriver/canbussocketcan.cpp

@@ -164,3 +164,19 @@ void BmuCellInputWidgets::setNtcRange(qint16 low, qint16 high)
         _lcdNumbers[i+13]->setRangeValue(low, high);
     }
 }
+
+void BmuCellInputWidgets::setBalanceMask(uint16_t mask)
+{
+    for(uint8_t i=0;i<_lcdNumbers.count();i++)
+    {
+        _lcdNumbers[i]->setBalancing((mask & (1 << i)) != 0 );
+    }
+}
+
+void BmuCellInputWidgets::setOpenWireMask(uint16_t mask)
+{
+    for(uint8_t i=0;i<_lcdNumbers.count();i++)
+    {
+        _lcdNumbers[i]->setOpenWire((mask & (1 << i)) !=0);
+    }
+}

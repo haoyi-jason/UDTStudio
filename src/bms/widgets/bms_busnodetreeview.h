@@ -2,7 +2,7 @@
 #define BMS_BUSNODETREEVIEW_H
 
 #include <QTreeView>
-#include "bmsstackmodel.h"
+#include "system/bmsstackmodel.h"
 
 #include <QAction>
 #include <QList>

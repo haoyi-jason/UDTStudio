@@ -217,6 +217,7 @@ void DataLogger::addDataValue(DLData *dlData, const QVariant &value, const QDate
 
 void DataLogger::exportCSVData(const QString &fileName)
 {
+    //qDebug()<<Q_FUNC_INFO<<fileName;
     QList<quint64> timeStamps;
     QVector<QMap<quint64, double>> maps(_dataList.count());
     uint dlDataId = 0;

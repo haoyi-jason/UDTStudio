@@ -119,39 +119,39 @@ QWidget *NodeScreenBCU::createSumaryWidget()
     sumaryLayout->addRow(tr("NTCs Per Pack"), indexLabel);
     _indexWidgets.append(indexLabel);
 
-    IndexComboBox *indexCombo;
-    indexCombo = new IndexComboBox(NodeObjectId(0x2001,0x04));
-    indexCombo->setMinValue(1);
-    indexCombo->setMaxValue(2);
-    sumaryLayout->addRow(tr("BMU Type"), indexCombo);
+//    IndexComboBox *indexCombo;
+//    indexCombo = new IndexComboBox(NodeObjectId(0x2001,0x04));
+//    indexCombo->setMinValue(1);
+//    indexCombo->setMaxValue(2);
+//    sumaryLayout->addRow(tr("BMU Type"), indexCombo);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x2002, 1));
-    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-    indexLabel->setScale(1.0);
-    indexLabel->setUnit("%");
-    sumaryLayout->addRow(tr("SOC"), indexLabel);
-    _indexWidgets.append(indexLabel);
+//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 1));
+//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+//    indexLabel->setScale(1.0);
+//    indexLabel->setUnit("%");
+//    sumaryLayout->addRow(tr("SOC"), indexLabel);
+//    _indexWidgets.append(indexLabel);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x2002, 2));
-    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-    indexLabel->setScale(0.1);
-    indexLabel->setUnit(" ");
-    sumaryLayout->addRow(tr("SOH"), indexLabel);
-    _indexWidgets.append(indexLabel);
+//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 2));
+//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+//    indexLabel->setScale(0.1);
+//    indexLabel->setUnit(" ");
+//    sumaryLayout->addRow(tr("SOH"), indexLabel);
+//    _indexWidgets.append(indexLabel);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x2002, 3));
-    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-    indexLabel->setScale(1.0);
-    indexLabel->setUnit("V");
-    sumaryLayout->addRow(tr("Stack Voltage"), indexLabel);
-    _indexWidgets.append(indexLabel);
+//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 3));
+//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+//    indexLabel->setScale(1.0);
+//    indexLabel->setUnit("V");
+//    sumaryLayout->addRow(tr("Stack Voltage"), indexLabel);
+//    _indexWidgets.append(indexLabel);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x2002, 4));
-    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-    indexLabel->setScale(0.1);
-    indexLabel->setUnit("A");
-    sumaryLayout->addRow(tr("Current"), indexLabel);
-    _indexWidgets.append(indexLabel);
+//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 4));
+//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+//    indexLabel->setScale(0.1);
+//    indexLabel->setUnit("A");
+//    sumaryLayout->addRow(tr("Current"), indexLabel);
+//    _indexWidgets.append(indexLabel);
 
     hlayout->addItem(sumaryLayout);
 

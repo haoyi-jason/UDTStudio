@@ -3,7 +3,7 @@
 
 #include "../lib/udtgui/screen/nodescreen.h"
 #include "canopen/nodeod/nodeodwidget.h"
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 
 class AbstractIndexWidget;
 class QLabel;

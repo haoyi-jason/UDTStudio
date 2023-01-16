@@ -30,6 +30,7 @@
 
 #include "busdriver/canbustcpudt.h"
 #include "busdriver/canbusvci.h"
+#include "system/login.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -58,7 +59,6 @@ MainWindow::MainWindow(QWidget *parent) :
    //     CanOpen::addBus(b);
 
 
-    //if(progSetting->contains("INTERFACE")){
     int sz = progSetting->beginReadArray("INTERFACE");
     if(sz > 0){
         for(int i=0;i<sz;i++){
@@ -70,7 +70,6 @@ MainWindow::MainWindow(QWidget *parent) :
                     b->setBusName(sl[0]);
                     //busList.append(b);
                     CanOpen::addBus(b);
-
                 }
             }
         }
@@ -104,7 +103,9 @@ MainWindow::MainWindow(QWidget *parent) :
                     progSetting->setArrayIndex(i);
                     int bid = progSetting->value("BUS_ID").toInt();
                     int nid = progSetting->value("NODE_ID").toInt();
+                    quint8 mode = progSetting->value("START_MODE").toInt();
                     BCU *node = new BCU(nid,QFileInfo(edsFile).completeBaseName(),edsFile);
+                    node->setStartMode(mode);
                     if(bid < CanOpen::buses().count()){
                         //busList[bus_id]->addNode(node);
                         CanOpen::bus(bid)->addNode(node);
@@ -112,11 +113,6 @@ MainWindow::MainWindow(QWidget *parent) :
                 }
                 progSetting->endArray();
             }
-//            for(int i=1;i<7;i++){
-//                BCU *node = new BCU(i,QFileInfo(edsFile).completeBaseName(),edsFile);
-//                b->addNode(node);
-//            }
-
         }
         id++;
     }
@@ -144,6 +140,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //_busNodesManagerView->startBcu(-1);
     //_busNodesManagerView->startPoll(2000);
     _logger->startLog(10);
+
+    //Login::instance()->show();
+    connect(Login::instance(),&Login::expired,this,&MainWindow::exitSuperUser);
 }
 
 MainWindow::~MainWindow()
@@ -371,6 +370,9 @@ bool MainWindow::event(QEvent *event)
         writeSettings();
         QApplication::quit();
     }
+//    else if(event->type() == QEvent::win){
+//        emit windowIdle();
+//    }
     return QMainWindow::event(event);
 }
 
@@ -390,8 +392,23 @@ void MainWindow::setFunction(int func)
 //        _tabWidget->removeTab(0);
 //    }
 //    _tabWidget->addTab(_configScreens,"CONFIG");
-    _stackWidget->setCurrentIndex(1);
-    _configScreens->setActivePage(func);
+    if(Login::instance()->isValid()){
+        _stackWidget->setCurrentIndex(1);
+        _configScreens->setActivePage(func);
+    }
+    else
+    {
+        if(Login::instance()->exec() == QDialog::Accepted){
+            if(Login::instance()->isValid()){
+                _stackWidget->setCurrentIndex(1);
+                _configScreens->setActivePage(func);
+            }
+            else{
+
+            }
+        }
+
+    }
 }
 
 void MainWindow::setActiveNode(Node *node)
@@ -401,4 +418,9 @@ void MainWindow::setActiveNode(Node *node)
 //    }
 //    _tabWidget->addTab(_nodeScreens,"BCU");
     _stackWidget->setCurrentIndex(0);
+}
+
+void MainWindow::exitSuperUser()
+{
+    setActiveNode(nullptr);
 }

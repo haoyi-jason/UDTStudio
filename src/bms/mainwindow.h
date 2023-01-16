@@ -13,7 +13,7 @@
 #include "canopen/datalogger/dataloggerwidget.h"
 #include "screen/nodescreenswidget.h"
 
-#include "bms_busnodemanagerview.h"
+#include "widgets/bms_busnodemanagerview.h"
 #include "canFrameListView/bms_canframelistview.h"
 
 #include "screen/bcuscreenwidget.h"
@@ -42,6 +42,7 @@ public slots:
 
     void setFunction(int func);
     void setActiveNode(Node *node);
+    void exitSuperUser();
 
 protected:
     QDockWidget *_dockWidget;
@@ -64,13 +65,16 @@ protected:
     BMS_SystemConfigWidget *_configScreens;
 
 
+
+public:
+    bool event(QEvent *event) override;
     void createMenus();
     void writeSettings();
     void readSettings();
     void initSettings();
 
-public:
-    bool event(QEvent *event) override;
+signals:
+    void windowIdle();
 
 private:
 //    Ui::MainWindow *ui;

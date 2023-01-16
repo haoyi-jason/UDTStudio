@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QToolBar>
 
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 
 
 

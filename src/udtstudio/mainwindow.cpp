@@ -41,11 +41,12 @@
 #    include "busdriver/canbussocketcan.h"
 #endif
 #include "busdriver/canbustcpudt.h"
+#include "busdriver/canbusvci.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    setWindowTitle(tr("UniSwarm UDTStudio"));
+    setWindowTitle(tr("CAN Discover"));
     setWindowIcon(QIcon(":/icons/img/udtstudio.ico"));
     statusBar()->setVisible(true);
 
@@ -75,13 +76,22 @@ MainWindow::MainWindow(QWidget *parent)
     bus->setBusName("Bus net");
     CanOpen::addBus(bus);*/
 
-    bus = new CanOpenBus(new CanBusDriver(""));
-    bus->setBusName("VBus eds");
+
+    bus = new CanOpenBus(new CanBusVCI("COM8"));
+    bus->setBusName("VCI CAN");
+//    bus = new CanOpenBus(new CanBusDriver(""));
+//    bus->setBusName("VBus eds");
     CanOpen::addBus(bus);
-    int id = 1;
+    int id = 2;
     for (const QString &edsFile : qAsConst(OdDb::edsFiles()))
     {
-        Node *node = new Node(id, QFileInfo(edsFile).completeBaseName(), edsFile);
+        Node *node;
+        if(edsFile.contains("HYMC")){
+            node = new Node(0x1, QFileInfo(edsFile).completeBaseName(), edsFile);
+        }
+        else{
+             node = new Node(id, QFileInfo(edsFile).completeBaseName(), edsFile);
+        }
         bus->addNode(node);
         id++;
     }

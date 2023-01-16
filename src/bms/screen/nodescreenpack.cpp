@@ -27,6 +27,8 @@ NodeScreenPack::NodeScreenPack(QWidget *parent)
     f.setPointSize(14);
     setFont(f);
 
+    _configLoaded = false;
+    _odError = false;
 }
 
 void NodeScreenPack::createWidgets()
@@ -53,99 +55,54 @@ void NodeScreenPack::createWidgets()
     QVBoxLayout *vlayout = new QVBoxLayout();
     vlayout->setContentsMargins(0,0,0,0);
 
-    QFormLayout *infoLayout = new QFormLayout();
+    _infoGroup = new QGroupBox("電池資訊");
+    QGridLayout *infoLayout = new QGridLayout();
     infoLayout->setContentsMargins(5,5,5,5);
-    //IndexLabel *indexLabel;
-    //NodeObjectId obj;
-
     infoLayout->setHorizontalSpacing(10);
     infoLayout->setVerticalSpacing(10);
 
-    _socLabel = new IndexLabel(NodeObjectId(0x2002,0x1));
-    infoLayout->addRow("SOC",_socLabel);
-    _sohLabel = new IndexLabel(NodeObjectId(0x2002,0x2));
-    infoLayout->addRow("SOH",_sohLabel);
-    _pvLabel = new IndexLabel(NodeObjectId(0x2002,0x3));
-    infoLayout->addRow("Stack Voltage",_pvLabel);
-    _paLabel = new IndexLabel(NodeObjectId(0x2002,0x4));
-    infoLayout->addRow("Current(A)",_paLabel);
+    _pvLabel = new IndexLCDNumber(NodeObjectId(0x2002,0x3));
+    _pvLabel->setScale(0.1);
+    _pvLabel->setUnit("V");
+    infoLayout->addWidget(new QLabel("總電壓"),0,0);
+    infoLayout->addWidget(_pvLabel,0,1);
+    _paLabel = new IndexLCDNumber(NodeObjectId(0x2002,0x4));
+    _paLabel->setScale(0.1);
+    _paLabel->setUnit("A");
 
-    vlayout->addItem(infoLayout);
-//    _stateWidget = new BcuStateWidget();
-//    vlayout->addWidget(_stateWidget);
+    infoLayout->addWidget(new QLabel("總電流"),0,2);
+    infoLayout->addWidget(_paLabel,0,3);
+
+    _socLabel = new IndexLCDNumber(NodeObjectId(0x2002,0x1));
+    _socLabel->setUnit("%");
+    infoLayout->addWidget(new QLabel("SOC"),1,0);
+    infoLayout->addWidget(_socLabel,1,1);
+    _sohLabel = new IndexLCDNumber(NodeObjectId(0x2002,0x2));
+    _sohLabel->setUnit("%");
+    infoLayout->addWidget(new QLabel("SOH"),1,2);
+    infoLayout->addWidget(_sohLabel,1,3);
+
+    _bcuInfo = new QLabel("系統狀態:\n\n");
+    infoLayout->addWidget(_bcuInfo,0,4,2,1);
+
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    hlayout->addItem(infoLayout);
+
+//    hlayout->addWidget(_bcuInfo);
+    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed));
+
+    _infoGroup->setLayout(hlayout);
+
+    vlayout->addWidget(_infoGroup);
 
 
-    //layout->addWidget(_bmuWidget);
-    //vlayout->addWidget(toolBar);
-    // set to maximum supported count and hide in "setInternal"
     QGridLayout *_cellLayout = new QGridLayout();
-    _cellLayout->setContentsMargins(5,5,5,5);
-
-//    _cellLayout->addWidget(new QLabel("Pack#"),0,0);
-//    _cellLayout->addWidget(new QLabel("Voltage"),0,1);
-//    for(int i=0;i<12;i++){
-//        _cellLayout->addWidget(new QLabel(QString("Cell#%1").arg(i+1)),0,i+2);
-//    }
-//    for(int i=0;i<5;i++){
-//        _cellLayout->addWidget(new QLabel(QString("NTC#%1").arg(i+1)),0,i+2+12);
-//    }
-
-//    _lcdNumbers.clear();
-//    IndexLCDNumber *lcdNumber;
-//    NodeObjectId objId;
-//    for(int i=0;i<30;i++){
-//        objId = NodeObjectId(0x2100 + i,0x01);
-//        registerObjId(objId);
-//        lcdNumber = new IndexLCDNumber();
-////        lcdNumber->setNode(node);
-//        lcdNumber->setObjId(objId);
-//        lcdNumber->setUnit("V");
-//        lcdNumber->setScale(0.1);
-//        lcdNumber->setDisplayHint(IndexLCDNumber::DisplayFloat);
-//        _lcdNumbers.append(lcdNumber);
-//        _cellLayout->addWidget(new QLabel(QString("#%1").arg(i+1)),i+1,0);
-//        _cellLayout->addWidget(lcdNumber,i+1,1);
-
-//        for(int j=0;j<12;j++){
-//            objId = NodeObjectId(0x2100 + i,j+0xa);
-//            registerObjId(objId);
-//            lcdNumber = new IndexLCDNumber();
-////            lcdNumber->setNode(node);
-//            lcdNumber->setObjId(objId);
-//            lcdNumber->setUnit("mV");
-//            lcdNumber->setScale(1);
-//            lcdNumber->setDisplayHint(IndexLCDNumber::DisplayDirectValue);
-//            _lcdNumbers.append(lcdNumber);
-//            _cellLayout->addWidget(lcdNumber,i+1,j+2);
-
-//        }
-//        for(int j=0;j<5;j++){
-//            objId = NodeObjectId(0x2100 + i,j+0x18);
-//            registerObjId(objId);
-//            lcdNumber = new IndexLCDNumber();
-////            lcdNumber->setNode(node);
-//            lcdNumber->setObjId(objId);
-//            lcdNumber->setUnit(QChar(0x2103));
-//            lcdNumber->setScale(0.1);
-//            lcdNumber->setDisplayHint(IndexLCDNumber::DisplayDirectValue);
-//            _lcdNumbers.append(lcdNumber);
-//            _cellLayout->addWidget(lcdNumber,i+1,j+2+12);
-//        }
-//    }
+    _cellLayout->setContentsMargins(1,5,1,5);
 
     _cellGroup = new QGroupBox();
     _cellGroup->setLayout(_cellLayout);
     vlayout->addWidget(_cellGroup);
 
-    // add cell widgets
-
-//    for(int i=0;i<30;i++){
-//        BmuCellInputWidgets *w = new BmuCellInputWidgets(i,12,5);
-//        vlayout->addWidget(w);
-//        _bmuCellInputWidgets.append(w);
-//        w->setCellRange(3000,3700);
-//        w->setNtcRange(20,50);
-//    }
     vlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Fixed,QSizePolicy::Expanding));
 
 
@@ -153,24 +110,6 @@ void NodeScreenPack::createWidgets()
     scrollArea->setWidget(widget);
     layout->addWidget(scrollArea);
 
-//    _prevPackAction = toolBar->addAction(tr("Prev"));
-//    _nextPackAction = toolBar->addAction(tr("Next"));
-//    _onShotAction = toolBar->addAction(tr("One Shot"));
-//    _edIndex = new QLineEdit();
-//    _edIndex->setText("0x2000");
-//    _edSubIndex = new QLineEdit();
-//    _edSubIndex->setText("0x01");
-//    toolBar->addWidget(_edIndex);
-//    toolBar->addWidget(_edSubIndex);
-//    _setIndexValue = toolBar->addAction("Set");
-//    connect(_setIndexValue,&QAction::triggered,this,&NodeScreenPack::toggleSetIndex);
-
-//    _prevPackAction->setText(tr("<-"));
-//    _nextPackAction->setText(tr("->"));
-
-//    connect(_prevPackAction,&QAction::triggered,this,&NodeScreenPack::toggleBMUNavagate);
-//    connect(_nextPackAction,&QAction::triggered,this,&NodeScreenPack::toggleBMUNavagate);
-//    connect(_onShotAction,&QAction::triggered,this,&NodeScreenPack::toggleOneShot);
     setLayout(layout);
 }
 
@@ -182,26 +121,46 @@ QString NodeScreenPack::title() const
 void NodeScreenPack::setNodeInternal(Node *node, uint8_t axis)
 {
     Q_UNUSED(axis);
-    //setNodeInterrest(node);
-    BCU *bcu = static_cast<BCU*>(node);
-    int packs =  _node->nodeOd()->value(0x2001,0x01).toInt();
-    int cells =  _node->nodeOd()->value(0x2001,0x02).toInt();
-    int ntcs =  _node->nodeOd()->value(0x2001,0x03).toInt();
-    int count = 0;
+    qDebug()<<Q_FUNC_INFO;
+    setNodeInterrest(node);
+    _bcu = static_cast<BCU*>(node);
+    if(_bcu != nullptr){
+        connect(_bcu,&BCU::configReady,this,&NodeScreenPack::BCUConfigReady);
+        NodeObjectId objId;
+        objId = NodeObjectId(0x2001,0x01);
+        registerObjId(objId);
+        objId = NodeObjectId(0x2001,0x02);
+        registerObjId(objId);
+        objId = NodeObjectId(0x2001,0x03);
+        registerObjId(objId);
 
-    _socLabel->setNode(node);
-    _sohLabel->setNode(node);
-    _pvLabel->setNode(node);
-    _paLabel->setNode(node);
+        connect(_bcu,&BCU::updateState,this, &NodeScreenPack::updateBCUInfo);
+    }
+}
+
+void NodeScreenPack::refreshContent()
+{
+    int packs =  _bcu->nofPacks();
+    int cells =  _bcu->nofCellsPerPack();
+    int ntcs =  _bcu->nofNtcsPerPack();
+
+    qDebug()<<Q_FUNC_INFO<<QString(" Pack:%1, CELLS:%2, NTCs:%3").arg(packs).arg(cells).arg(ntcs);
+
+    int count = 0;
+    _socLabel->setNode(_node);
+    _sohLabel->setNode(_node);
+    _pvLabel->setNode(_node);
+    _paLabel->setNode(_node);
 
     _lcdNumbers.clear();
     QGridLayout *_cellLayout = (QGridLayout*)_cellGroup->layout();
 
 
+
     _cellLayout->addWidget(new QLabel("Pack#"),0,0);
     _cellLayout->addWidget(new QLabel("Voltage"),0,1);
     for(int i=0;i<cells;i++){
-        _cellLayout->addWidget(new QLabel(QString("C#%1(mV)").arg(i+1)),0,i+2);
+        _cellLayout->addWidget(new QLabel(QString("C#%1(V)").arg(i+1)),0,i+2);
     }
     for(int i=0;i<ntcs;i++){
         _cellLayout->addWidget(new QLabel(QString("T#%1-%2").arg(i+1).arg(QChar(0x2103))),0,i+2+12);
@@ -249,34 +208,21 @@ void NodeScreenPack::setNodeInternal(Node *node, uint8_t axis)
             _lcdNumbers.append(lcdNumber);
             _cellLayout->addWidget(lcdNumber,i+1,j+2+12);
         }
+        for(uint8_t j=2;j<10;j++){
+            objId = NodeObjectId(0x2100 + i,j );
+            registerObjId(objId);
+        }
     }
 
     //_cellLayout->addItem(new QSpacerItem(0,0,QSizePolicy::Fixed,QSizePolicy::Expanding));
     _cellGroup->setLayout(_cellLayout);
     foreach (IndexLCDNumber *v, _lcdNumbers) {
-        v->setNode(static_cast<Node*>(bcu));
+        v->setNode(static_cast<Node*>(_node));
         //v->show();
     }
 
+
     loadCriteria();
-//    _stateWidget->setBCU(bcu);
-//    foreach (BmuCellInputWidgets *b, _bmuCellInputWidgets) {
-//        b->setBCU(bcu);
-//        if(count < packs){
-//            b->show();
-//        }
-//        else{
-//            b->hide();
-//        }
-//        count++;
-//    }
-
-
-
-}
-
-void NodeScreenPack::refreshContent()
-{
 
 }
 
@@ -308,8 +254,38 @@ void NodeScreenPack::toggleOneShot()
 
 void NodeScreenPack::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
 {
+    //qDebug()<<Q_FUNC_INFO;
     if((flags & NodeOd::FlagsRequest::Error) != 0){
+        // todo: handle error here
+        _odError = true;
         return;
+    }
+    int pack = objId.index() - 0x2100;
+    if(objId.index() == 0x2001){
+        //qDebug()<<Q_FUNC_INFO;
+        _bcu->configReceived(objId.index(),objId.subIndex());
+    }
+    else if(objId.index() == 0x1018){
+
+    }
+    else if((pack >= 0) && (pack < _bcu->nofPacks())){
+        quint16 mask = (quint16)(_bcu->nodeOd()->value(objId).toInt());
+        int base = pack *(_bcu->nofCellsPerPack() + _bcu->nofNtcsPerPack() + 1) + 1;
+        switch(objId.subIndex()){
+        case 0x02:
+            //qDebug()<<Q_FUNC_INFO << "Read Balance mask";
+            for(int i=0;i<_bcu->nofCellsPerPack();i++){
+                _lcdNumbers[base+i]->setBalancing((mask & (1 << i)) != 0);
+            }
+            break;
+        case 0x03:
+            //qDebug()<<Q_FUNC_INFO << "Read open wire mask";
+            for(int i=0;i<_bcu->nofCellsPerPack();i++){
+                _lcdNumbers[base+i]->setOpenWire((mask & (1 << i)) != 0);
+            }
+            break;
+        }
+
     }
 }
 
@@ -347,4 +323,20 @@ void NodeScreenPack::loadCriteria()
     }
 
     progSetting->endArray();
+}
+
+void NodeScreenPack::BCUConfigReady()
+{
+      //qDebug()<<Q_FUNC_INFO;
+      refreshContent();
+}
+
+void NodeScreenPack::updateBCUInfo()
+{
+    //qDebug()<<Q_FUNC_INFO;
+    QString msg =_odError?"通訊錯誤: ":"系統狀態: ";
+    msg += _bcu->chargeStr() +"\n";
+    msg += _bcu->cvStr() +" ";
+    msg += _bcu->ctStr() +" ";
+    _bcuInfo->setText(msg);
 }

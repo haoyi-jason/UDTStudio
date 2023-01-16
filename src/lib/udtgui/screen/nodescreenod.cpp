@@ -47,20 +47,24 @@ void NodeScreenOD::createWidgets()
 
 QWidget *NodeScreenOD::createStoreWidget()
 {
-    _storeRestoreGroupBox = new QGroupBox(tr("Store / restore"));
+    _storeRestoreGroupBox = new QGroupBox(tr("儲存 / 回復參數"));
     QFormLayout *layout = new QFormLayout();
     layout->setContentsMargins(5, 5, 5, 5);
     layout->setSpacing(5);
 
     QHBoxLayout *storeLayout = new QHBoxLayout();
     _storeComboBox = new QComboBox();
-    _storeComboBox->addItem(tr("Save all parameters"), QVariant(Node::StoreAll));
-    _storeComboBox->addItem(tr("Save communication parameters"), QVariant(Node::StoreCom));
-    _storeComboBox->addItem(tr("Save application parameters"), QVariant(Node::StoreApp));
-    _storeComboBox->addItem(tr("Save manufacturer parameters"), QVariant(Node::StoreMan));
+//    _storeComboBox->addItem(tr("Save all parameters"), QVariant(Node::StoreAll));
+//    _storeComboBox->addItem(tr("Save communication parameters"), QVariant(Node::StoreCom));
+//    _storeComboBox->addItem(tr("Save application parameters"), QVariant(Node::StoreApp));
+//    _storeComboBox->addItem(tr("Save manufacturer parameters"), QVariant(Node::StoreMan));
+    _storeComboBox->addItem(tr("儲存所有參數"), QVariant(Node::StoreAll));
+    _storeComboBox->addItem(tr("儲存通訊參數"), QVariant(Node::StoreCom));
+    _storeComboBox->addItem(tr("儲存模組參數"), QVariant(Node::StoreApp));
+    _storeComboBox->addItem(tr("儲存製造商參數"), QVariant(Node::StoreMan));
     storeLayout->addWidget(_storeComboBox);
 
-    QPushButton *storeButon = new QPushButton("Store");
+    QPushButton *storeButon = new QPushButton("儲存");
     connect(storeButon, &QPushButton::clicked, this, &NodeScreenOD::store);
     storeLayout->addWidget(storeButon);
 
@@ -78,7 +82,7 @@ QWidget *NodeScreenOD::createStoreWidget()
     _restoreComboBox->addItem(tr("Restore saved manufacturer parameters"), QVariant(Node::RestoreSavedMan));
     restoreLayout->addWidget(_restoreComboBox);
 
-    QPushButton *restoreButon = new QPushButton("Restore");
+    QPushButton *restoreButon = new QPushButton("回復預設值");
     connect(restoreButon, &QPushButton::clicked, this, &NodeScreenOD::restore);
     restoreLayout->addWidget(restoreButon);
 

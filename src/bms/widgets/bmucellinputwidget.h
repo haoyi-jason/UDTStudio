@@ -11,7 +11,7 @@
 #include <QProgressBar>
 #include <QSlider>
 
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 
 class IndexCheckBox;
 class NodeObjectId;

@@ -44,23 +44,33 @@ signals:
 
 public slots:
     void loadCriteria();
+    void BCUConfigReady();
+    void updateBCUInfo();
 
 public:
     QString title() const;
     void setNodeInternal(Node *node, uint8_t axis);
 private:
     int _bmuIndex;
-    QList<BmuCellInputWidgets*> _bmuCellInputWidgets;
+    //QList<BmuCellInputWidgets*> _bmuCellInputWidgets;
     BcuStateWidget *_stateWidget;
-    IndexLabel *_socLabel;
-    IndexLabel *_sohLabel;
-    IndexLabel *_pvLabel;
-    IndexLabel *_paLabel;
+    IndexLCDNumber *_socLabel;
+    IndexLCDNumber *_sohLabel;
+    IndexLCDNumber *_pvLabel;
+    IndexLCDNumber *_paLabel;
 
     QList<IndexLCDNumber*> _lcdNumbers;
     QList<NodeObjectId> _objectIds;
 
     QGroupBox *_cellGroup;
+    bool _configLoaded;
+
+    BCU *_bcu;
+
+    QGroupBox *_infoGroup;
+    QLabel *_bcuInfo;
+
+    bool _odError;
 
 protected:
     void odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags) override;

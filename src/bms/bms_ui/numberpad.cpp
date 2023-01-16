@@ -155,15 +155,15 @@ void NumberPad::padClicked()
     default:break;
     }
 
-    if(_passChar){
-        int n = str.length();
-        QString b("*");
-        b.repeated(n);
-        _inBox->setText(b);
-    }
-    else{
-        _inBox->setText(str);
-    }
+//    if(_passChar){
+//        int n = str.length();
+//        QString b("*");
+//        b.repeated(n);
+//        _inBox->setText(b);
+//    }
+//    else{
+//        _inBox->setText(str);
+//    }
 }
 
 void NumberPad::setText(QString &content)
@@ -184,7 +184,9 @@ void NumberPad::setMax(int value)
 
 void NumberPad::passwordMode(bool on)
 {
-    _passChar = on;
+    //_passChar = on;
+    _inBox->setEchoMode(on?QLineEdit::Password:QLineEdit::Normal);
+
 }
 
 void NumberPad::validInput(bool on)

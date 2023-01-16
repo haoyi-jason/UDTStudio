@@ -10,7 +10,7 @@
 #include <QToolBar>
 #include <QPushButton>
 #include "canopenbus.h"
-#include "bmsstack.h"
+#include "system/bmsstack.h"
 #include "canopen.h"
 
 class BMS_BCUManagerwidget : public QWidget

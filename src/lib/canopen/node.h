@@ -127,11 +127,13 @@ public slots:
     void sendResetComm();
     void sendResetNode();
     void sendStatusReq();
+    void handleEmergency(uint16_t errorCode, uint8_t errorClass, QByteArray errorDesc);
 
 signals:
     void nameChanged(const QString &);
     void statusChanged(Node::Status);
     void edsFileChanged(const QString &);
+    void stateChanged();
 
 protected:
     friend class CanOpenBus;
@@ -155,6 +157,10 @@ protected:
     QList<NodeProfile *> _nodeProfiles;
 
     NodeOd *_nodeOd;
+
+    uint16_t _errorCode;
+    uint8_t _errorClass;
+    QByteArray _errorDest;
 };
 
 #endif  // NODE_H

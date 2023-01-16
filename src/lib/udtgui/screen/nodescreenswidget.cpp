@@ -169,8 +169,15 @@ void NodeScreensWidget::addNode(Node *node)
 
 void NodeScreensWidget::createWidgets()
 {
-    QLayout *layout = new QHBoxLayout();
+    QLayout *layout = new QVBoxLayout();
     layout->setContentsMargins(2, 2, 2, 2);
+
+    _logoLabel = new QLabel();
+    QPixmap p(":/logo/logo-10");
+
+    _logoLabel->setPixmap(p.scaled(800,100));
+    _logoLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    layout->addWidget(_logoLabel);
 
     _tabWidget = new QTabWidget();
     layout->addWidget(_tabWidget);

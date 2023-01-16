@@ -6,6 +6,9 @@
 #include <QtGlobal>
 #include <QGridLayout>
 #include "bms_systemconfigwidget.h"
+#include <QTableView>
+#include <QHeaderView>
+#include <QScrollArea>
 
 BMS_SystemConfigWidget::BMS_SystemConfigWidget(QWidget *parent) : QStackedWidget(parent)
 {
@@ -32,6 +35,7 @@ void BMS_SystemConfigWidget::createWidgets()
     addWidget(createHardwareWidget());
     addWidget(createBCUWidget());
     addWidget(createAlarmWidget());
+    addWidget(createEventViewWidget());
 
     qDebug()<<Q_FUNC_INFO<<" Widgets:"<<count();
 }
@@ -49,6 +53,7 @@ void BMS_SystemConfigWidget::setActivePage(int id)
 QWidget *BMS_SystemConfigWidget::createHardwareWidget()
 {
     QWidget *widget = new QWidget();
+    widget->setWindowTitle("Hardware Config");
     QVBoxLayout *layout = new QVBoxLayout();
     layout->setContentsMargins(5,5,5,5);
     layout->setSpacing(20);
@@ -84,10 +89,10 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     _cboBaudrate->addItem("115200");
     hlayout->addWidget(new QLabel("Baudrate"));
     hlayout->addWidget(_cboBaudrate);
-    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Minimum));
     btn = new QPushButton(tr("Set"));
     connect(btn,&QPushButton::clicked,this,&BMS_SystemConfigWidget::saveSerialPortSetting);
     hlayout->addWidget(btn);
+    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Fixed));
     layout->addItem(hlayout);
 
     // ethernet config
@@ -135,8 +140,10 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
         glayout->addWidget(editor,3,i+1);
     }
 //    vlayout->addItem(hlayout);
-
-    _grpEthernet->setLayout(glayout);
+    hlayout = new QHBoxLayout();
+    hlayout->addItem(glayout);
+    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed));
+    _grpEthernet->setLayout(hlayout);
 
     layout->addWidget(_grpEthernet);
 
@@ -211,18 +218,32 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     _balancingVoltage = new FocusedEditor();
     _balancingTime = new FocusedEditor();
     _balancingHystersis = new FocusedEditor();
+    _balancingVoltageMin = new FocusedEditor();
+    _balancingVoltageMax = new FocusedEditor();
+    _balancingVoltageFaultDiff = new FocusedEditor();
+
     connect(_balancingVoltage,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
     connect(_balancingTime,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
     connect(_balancingHystersis,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
+    connect(_balancingVoltageMin,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
+    connect(_balancingVoltageMax,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
+    connect(_balancingVoltageFaultDiff,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
+
     hlayout = new QHBoxLayout();
     hlayout->setContentsMargins(5,5,5,5);
     hlayout->setSpacing(20);
-    hlayout->addWidget(new QLabel(tr("均衡電壓(V)")));
-    hlayout->addWidget(_balancingVoltage);
-    hlayout->addWidget(new QLabel(tr("均衡時間(秒)")));
-    hlayout->addWidget(_balancingTime);
-    hlayout->addWidget(new QLabel(tr("允許誤差(mv)")));
+    hlayout->addWidget(new QLabel(tr("最低均衡電壓(V)")));
+    hlayout->addWidget(_balancingVoltageMin);
+    hlayout->addWidget(new QLabel(tr("最高均衡電壓(V)")));
+    hlayout->addWidget(_balancingVoltageMax);
+    hlayout->addWidget(new QLabel(tr("停止均衡壓差(V)")));
+    hlayout->addWidget(_balancingVoltageFaultDiff);
+
+//    hlayout->addWidget(new QLabel(tr("均衡時間(秒)")));
+//    hlayout->addWidget(_balancingTime);
+    hlayout->addWidget(new QLabel(tr("允許誤差(V)")));
     hlayout->addWidget(_balancingHystersis);
+
     layout->addItem(hlayout);
 
 
@@ -230,6 +251,42 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     widget->setLayout(layout);
     return widget;
 
+}
+
+QWidget *BMS_SystemConfigWidget::createEventViewWidget()
+{
+    QScrollArea *scrollArea = new QScrollArea();
+    scrollArea->setWidgetResizable(true);
+
+    QWidget *widget = new QWidget();
+    QVBoxLayout *layout = new QVBoxLayout();
+
+//    BMS_EventViewer *ev = new BMS_EventViewer();
+    _evtModel = new BMS_EventModel();
+    _evtModel->setEventFile("./events/event.log");
+    QTableView *tview = new QTableView();
+    tview->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    tview->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tview->setModel(_evtModel);
+
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    QPushButton *btn = new QPushButton("Previous");
+    connect(btn,&QPushButton::clicked,_evtModel,&BMS_EventModel::prevPage);
+    hlayout->addWidget(btn);
+    btn = new QPushButton("Next");
+    connect(btn,&QPushButton::clicked,_evtModel,&BMS_EventModel::nextPage);
+    hlayout->addWidget(btn);
+
+    btn = new QPushButton("清除事件");
+    connect(btn,&QPushButton::clicked,_evtModel,&BMS_EventModel::clearData);
+    hlayout->addWidget(btn);
+
+    layout->addLayout(hlayout);
+    layout->addWidget(tview);
+
+    widget->setLayout(layout);
+
+    return widget;
 }
 
 QWidget *BMS_SystemConfigWidget::createAlarmWidget()
@@ -513,6 +570,31 @@ void BMS_SystemConfigWidget::loadSettings()
         _balancingHystersis->setText("8");
         progSetting->setValue("HYSTERSIS","8");
     }
+
+    if(progSetting->contains("MINIMUM")){
+        _balancingVoltageMin->setText(progSetting->value("MINIMUM").toString());
+    }
+    else{
+        _balancingVoltageMin->setText("3.4");
+        progSetting->setValue("MINIMUM","3.4");
+    }
+
+    if(progSetting->contains("MAXIMUM")){
+        _balancingVoltageMax->setText(progSetting->value("MAXIMUM").toString());
+    }
+    else{
+        _balancingVoltageMax->setText("4.2");
+        progSetting->setValue("MAXIMUM","4.2");
+    }
+
+    if(progSetting->contains("FAULT_DIFF")){
+        _balancingVoltageFaultDiff->setText(progSetting->value("FAULT_DIFF").toString());
+    }
+    else{
+        _balancingVoltageFaultDiff->setText("0.5");
+        progSetting->setValue("FAULT_DIFF","0.5");
+    }
+
     progSetting->endGroup();
 
     // alarm settings

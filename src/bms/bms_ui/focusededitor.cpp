@@ -39,7 +39,7 @@ void FocusedEditor::focusInternal()
     nPad->setText(str);
     nPad->setMax(_max);
     nPad->setMin(_min);
-
+    nPad->passwordMode(echoMode()==QLineEdit::Password);
     //connect(nPad,&NumberPad::accepted,this,&FocusedEditor::accepted);
     if(nPad->exec() == QDialog::Accepted){
         setText(nPad->result());

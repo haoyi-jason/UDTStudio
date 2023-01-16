@@ -30,10 +30,11 @@ public:
     double voltage() const;
     double current() const;
 
-    QList<BatteryPack*> packs() const;
-
     Status status();
     QString statusStr();
+    QString chargeStr();
+    QString cvStr();
+    QString ctStr();
 
     // BCU specified functions
     void accessVoltage(quint8 pack, quint8 cell);
@@ -54,19 +55,37 @@ public:
     qint16 cellDifference() const;
 
     AlarmManager *alarmManager() const;
+    quint8 startMode() const;
+    void setStartMode(quint8 mode);
+    bool isConfigReady() ;
+    void reConfig();
+    bool canPoll();
+
+    void reset();
+    void identify();
 
 public slots:
     void startPollThread(int interval=50);
-    void validate();
+    bool validate();
+    void configReceived(quint16 index, quint8 subindex);
+    void readConfig();
+    void resetError();
+    void startPoll(int interval = 50);
+    void stopPoll();
 
 signals:
     void threadActive(bool);
     void sendEvent(QString event);
+    void configReady();
+    void updateState();
+    void identified();
+
+private slots:
+    void accessData();
 
 private:
     double _voltage;
     double _current;
-    QList<BatteryPack*> _packs;
     quint8 _nofPacks;
     quint8 _cellsPerPack;
     quint8 _ntcsPerPack;
@@ -90,6 +109,18 @@ private:
     double _minTemperature;
 
     AlarmManager *_alarmManager;
+    quint16 _configReady;
+    quint16 _identifyReady;
+
+    quint8 _startMode;
+
+    double _currentGap;
+
+    QTimer *_pollTimer;
+    QList<NodeObjectId> _accessIds;
+    QList<NodeObjectId>::iterator _accessIdIterator;
+    bool _accessOnece;
+    NodeObjectId _currentOd;
 };
 
 

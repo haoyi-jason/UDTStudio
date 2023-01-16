@@ -27,6 +27,8 @@
 #include "profile/p402/nodeprofile402.h"
 #include "services/services.h"
 
+#include <QDebug>
+
 Node::Node(quint8 nodeId, const QString &name, const QString &edsFileName)
     : _nodeId(nodeId)
 {
@@ -45,7 +47,9 @@ Node::Node(quint8 nodeId, const QString &name, const QString &edsFileName)
 
     // services
     _emergency = new Emergency(this);
+    connect(_emergency,&Emergency::emergency,this,&Node::handleEmergency);
     _services.append(_emergency);
+
 
     _nmt = new NMT(this);
     _services.append(_nmt);
@@ -78,6 +82,10 @@ Node::Node(quint8 nodeId, const QString &name, const QString &edsFileName)
         loadEds(edsFileName);
         NodeProfileFactory::profileFactory(this);
     }
+
+    _errorCode = 0;
+    _errorClass = 0;
+
 }
 
 Node::~Node()
@@ -416,3 +424,14 @@ void Node::sendStatusReq()
 {
     _nmt->sendNodeGuarding();
 }
+
+void Node::handleEmergency(uint16_t errorCode, uint8_t errorClass, QByteArray errorDesc)
+{
+    qDebug()<<Q_FUNC_INFO;
+    _errorCode = errorCode;
+    _errorClass = errorClass;
+    _errorDest = errorDesc;
+
+    emit stateChanged();
+}
+

@@ -7,7 +7,8 @@
 #include "../../lib/udtgui/screen/nodescreen.h"
 #include <QTableWidget>
 
-#include "bmsstack.h"
+#include "system/bmsstack.h"
+#include <QLabel>
 
 class BcuScreenWidget : public NodeScreensWidget
 {
@@ -39,6 +40,8 @@ protected:
     };
 
     QMap<Node*, NodeScreens> _nodesMap;
+
+    QLabel *_logoLabe;
 
 };
 

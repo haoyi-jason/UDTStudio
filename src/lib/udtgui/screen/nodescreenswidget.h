@@ -26,6 +26,7 @@
 #include "nodescreen.h"
 
 #include <QTabWidget>
+#include <QLabel>
 
 class UDTGUI_EXPORT NodeScreensWidget : public QWidget
 {
@@ -54,6 +55,8 @@ protected:
     };
 
     QMap<Node *, NodeScreens> _nodesMap;
+    QLabel *_logoLabel;
+
 };
 
 #endif  // NODESCREENS_H

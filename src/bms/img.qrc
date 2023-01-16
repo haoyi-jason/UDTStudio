@@ -62,4 +62,7 @@
         <file alias="usb.png">img/uBoards/icons8-usb.png</file>
         <file alias="ethernet.png">img/uBoards/icons8-ethernet.png</file>
     </qresource>
+    <qresource prefix="/logo">
+        <file alias="logo-10">img/logo/GE_LOGO-10_cut.png</file>
+    </qresource>
 </RCC>
