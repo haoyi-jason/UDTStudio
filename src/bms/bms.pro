@@ -35,6 +35,7 @@ SOURCES += \
         bcu/bcupdomappingwidget.cpp \
         bcu/bms_bcumanagerwidget.cpp \
         bcu/bms_nodemanagerwidget.cpp \
+        bms_ui/indexfocuseditor.cpp \
         system/login.cpp \
         widgets/bms_busmanagerwidget.cpp \
         widgets/bms_busnodemanagerview.cpp \
@@ -69,6 +70,7 @@ HEADERS += \
         bcu/bcupdomappingwidget.h \
         bcu/bms_bcumanagerwidget.h \
         bcu/bms_nodemanagerwidget.h \
+        bms_ui/indexfocuseditor.h \
         system/login.h \
         widgets/bms_busmanagerwidget.h \
         widgets/bms_busnodemanagerview.h \

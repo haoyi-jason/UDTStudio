@@ -76,8 +76,18 @@ MainWindow::MainWindow(QWidget *parent)
     bus->setBusName("Bus net");
     CanOpen::addBus(bus);*/
 
+    //qDebug()<<QCoreApplication::arguments();
 
-    bus = new CanOpenBus(new CanBusVCI("COM8"));
+    QStringList args = QCoreApplication::arguments();
+
+    if(args.count() >= 3 && args[1].contains("port")){
+        bus = new CanOpenBus(new CanBusVCI(args[2]));
+        qDebug()<<"Connect to "<<args[2];
+    }
+    else{
+        bus = new CanOpenBus(new CanBusVCI("COM4"));
+        qDebug()<<"Connect to COM4";
+    }
     bus->setBusName("VCI CAN");
 //    bus = new CanOpenBus(new CanBusDriver(""));
 //    bus->setBusName("VBus eds");
