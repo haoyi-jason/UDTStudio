@@ -251,8 +251,8 @@ QVariant BMSStackModel::data(const QModelIndex &index, int role) const
             case Qt::DisplayRole:
             switch(index.column()){
             case StackId: return QVariant(index.row());break;
-            case Name: return QVariant(node->name());break;
-            case Status: return QVariant(node->status());break;
+            case Name: return QVariant(node->node()->name());break;
+            case Status: return QVariant(node->node()->status());break;
             default:return QVariant();
             }
             break;

@@ -37,6 +37,7 @@ public:
 
 public slots:
     void setNode(Node *node);
+    void setBCU(BCU *bcu);
     void updateData();
 
     void preop();

@@ -88,7 +88,7 @@ void BMS_Logger::log()
 //    QString dt = QDateTime::currentDateTime().toString("yyyy/MM/dd,hh:mm:ss");
 
     foreach(BCU *b, _bcuList){
-        if(b->status() == Node::Status::STARTED && b->isConfigReady()){
+        if(b->node()->status() == Node::Status::STARTED && b->isConfigReady()){
             generateRecord(b);
         }
     }
@@ -123,7 +123,7 @@ QString BMS_Logger::generateHeader(BCU *bcu)
 void BMS_Logger::generateRecord(BCU *bcu)
 {
     if(bcu == nullptr) return;
-    QString fileName =QString("%1/BCU[%2]-%3.log").arg(_recordPath).arg(bcu->nodeId()).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hh"));
+    QString fileName =QString("%1/BCU[%2]-%3.log").arg(_recordPath).arg(bcu->node()->nodeId()).arg(QDateTime::currentDateTime().toString("yyyyMMdd_hh"));
     QFile f(fileName);
     f.open(QIODevice::ReadWrite| QIODevice::Append);
     QTextStream ds(&f);
@@ -149,10 +149,10 @@ void BMS_Logger::generateRecord(BCU *bcu)
 
     for(int i=0;i< bcu->nofPacks();i++){
         for(int j=0;j<bcu->nofCellsPerPack();j++){
-            ds << QString(",%1").arg(bcu->nodeOd()->value(0x2010 + i, 0x0a + j).toInt()/1000.);
+            ds << QString(",%1").arg(bcu->node()->nodeOd()->value(0x2010 + i, 0x0a + j).toInt()/1000.);
         }
         for(int j=0;j<bcu->nofNtcsPerPack();j++){
-            ds << QString(",%1").arg(bcu->nodeOd()->value(0x2010 + i, 0x19 + j).toInt()/10.);
+            ds << QString(",%1").arg(bcu->node()->nodeOd()->value(0x2010 + i, 0x19 + j).toInt()/10.);
         }
     }
     ds <<"\n";

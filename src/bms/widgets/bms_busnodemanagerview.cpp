@@ -18,10 +18,11 @@ BMS_BusNodesManagerView::BMS_BusNodesManagerView(CanOpen *canOpen, QWidget *pare
     createWidgets();
     setCanOpen(canOpen);
 
-    connect(_busNodeTreeView,&BMS_BusNodeTreeView::busSelected,this,&BMS_BusNodesManagerView::busSelected);
-    connect(_busNodeTreeView,&BMS_BusNodeTreeView::nodeSelected,this,&BMS_BusNodesManagerView::nodeSelected);
-    connect(_busNodeTreeView,&BMS_BusNodeTreeView::busSelected,_busManagerWidget,&BMS_BusManagerWidget::setBus);
-    connect(_busNodeTreeView,&BMS_BusNodeTreeView::nodeSelected,_nodeManagerWidget,&BMS_NodeManagerWidget::setNode);
+    connect(_busNodeTreeView,&BusNodesTreeView::busSelected,this,&BMS_BusNodesManagerView::busSelected);
+    connect(_busNodeTreeView,&BusNodesTreeView::nodeSelected,this,&BMS_BusNodesManagerView::setNode);
+    connect(_busNodeTreeView,&BusNodesTreeView::busSelected,_busManagerWidget,&BMS_BusManagerWidget::setBus);
+    connect(this,&BMS_BusNodesManagerView::bcuSelected,_nodeManagerWidget,&BMS_NodeManagerWidget::setBCU);
+    //connect(_bcuManagerWidget,&BMS_BCUManagerwidget::nodeSelected,this,&BMS_BusNodesManagerView::nodeSelected);
 
     //connect(_bcuManagerWidget,&BMS_BCUManagerwidget::nodeSelected,this,&BMS_BusNodesManagerView::nodeSelected);
 
@@ -73,37 +74,48 @@ void BMS_BusNodesManagerView::addBcu(CanOpenBus *bus, quint8 id)
         return;
     }
 
-    BCU *bcu = static_cast<BCU*>(node);
-
-    if(bcu == nullptr){
-        return;
-    }
 
     bool found = false;
-    foreach (BCU *b, _bcus) {
-        if(b == bcu){
-            found = true;
-        }
+    QMap<Node*,BCU*>::const_iterator it = _bcusMap.constFind(node);
+    if(it != _bcusMap.constEnd()){
+        return;
     }
-    if(!found){
-        _bcus.append(bcu);
-        if(bcu->startMode() == 1){
-            bcu->setStatus(Node::STARTED);
-        }
-        QVBoxLayout *bcuLayout = (QVBoxLayout*)_bcuGroup->layout();
-        QString title = QString("BCU ID: %1").arg(bcu->nodeId());
-        BMS_NodeManagerWidget *nm = new BMS_NodeManagerWidget();
-        nm->setNode(bcu);
-        _bcuWidgets.append(nm);
-        bcuLayout->addWidget(nm);
-        //connect(btn,&QPushButton::clicked,this,&BMS_BCUManagerwidget::setCurrentBcu);
-        connect(nm,&BMS_NodeManagerWidget::nodeSelected,this,&BMS_BusNodesManagerView::nodeSelected);
+    BCU *bcu = new BCU(node,false);
+    _bcusMap.insert(node,bcu);
+    connect(bcu,&BCU::stateChanged,this,&BMS_BusNodesManagerView::bcuStateChanged);
+    connect(node,&Node::nameChanged,this,&BMS_BusNodesManagerView::nodeNameChanged);
+//    QVBoxLayout *bcuLayout = (QVBoxLayout*)_bcuGroup->layout();
+//    QString title = QString("BCU ID: %1").arg(node->nodeId());
+//    bcu->readConfig();
+}
+
+void BMS_BusNodesManagerView::nodeNameChanged(QString name)
+{
+    qDebug()<<Q_FUNC_INFO;
+    //UNUSED(name);
+    Node *node = static_cast<Node*>(sender());
+    QMap<Node*, BCU*>::const_iterator it = _bcusMap.constFind(node);
+    if(it != _bcusMap.constEnd()){
+        it.value()->readConfig();
+        it.value()->node()->sendStart();
     }
 }
 
 void BMS_BusNodesManagerView::removeBcu(CanOpenBus *bus, quint8 id)
 {
+    QMap<Node*,BCU*>::ConstIterator it = _bcusMap.constBegin();
+    foreach(Node *n, _bcusMap.keys()){
+        if(n->nodeId() == id && n->bus() == bus){
+            _bcusMap.value(n)->deleteLater();
+            _bcusMap.remove(n);
 
+        }
+    }
+//    foreach(Node *n,_nodes){
+//        if(n->nodeId() == id && n->bus() == bus){
+//            _nodes.removeOne(n);
+//        }
+//    }
 }
 
 void BMS_BusNodesManagerView::setFunction(int func)
@@ -128,7 +140,7 @@ void BMS_BusNodesManagerView::createWidgets()
     layout->setContentsMargins(2, 2, 2, 2);
 
 
-    _busNodeTreeView = new BMS_BusNodeTreeView();
+    _busNodeTreeView = new BusNodesTreeView();
     _busManagerWidget = new BMS_BusManagerWidget();
 
     _busNodeTreeView->addBusAction(_busManagerWidget->actionExplore());
@@ -137,6 +149,7 @@ void BMS_BusNodesManagerView::createWidgets()
     _busNodeTreeView->addBusAction(_busManagerWidget->actionTogleConnect());
 
     _nodeManagerWidget = new BMS_NodeManagerWidget();
+//    _nodeManagerWidget = new NodeManagerWidget();
     _busNodeTreeView->addNodeAction(_nodeManagerWidget->actionRemoveNode());
     _busNodeTreeView->addNodeAction(_nodeManagerWidget->actionUpdateFirmware());
     _busNodeTreeView->addNodeAction(_nodeManagerWidget->actionLoadEds());
@@ -144,7 +157,6 @@ void BMS_BusNodesManagerView::createWidgets()
 
     //_bcuManagerWidget = new BMS_BCUManagerwidget();
 
-//    layout->addWidget(_nodeManagerWidget);
     //layout->addWidget(_bcuManagerWidget);
 
     QVBoxLayout *vlayout = new QVBoxLayout();
@@ -185,24 +197,20 @@ void BMS_BusNodesManagerView::createWidgets()
 
     BMS_NodeManagerWidget *nm;
     _bcuGroup = new QGroupBox();
-//    for(int i=0;i<5;i++){
-//        nm = new BMS_NodeManagerWidget();
-//        vlayout->addWidget(nm);
-//        _bcuWidgets.append(nm);
-//    }
     _bcuGroup->setLayout(vlayout);
     QScrollArea *scroll = new QScrollArea();
     scroll->setWidgetResizable(true);
     scroll->setWidget(_bcuGroup);
-    layout->addWidget(scroll);
+    //layout->addWidget(scroll);
 
     _sysManager = new BMS_SystemManagerWidget();
     connect(_sysManager,&BMS_SystemManagerWidget::validFunction,this,&BMS_BusNodesManagerView::functionSelected);
     layout->addWidget(_sysManager);
 
 
-   // layout->addWidget(_busNodeTreeView);
+    layout->addWidget(_busNodeTreeView);
     layout->addWidget(_busManagerWidget);
+    layout->addWidget(_nodeManagerWidget);
 
     setLayout(layout);
 
@@ -210,7 +218,8 @@ void BMS_BusNodesManagerView::createWidgets()
 
 BMS_NodeManagerWidget *BMS_BusNodesManagerView::nodeManagerWidget() const
 {
-    return _nodeManagerWidget;
+//    return _nodeManagerWidget;
+    return nullptr;
 }
 
 void BMS_BusNodesManagerView::saveState(QSettings &settings)
@@ -228,7 +237,7 @@ BMS_BusManagerWidget *BMS_BusNodesManagerView::busManagerWidget() const
     return _busManagerWidget;
 }
 
-BMS_BusNodeTreeView *BMS_BusNodesManagerView::busNodeTreeView() const
+BusNodesTreeView *BMS_BusNodesManagerView::busNodeTreeView() const
 {
     return _busNodeTreeView;
 }
@@ -256,7 +265,7 @@ void BMS_BusNodesManagerView::pollProc()
 void BMS_BusNodesManagerView::startPoll(int interval)
 {
     qDebug()<<Q_FUNC_INFO<<" Interval = "<<interval;
-    foreach (BCU *b, _bcus) {
+    foreach (BCU *b, _bcusMap.values()) {
         b->startPoll(interval);
     }
 //    if(_poller == nullptr && _bcus.count() > 0){
@@ -270,7 +279,7 @@ void BMS_BusNodesManagerView::startPoll(int interval)
 
 void BMS_BusNodesManagerView::stopPoll()
 {
-    foreach (BCU *b, _bcus) {
+    foreach (BCU *b, _bcusMap.values()) {
         b->stopPoll();
     }
     //qDebug()<<Q_FUNC_INFO;
@@ -295,49 +304,48 @@ void BMS_BusNodesManagerView::handlePollerDone()
 void BMS_BusNodesManagerView::startBcu(int id)
 {
     if(id == -1){
-        foreach (BCU *b, _bcus) {
-            b->sendStart();
-
+        foreach (Node *n, _bcusMap.keys()) {
+            n->sendStart();
         }
     }
-    else if(id < _bcus.count()){
-        _bcus[id]->sendStart();
+    else if(id < _bcusMap.count()){
+        _bcusMap.keys().at(id)->sendStart();
     }
 }
 
 void BMS_BusNodesManagerView::stopBcu(int id)
 {
     if(id == -1){
-        foreach (BCU *b, _bcus) {
-            b->sendStop();
+        foreach (Node *n, _bcusMap.keys()) {
+            n->sendStop();
         }
     }
-    else if(id < _bcus.count()){
-        _bcus[id]->sendStop();
+    else if(id < _bcusMap.count()){
+        _bcusMap.keys().at(id)->sendStop();
     }
 }
 
 void BMS_BusNodesManagerView::preopBcu(int id)
 {
     if(id == -1){
-        foreach (BCU *b, _bcus) {
-            b->sendPreop();
+        foreach (Node *n, _bcusMap.keys()) {
+            n->sendPreop();
         }
     }
-    else if(id < _bcus.count()){
-        _bcus[id]->sendPreop();
+    else if(id < _bcusMap.count()){
+        _bcusMap.keys().at(id)->sendPreop();
     }
 }
 
 void BMS_BusNodesManagerView::reloadEds(int id)
 {
     if(id == -1){
-        foreach (BCU *b, _bcus) {
-            b->loadEds(b->edsFileName());
+        foreach (Node *n, _bcusMap.keys()) {
+            n->loadEds(n->edsFileName());
         }
     }
-    else if(id < _bcus.count()){
-        _bcus[id]->loadEds(_bcus[id]->edsFileName());
+    else if(id < _bcusMap.count()){
+        _bcusMap.keys().at(id)->loadEds(_bcusMap.keys().at(id)->edsFileName());
     }
 }
 // poll once
@@ -349,7 +357,7 @@ void BMS_BusNodesManagerView::single()
 void BMS_BusNodesManagerView::start()
 {
     //startPoll(2000);
-    foreach (BCU *b, _bcus) {
+    foreach (BCU *b, _bcusMap.values()) {
         b->startPoll();
     }
 }
@@ -357,7 +365,7 @@ void BMS_BusNodesManagerView::start()
 void BMS_BusNodesManagerView::stop()
 {
     //stopPoll();
-    foreach (BCU *b, _bcus) {
+    foreach (BCU *b, _bcusMap.values()) {
         b->stopPoll();
     }
 }
@@ -366,13 +374,31 @@ void BMS_BusNodesManagerView::scanBus()
 {
     foreach (CanOpenBus *b, CanOpen::buses()) {
         //b->exploreBus();
-        foreach (Node *n, b->nodes()) {
-            BCU *b = static_cast<BCU*> (n);
+//        foreach (Node *n, b->nodes()) {
+            //BCU *b = static_cast<BCU*> (n);
             //b->readConfig();
-            b->identify();
-        }
+            //b->identify();
+//        }
     }
 }
+
+void BMS_BusNodesManagerView::bcuStateChanged()
+{
+
+}
+
+void BMS_BusNodesManagerView::setNode(Node *node)
+{
+    QMap<Node*, BCU*>::const_iterator it = _bcusMap.constFind(node);
+    if(it == _bcusMap.constEnd()) {
+        emit nodeSelected(nullptr);
+        emit bcuSelected(nullptr);
+        return;
+    }
+    emit nodeSelected(it.key());
+    emit bcuSelected(it.value());
+}
+
 
 /************* poll thread ************/
 BMS_Poller::BMS_Poller(QObject *parent)
@@ -422,75 +448,75 @@ void BMS_Poller::run()
      */
     bool removeBcu = false;
     while(!_stop){
-        foreach (BCU *b, _bcus) {
-            if(b->canPoll()){
-//            if(b->status() == Node::Status::STARTED){
-                // validate data first
-                b->validate();
+//        foreach (BCU *b, _bcus) {
+//            if(b->canPoll()){
+////            if(b->status() == Node::Status::STARTED){
+//                // validate data first
+//                b->validate();
 
 
-                packs = b->nofPacks();
-                cells = b->nofCellsPerPack();
-                ntcs = b->nofNtcsPerPack();
-                for(int i=0;i<packs;i++){
-                    for(int j=0;j<0x09;j++){
-                        if( !removeBcu && (b->nodeOd()->errorObject(0x2100 + i,j+0x01) == 0)){
-                            b->readObject(0x2100 + i,j + 0x01);
-                        }
-                        else{
-                            removeBcu = true;
-                            continue;
-                        }
-                        //QThread::msleep(5);
-                    }
-                    for(int j=0;j<cells;j++){
-                        if(!removeBcu && (b->nodeOd()->errorObject(0x2100 + i,j+0x0A) == 0)){
-                            b->readObject(0x2100 + i,j+0x0A);
-                        }
-                        else{
-                            removeBcu = true;
-                            continue;
-                        }
-                        //QThread::msleep(5);
-                    }
-                    for(int j=0;j<ntcs;j++){
-                        if(!removeBcu && (b->nodeOd()->errorObject(0x2100 + i,j+0x18) == 0)){
-                            b->readObject(0x2100 + i,j+0x18);
-                        }
-                        else{
-                            removeBcu = true;
-                            continue;
-                        }
-                        //QThread::msleep(5);
-                    }
-                }
+//                packs = b->nofPacks();
+//                cells = b->nofCellsPerPack();
+//                ntcs = b->nofNtcsPerPack();
+//                for(int i=0;i<packs;i++){
+//                    for(int j=0;j<0x09;j++){
+//                        if( !removeBcu && (b->nodeOd()->errorObject(0x2100 + i,j+0x01) == 0)){
+//                            b->readObject(0x2100 + i,j + 0x01);
+//                        }
+//                        else{
+//                            removeBcu = true;
+//                            continue;
+//                        }
+//                        //QThread::msleep(5);
+//                    }
+//                    for(int j=0;j<cells;j++){
+//                        if(!removeBcu && (b->nodeOd()->errorObject(0x2100 + i,j+0x0A) == 0)){
+//                            b->readObject(0x2100 + i,j+0x0A);
+//                        }
+//                        else{
+//                            removeBcu = true;
+//                            continue;
+//                        }
+//                        //QThread::msleep(5);
+//                    }
+//                    for(int j=0;j<ntcs;j++){
+//                        if(!removeBcu && (b->nodeOd()->errorObject(0x2100 + i,j+0x18) == 0)){
+//                            b->readObject(0x2100 + i,j+0x18);
+//                        }
+//                        else{
+//                            removeBcu = true;
+//                            continue;
+//                        }
+//                        //QThread::msleep(5);
+//                    }
+//                }
 
-                if(!removeBcu){
-                    // poll error
-                    b->readObject(0x1001,0x00);
-                    // stack state
-                    for(int i=1;i<5;i++){
-                        b->readObject(0x2002,i);
-                    }
-                }
-                else{
-                    _bcus.removeOne(b);
-                    removeBcu = false;
-                    emit error();
-                }
+//                if(!removeBcu){
+//                    // poll error
+//                    b->readObject(0x1001,0x00);
+//                    // stack state
+//                    for(int i=1;i<5;i++){
+//                        b->readObject(0x2002,i);
+//                    }
+//                }
+//                else{
+//                    _bcus.removeOne(b);
+//                    removeBcu = false;
+//                    emit error();
+//                }
 
-            }
-            if(_bcus.count() == 0){
-                _stop = true;
-                break;
-            }
-        }
-        if(_interval > 0){
-            QThread::msleep(_interval);
-        }
-        else{
-            _stop = true; // poll onece
-        }
+//            }
+//            if(_bcus.count() == 0){
+//                _stop = true;
+//                break;
+//            }
+//        }
+//        if(_interval > 0){
+//            QThread::msleep(_interval);
+//        }
+//        else{
+//            _stop = true; // poll onece
+//        }
     }
 
     emit finished();

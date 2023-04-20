@@ -1,5 +1,6 @@
 #include "canbusvci.h"
 #include "../../vci_can/VCI_CAN.h"
+//#include "source/node/settings.h"
 
 #include <QDebug>
 
@@ -7,27 +8,34 @@ CanBusVCI::CanBusVCI(const QString &address)
     :CanBusDriver(address)
 {
 
+    //Settings::instance().Info(Q_FUNC_INFO);
     _can_port = -1;
     _readNotifier = nullptr;
 
     QString portStr = address.mid(3,address.size()-3);
     int portNum = portStr.toInt();
     if(portNum != 0){
+        //Settings::instance().Info(QString("Set port number:%1").arg(portNum));
         _can_port = portNum;
     }
 
+    //Settings::instance().Info(QString("Try to load vci_can.dll"));
     _vciLibrary.setFileName("VCI_CAN.dll");
     _vciLibrary.load();
 
-    QLibrary libTest("VCI_CAN.dll");
-    libTest.load();
-    if(libTest.isLoaded()){
-        libTest.unload();
-    }
+//    QLibrary libTest("VCI_CAN.dll");
+//    libTest.load();
+//    if(libTest.isLoaded()){
+//        libTest.unload();
+//        Settings::instance().Info(QString(""));
+//    }
 
     if(!_vciLibrary.isLoaded()){
-        qDebug()<<"Load VCI Dll failed";
+        //Settings::instance().Info(QString("vci load fail"));
         _vciLibrary.unload();
+    }
+    else{
+        //Settings::instance().Info(QString("vci load success"));
     }
 }
 
@@ -58,6 +66,7 @@ bool CanBusVCI::connectDevice()
     int ret = VCI_OPEN(&pCANPARAM);
 
     if(ret != No_Err){
+        disconnectDevice();
         return false;
     }
 
@@ -77,14 +86,16 @@ void CanBusVCI::disconnectDevice()
     if(_can_port == 0){
         return;
     }
-    _readNotifier->terminate();
+    if(_readNotifier != nullptr){
+        _readNotifier->terminate();
+        _readNotifier->deleteLater();
+    }
 
     typedef int32_t (*vci_close)(int);
     vci_close VCI_Close = (vci_close)_vciLibrary.resolve("VCI_CloseCAN");
     VCI_Close(_can_port);
 
     setState(DISCONNECTED);
-    _readNotifier->deleteLater();
 
 }
 

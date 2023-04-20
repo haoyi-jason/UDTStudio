@@ -31,34 +31,50 @@ Node *BMS_NodeManagerWidget::node() const
     return _node;
 }
 
+void BMS_NodeManagerWidget::setBCU(BCU *bcu)
+{
+    _bcu = bcu;
+    if(_bcu != nullptr){
+        setNode(_bcu->node());
+    }
+    else{
+        setNode(nullptr);
+    }
+}
+
 void BMS_NodeManagerWidget::setNode(Node *node)
 {
+    //if(node == nullptr) return;
+
     if(node != _node){
         if(_node != nullptr)
         {
             disconnect(_node,&Node::statusChanged,this,&BMS_NodeManagerWidget::updateData);
+            //disconnect(_node,&Node::stateChanged);
         }
     }
-
     _node = node;
-    _bcu = static_cast<BCU*>(node);
+    //_bcu = static_cast<BCU*>(node);
 
     if(_node != nullptr){
         connect(_node,&Node::statusChanged,this,&BMS_NodeManagerWidget::updateData);
 
-        connect(_bcu,&BCU::threadActive,this,&BMS_NodeManagerWidget::updateThreadState);
+        //connect(_bcu,&BCU::threadActive,this,&BMS_NodeManagerWidget::updateThreadState);
 
-        connect(_bcu,&BCU::statusChanged,this,&BMS_NodeManagerWidget::nodeStatusChanged);
+        //connect(_bcu,&BCU::statusChanged,this,&BMS_NodeManagerWidget::nodeStatusChanged);
     }
 
     _groupBox->setEnabled(_node != nullptr);
     _groupNmt->setEnabled(_node != nullptr);
+
+    //_actionStartPoll->setEnabled(_bcu->isConfigReady());
 
     _actionLoadEds->setEnabled(_node != nullptr);
     _actionLoadEds->setEnabled(_node != nullptr);
 
     _actionRemoveNode->setEnabled(_node != nullptr);
     _actionUpdateFirmware->setEnabled(_node != nullptr);
+
 
     updateData();
 }
@@ -82,8 +98,8 @@ void BMS_NodeManagerWidget::updateData()
         _groupNmt->blockSignals(false);
         QString title = QString("%1 ID=%2").arg(_node->name()).arg(_node->nodeId());
         _groupBox->setTitle(title);
-        connect(_groupBox,&QGroupBox::clicked,this,&BMS_NodeManagerWidget::select);
-        _statusLabel->setText(_bcu->statusStr());
+        //connect(_groupBox,&QGroupBox::clicked,this,&BMS_NodeManagerWidget::select);
+        //_statusLabel->setText(_bcu->statusStr());
     }
     else{
         _nodeNameEdit->setText("");
@@ -102,7 +118,7 @@ void BMS_NodeManagerWidget::updateThreadState(bool state)
 
 void BMS_NodeManagerWidget::pollNode()
 {
-    _bcu->startPollThread();
+    _bcu->startPoll();
 }
 
 void BMS_NodeManagerWidget::preop()
@@ -191,7 +207,8 @@ void BMS_NodeManagerWidget::select()
 {
     //qDebug()<<Q_FUNC_INFO;
     _bcu->readConfig();
-    emit nodeSelected(_bcu);
+
+    //emit nodeSelected(_bcu->node());
 }
 
 void BMS_NodeManagerWidget::nodeStatusChanged(Node::Status status)
@@ -260,9 +277,9 @@ void BMS_NodeManagerWidget::createWidgets()
     _actionReset->setStatusTip(tr("Request node to reset all values"));
     connect(_actionReset, &QAction::triggered, this, &BMS_NodeManagerWidget::resetNode);
 
-//    _actionStartPoll = _groupNmt->addAction(tr("Poll"));
-//    _actionStartPoll->setStatusTip(tr("Poll BCU"));
-//    connect(_actionStartPoll,&QAction::triggered,this,&BMS_NodeManagerWidget::pollNode);
+    _actionStartPoll = _toolBar->addAction(tr("Poll"));
+    _actionStartPoll->setStatusTip(tr("Poll BCU"));
+    connect(_actionStartPoll,&QAction::triggered,this,&BMS_NodeManagerWidget::pollNode);
 
     _toolBar->addActions(_groupNmt->actions());
 

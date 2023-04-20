@@ -65,7 +65,7 @@ BMS_BCUManagerwidget::BMS_BCUManagerwidget(BCU *bcu, QWidget *parent)
 BCU *BMS_BCUManagerwidget::bcu(uint8_t id) const
 {
     foreach (BCU *b, _bcus) {
-        if(b->busId() == id){
+        if(b->node()->busId() == id){
             return b;
         }
     }
@@ -116,7 +116,7 @@ void BMS_BCUManagerwidget::setCurrentBcu()
     int id = (btn->property("ID").toInt());
 
     foreach (BCU *bcu, _bcus) {
-        if(bcu->nodeId() == id){
+        if(bcu->node()->nodeId() == id){
             emit nodeSelected((Node*)bcu);
         }
     }
@@ -274,7 +274,7 @@ void BMS_BCUManagerwidget::createWidgets()
     bcuLayout->setSpacing(2);
     _bcuButtons.clear();
     foreach (BCU *b, _bcus) {
-        QString title = QString("ID: %1").arg(b->busId());
+        QString title = QString("ID: %1").arg(b->node()->busId());
         QPushButton *btn = new QPushButton(title);
         _bcuButtons.append(btn);
         bcuLayout->addWidget(btn);

@@ -17,7 +17,7 @@ protected:
 
     // abstractindexwidget interface
 protected:
-    void setDisplayValue(const QVariant &value, DisplayAttribute flats) override;
+    void setDisplayValue(const QVariant &value, DisplayAttribute flags) override;
     bool isEditing() const override;
     void updateHint() override;
 
@@ -27,7 +27,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
-
+    void textEdited() override;
 
 };
 

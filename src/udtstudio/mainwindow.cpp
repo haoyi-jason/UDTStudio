@@ -92,19 +92,19 @@ MainWindow::MainWindow(QWidget *parent)
 //    bus = new CanOpenBus(new CanBusDriver(""));
 //    bus->setBusName("VBus eds");
     CanOpen::addBus(bus);
-    int id = 2;
-    for (const QString &edsFile : qAsConst(OdDb::edsFiles()))
-    {
-        Node *node;
-        if(edsFile.contains("HYMC")){
-            node = new Node(0x1, QFileInfo(edsFile).completeBaseName(), edsFile);
-        }
-        else{
-             node = new Node(id, QFileInfo(edsFile).completeBaseName(), edsFile);
-        }
-        bus->addNode(node);
-        id++;
-    }
+//    int id = 2;
+//    for (const QString &edsFile : qAsConst(OdDb::edsFiles()))
+//    {
+//        Node *node;
+//        if(edsFile.contains("HYMC")){
+//            node = new Node(0x1, QFileInfo(edsFile).completeBaseName(), edsFile);
+//        }
+//        else{
+//             node = new Node(id, QFileInfo(edsFile).completeBaseName(), edsFile);
+//        }
+//        bus->addNode(node);
+//        id++;
+//    }
 
     resize(QApplication::screens().at(0)->size() * 3 / 4);
 

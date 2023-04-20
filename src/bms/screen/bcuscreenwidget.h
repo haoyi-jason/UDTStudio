@@ -27,21 +27,21 @@ public slots:
 
 protected:
     BCU *_activeBcu;
-    Node *_activeNode;
+    //Node *_activeNode;
 
     void addNode(Node *node);
 
-    void createWidgets();
-   // QTabWidget *_tabWidget;
+    //void createWidgets();
+    //QTabWidget *_tabWidget;
 
-    struct NodeScreens{
-        Node *node;
-        QList<NodeScreen*> screens;
-    };
+//    struct NodeScreens{
+//        Node *node;
+//        QList<NodeScreen*> screens;
+//    };
 
-    QMap<Node*, NodeScreens> _nodesMap;
+    //QMap<Node*, NodeScreens> _nodesMap;
 
-    QLabel *_logoLabe;
+   // QLabel *_logoLabe;
 
 };
 

@@ -31,17 +31,17 @@ void NodeScreenBCU::resetHardware()
 void NodeScreenBCU::createWidgets()
 {
     QLayout *glayout = new QVBoxLayout();
-    glayout->setContentsMargins(2,2,2,0);
+    glayout->setContentsMargins(2,2,2,2);
 
     QLayout *toolBarLayout = new QVBoxLayout();
-    toolBarLayout->setContentsMargins(2,2,2,0);
+    toolBarLayout->setContentsMargins(2,2,2,2);
 
     QScrollArea *scrollArea = new QScrollArea();
     scrollArea->setWidgetResizable(true);
 
     QWidget *widget = new QWidget(this);
     QLayout *layout = new QVBoxLayout();
-    layout->setContentsMargins(0,0,0,0);
+    layout->setContentsMargins(2,2,2,2);
     layout->setSpacing(0);
 
     layout->addWidget(createSumaryWidget());
@@ -87,6 +87,7 @@ QWidget *NodeScreenBCU::createSumaryWidget()
     _indexWidgets.append(indexLabel);
 
     indexLabel = new IndexLabel(NodeObjectId(0x1018, 4));
+    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayHexa);
     sumaryLayout->addRow(tr("Serial number:"), indexLabel);
     _indexWidgets.append(indexLabel);
 

@@ -34,8 +34,8 @@ void BmuCellInputWidgets::setBCU(BCU *bcu)
 
     _bcu = bcu;
     _objectIds.clear();
-    _cells = _bcu->nodeOd()->value(0x2001,0x02).toInt();
-    _ntcs = _bcu->nodeOd()->value(0x2001,0x03).toInt();
+    _cells = _bcu->node()->nodeOd()->value(0x2001,0x02).toInt();
+    _ntcs = _bcu->node()->nodeOd()->value(0x2001,0x03).toInt();
 
     if(_cells > _maxCells){
         _cells = _maxCells;
@@ -56,7 +56,7 @@ void BmuCellInputWidgets::setBCU(BCU *bcu)
     _objectIds.append(obj);
     registerObjId(_objectIds.last());
     _lcdNumbers[0]->setObjId(obj);
-    _lcdNumbers[0]->setNode( static_cast<Node*>(_bcu) );
+    _lcdNumbers[0]->setNode(_bcu->node());
     _lcdNumbers[0]->show();
 
     for(quint8 i=0; i < _cells; i++){
@@ -64,7 +64,7 @@ void BmuCellInputWidgets::setBCU(BCU *bcu)
         _objectIds.append(obj);
         registerObjId(_objectIds.last());
         _lcdNumbers[i+1]->setObjId(obj);
-        _lcdNumbers[i+1]->setNode( static_cast<Node*>(_bcu) );
+        _lcdNumbers[i+1]->setNode(_bcu->node());
         _lcdNumbers[i+1]->show();
     }
     for(quint8 i=0; i < _ntcs; i++){
@@ -72,7 +72,7 @@ void BmuCellInputWidgets::setBCU(BCU *bcu)
         _objectIds.append(obj);
         registerObjId(_objectIds.last());
         _lcdNumbers[i+1+_maxCells]->setObjId(obj);
-        _lcdNumbers[i+1+_maxCells]->setNode( static_cast<Node*>(_bcu) );
+        _lcdNumbers[i+1+_maxCells]->setNode(_bcu->node());
         _lcdNumbers[i+1+_maxCells]->show();
     }
 
@@ -91,7 +91,7 @@ void BmuCellInputWidgets::setBCU(BCU *bcu)
 //    }
 
 
-    setNodeInterrest(_bcu);
+    setNodeInterrest(_bcu->node());
 
 
 

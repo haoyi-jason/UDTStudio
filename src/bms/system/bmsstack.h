@@ -10,10 +10,11 @@ class BatteryPack;
 #include "canopenbus.h"
 #include "node.h"
 #include "system/bms_alarmcriteria.h"
+#include "nodeodsubscriber.h"
 
 class BCUPollThread;
 
-class BCU : public Node
+class BCU : public QObject,public NodeOdSubscriber
 {
     Q_OBJECT
 public:
@@ -24,13 +25,17 @@ public:
         DISCHARGING
     };
 
-    BCU(quint8 nodeId, const QString &name = QString(), const QString &edsFileName = QString());
+//    BCU(quint8 nodeId, const QString &name = QString(), const QString &edsFileName = QString());
+    BCU(QObject *parent = nullptr);
+    BCU(Node *node,bool autoStart = false, QObject *parent = nullptr);
     ~BCU();
+
+    Node *node() const;
 
     double voltage() const;
     double current() const;
 
-    Status status();
+    //Status status();
     QString statusStr();
     QString chargeStr();
     QString cvStr();
@@ -70,8 +75,9 @@ public slots:
     void configReceived(quint16 index, quint8 subindex);
     void readConfig();
     void resetError();
-    void startPoll(int interval = 50);
+    void startPoll(int interval = 200);
     void stopPoll();
+    void setNode(Node *node);
 
 signals:
     void threadActive(bool);
@@ -79,6 +85,10 @@ signals:
     void configReady();
     void updateState();
     void identified();
+    void stateChanged();
+    void configFail();
+protected:
+    void odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags) override;
 
 private slots:
     void accessData();
@@ -121,6 +131,15 @@ private:
     QList<NodeObjectId>::iterator _accessIdIterator;
     bool _accessOnece;
     NodeObjectId _currentOd;
+
+    bool _pollConfig;
+    int _pollRetry;
+
+    Node *_node;
+    uint16_t _errorCode;
+    uint8_t _errorClass;
+    QByteArray _errorDest;
+    bool _autoStart;
 };
 
 

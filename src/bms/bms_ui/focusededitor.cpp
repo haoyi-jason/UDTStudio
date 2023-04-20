@@ -43,7 +43,14 @@ void FocusedEditor::focusInternal()
     //connect(nPad,&NumberPad::accepted,this,&FocusedEditor::accepted);
     if(nPad->exec() == QDialog::Accepted){
         setText(nPad->result());
+        textEdited();
+        emit edited();
     }
+}
+
+void FocusedEditor::textEdited()
+{
+
 }
 
 void FocusedEditor::accepted()

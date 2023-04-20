@@ -41,6 +41,7 @@ IndexLCDNumber::IndexLCDNumber(const NodeObjectId &objId)
     _lcdNumber = new QLCDNumber();
     _lcdNumber->setStyleSheet("margin-right: 0; padding-right: 0;color:red; background-color:green");
     _lcdNumber->setSegmentStyle(QLCDNumber::Flat);
+    _lcdNumber->setDigitCount(6);
     _label = new QLabel();
     _label->setStyleSheet("margin-left: 0; padding-left: 0;font: italic;");
 

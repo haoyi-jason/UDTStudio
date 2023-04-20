@@ -36,6 +36,7 @@ SOURCES += \
         bcu/bms_bcumanagerwidget.cpp \
         bcu/bms_nodemanagerwidget.cpp \
         bms_ui/indexfocuseditor.cpp \
+        system/gsettings.cpp \
         system/login.cpp \
         widgets/bms_busmanagerwidget.cpp \
         widgets/bms_busnodemanagerview.cpp \
@@ -45,7 +46,6 @@ SOURCES += \
         system/bmsstack.cpp \
         system/bmsstackmodel.cpp \
         bmsstackview.cpp \
-        busdriver/canbusvci.cpp \
         canFrameListView/bms_canframelistview.cpp \
         canFrameListView/bms_canframemodel.cpp \
         main.cpp \
@@ -71,6 +71,7 @@ HEADERS += \
         bcu/bms_bcumanagerwidget.h \
         bcu/bms_nodemanagerwidget.h \
         bms_ui/indexfocuseditor.h \
+        system/gsettings.h \
         system/login.h \
         widgets/bms_busmanagerwidget.h \
         widgets/bms_busnodemanagerview.h \
@@ -80,7 +81,6 @@ HEADERS += \
         system/bmsstack.h \
         system/bmsstackmodel.h \
         bmsstackview.h \
-        busdriver/canbusvci.h \
         canFrameListView/bms_canframelistview.h \
         canFrameListView/bms_canframemodel.h \
         mainwindow.h \

@@ -21,24 +21,24 @@ void BcuStateWidget::setBCU(BCU *bcu)
     obj = NodeObjectId(0x2002,0x01);
     registerObjId(obj);
     _socLabel->setObjId(obj);
-    _socLabel->setNode(static_cast<Node*>(_bcu));
+    _socLabel->setNode(_bcu->node());
 
     obj = NodeObjectId(0x2002,0x02);
     registerObjId(obj);
     _sohLabel->setObjId(obj);
-    _sohLabel->setNode(static_cast<Node*>(_bcu));
+    _sohLabel->setNode(_bcu->node());
 
     obj = NodeObjectId(0x2002,0x03);
     registerObjId(obj);
     _pvLabel->setObjId(obj);
-    _pvLabel->setNode(static_cast<Node*>(_bcu));
+    _pvLabel->setNode(_bcu->node());
 
     obj = NodeObjectId(0x2002,0x04);
     registerObjId(obj);
     _paLabel->setObjId(obj);
-    _paLabel->setNode(static_cast<Node*>(_bcu));
+    _paLabel->setNode(_bcu->node());
 
-    setNodeInterrest(_bcu);
+    setNodeInterrest(_bcu->node());
 }
 
 void BcuStateWidget::createWidgets()

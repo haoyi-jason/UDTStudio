@@ -24,6 +24,7 @@ BcuScreenWidget::BcuScreenWidget(QWidget *parent)
     _activeBcu = nullptr;
 
     //createWidgets();
+
     //setStyleSheet("QTabWidget::tab-bar {left: 5px;}");
 }
 
@@ -43,7 +44,7 @@ void BcuScreenWidget::setActiveNode(Node *node)
     }
 
     _activeNode = node;
-    _activeBcu = static_cast<BCU*>(node);
+    //_activeBcu = static_cast<BCU*>(node);
 
     if (node != nullptr)
     {
@@ -56,6 +57,9 @@ void BcuScreenWidget::setActiveNode(Node *node)
             _tabWidget->addTab(screen, screen->icon(), " " + screen->title() + " ");
         }
 
+//        if(currentIndex<0 && _tabWidget->count() > 0){
+//            currentIndex = 0;
+//        }
         _tabWidget->setCurrentIndex(currentIndex);
         //_tabWidget->setVisible(true);
     }
@@ -116,8 +120,7 @@ void BcuScreenWidget::addNode(Node *node)
     screen->setNode(node);
     screen->setScreenWidget(this);
     nodeScreens.screens.append(screen);
-    connect((NodeScreenPack*)screen,&NodeScreenPack::OneShot,this,&BcuScreenWidget::setOneShot);
-
+    //connect((NodeScreenPack*)screen,&NodeScreenPack::OneShot,this,&NodeScreenPack::setOneShot);
 //    QApplication::processEvents();
 //    screen = new NodeScreenHome();
 //    screen->setNode(node);
@@ -184,15 +187,18 @@ void BcuScreenWidget::addNode(Node *node)
 
 }
 
-void BcuScreenWidget::createWidgets()
-{
-    QLayout *layout = new QHBoxLayout();
-    layout->setContentsMargins(2, 2, 2, 2);
+//void BcuScreenWidget::createWidgets()
+//{
+//    QLayout *layout = new QVBoxLayout();
+//    layout->setContentsMargins(2, 2, 2, 2);
 
 
-    _tabWidget = new QTabWidget();
-    layout->addWidget(_tabWidget);
+//    //_tabWidget = new QTabWidget();
+//    //QLabel *lb = new QLabel("Test");
+//    //lb->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+//    //layout->addWidget(lb);
+//    layout->addWidget(_tabWidget);
 
-    setLayout(layout);
-}
+//    setLayout(layout);
+//}
 

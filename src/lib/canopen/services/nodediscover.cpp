@@ -25,12 +25,16 @@
 #include "../profile/nodeprofilefactory.h"
 #include "canopenbus.h"
 
+//#include "system/bmsstack.h"
+
+#include <QDataStream>
+
 NodeDiscover::NodeDiscover(CanOpenBus *bus)
     : Service(bus)
 {
     for (quint8 nodeId = 1; nodeId <= 127; nodeId++)
     {
-        _cobIds.append(0x700U + nodeId);
+        _cobIds.append(0x580U + nodeId);
     }
 
     _exploreBusNodeId = 0;
@@ -52,41 +56,58 @@ QString NodeDiscover::type() const
 
 void NodeDiscover::parseFrame(const QCanBusFrame &frame)
 {
-    if ((frame.frameId() >= 0x701) && (frame.frameId() <= 0x7FF) && frame.frameType() == QCanBusFrame::DataFrame)
+    if ((frame.frameId() >= 0x581) && (frame.frameId() <= 0x5FF) && frame.frameType() == QCanBusFrame::DataFrame)
     {
         uint8_t nodeId = frame.frameId() & 0x7F;
         if (!bus()->existNode(nodeId))
         {
             Node *node = new Node(nodeId);
+            node->setStatus(Node::Status::INIT);
 
-            if (frame.payload().size() == 1)
-            {
-                switch (frame.payload().at(0) & 0x7F)
-                {
-                    case 0:  // Bootup
-                        node->setStatus(Node::Status::INIT);
-                        break;
+//            if (frame.payload().size() == 1)
+//            {
+//                switch (frame.payload().at(0) & 0x7F)
+//                {
+//                    case 0:  // Bootup
+//                        node->setStatus(Node::Status::INIT);
+//                        break;
 
-                    case 4:  // Stopped
-                        node->setStatus(Node::Status::STOPPED);
-                        break;
+//                    case 4:  // Stopped
+//                        node->setStatus(Node::Status::STOPPED);
+//                        break;
 
-                    case 5:  // Operational
-                        node->setStatus(Node::Status::STARTED);
-                        break;
+//                    case 5:  // Operational
+//                        node->setStatus(Node::Status::STARTED);
+//                        break;
 
-                    case 127:  // Pre-operational
-                        node->setStatus(Node::Status::PREOP);
-                        break;
+//                    case 127:  // Pre-operational
+//                        node->setStatus(Node::Status::PREOP);
+//                        break;
 
-                    default:
-                        break;
-                }
-            }
+//                    default:
+//                        break;
+//                }
+//            }
             bus()->addNode(node);
 
             exploreNode(nodeId);
         }
+//        else{
+//            Node *node = bus()->node(nodeId);
+//            quint32 vender = node->nodeOd()->value(0x1018,0x1).toUInt();
+//            if(vender != 0x00){
+//                quint32 product = node->nodeOd()->value(0x1018,0x2).toUInt();
+//                if(product == 0x00010000){
+//                    for (const QString &edsFile : qAsConst(OdDb::edsFiles()))
+//                    {
+//                        if(edsFile.contains("HYMC")){
+//                            node->loadEds(edsFile);
+//                            node->setName(QFileInfo(edsFile).completeBaseName());
+//                        }
+//                    }
+//                }
+//            }
+//        }
     }
 }
 
@@ -96,7 +117,12 @@ void NodeDiscover::exploreBus()
     {
         return;
     }
+
+    foreach (Node *n, bus()->nodes()) {
+        bus()->removeNode(n);
+    }
     _exploreBusNodeId = 1;
+
     _exploreBusTimer.start(8);
 }
 
@@ -119,17 +145,37 @@ void NodeDiscover::exploreBusNext()
         return;
     }
 
-    if (_exploreBusNodeId > 127)
+    if (_exploreBusNodeId > 5)
     {
         _exploreBusNodeId = 0;
         _exploreBusTimer.stop();
         return;
     }
 
-    QCanBusFrame frameNodeGuarding;
-    frameNodeGuarding.setFrameId(0x700 + _exploreBusNodeId);
-    frameNodeGuarding.setFrameType(QCanBusFrame::RemoteRequestFrame);
-    bus()->writeFrame(frameNodeGuarding);
+    QByteArray sdoWriteReqPayload;
+    QDataStream request(&sdoWriteReqPayload,QIODevice::WriteOnly);
+    request.setByteOrder(QDataStream::LittleEndian);
+
+    quint8 cmd = 0x40;
+    quint16 index = 0x1018;
+    quint8 subIndex = 0x0;
+
+    request << cmd;
+    request << index;
+    request << subIndex;
+
+    for(int i=sdoWriteReqPayload.size();i<8;i++){
+        request << static_cast<quint8>(0);
+    }
+
+    QCanBusFrame frameIdn;
+    frameIdn.setFrameId(0x600 + _exploreBusNodeId);
+    frameIdn.setPayload(sdoWriteReqPayload);
+
+//    QCanBusFrame frameNodeGuarding;
+//    frameNodeGuarding.setFrameId(0x700 + _exploreBusNodeId);
+//    frameNodeGuarding.setFrameType(QCanBusFrame::RemoteRequestFrame);
+    bus()->writeFrame(frameIdn);
 
     _exploreBusNodeId++;
 }
@@ -155,6 +201,9 @@ void NodeDiscover::exploreNodeNext()
             node->nodeOd()->loadEds(file);
             node->reset();
             NodeProfileFactory::profileFactory(node);
+
+            QString name = QString("%1-#%2").arg(node->nodeOd()->value(0x1008,0).toString()).arg(node->nodeId());
+            node->setName(name);
         }
 
         if (_nodeIdToExplore.isEmpty())

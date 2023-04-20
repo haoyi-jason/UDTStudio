@@ -43,7 +43,7 @@ public slots:
 
 protected:
     Node *_activeNode;
-    void addNode(Node *node);
+    virtual void addNode(Node *node);
 
     void createWidgets();
     QTabWidget *_tabWidget;

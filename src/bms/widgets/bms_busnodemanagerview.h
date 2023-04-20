@@ -8,7 +8,8 @@
 #include "bcu/bms_nodemanagerwidget.h"
 #include "bms_busmanagerwidget.h"
 
-//#include "nodemanagerwidget.h"
+#include "../lib/udtgui/canopen/nodemanagerwidget.h"
+#include "../lib/udtgui/canopen/busnodestreeview.h"
 #include "bcu/bms_bcumanagerwidget.h"
 #include "system/bms_systemmanagerwidget.h"
 #include <QActionGroup>
@@ -30,7 +31,7 @@ public:
     CanOpenBus *currentBus() const;
     Node *currentNode() const;
 
-    BMS_BusNodeTreeView *busNodeTreeView() const;
+    BusNodesTreeView *busNodeTreeView() const;
     BMS_NodeManagerWidget *nodeManagerWidget() const;
     BMS_BusManagerWidget *busManagerWidget() const;
 
@@ -42,7 +43,7 @@ signals:
     void busSelected(CanOpenBus *currentBus);
     void nodeSelected(Node *currentNode);
     void functionSelected(int function); // switch node window or setting window
-
+    void bcuSelected(BCU* bcu);
 protected slots:
     void addBus(quint8 busId);
     void addBcu(CanOpenBus *bus, quint8 id);
@@ -63,17 +64,23 @@ public slots:
     void single();
     void scanBus();
 
+    void bcuStateChanged();
+    void setNode(Node *node);
+    void nodeNameChanged(QString name);
+
 protected:
     void createWidgets();
-    BMS_BusNodeTreeView *_busNodeTreeView;
+    BusNodesTreeView *_busNodeTreeView;
     BMS_BusManagerWidget *_busManagerWidget;
     BMS_NodeManagerWidget *_nodeManagerWidget;
+//    NodeManagerWidget *_nodeManagerWidget;
 
     CanOpen *_canOpen;
 
-//    BMS_BCUManagerwidget *_bcuManagerWidget;
+    BMS_BCUManagerwidget *_bcuManagerWidget;
     QList<BMS_NodeManagerWidget*> _bcuWidgets;
     QList<BCU *> _bcus;
+    QList<Node *> _nodes;
     QGroupBox *_bcuGroup;
 
 
@@ -87,6 +94,7 @@ protected:
 private:
     BMS_Poller *_poller;
     QActionGroup *_groupControl;
+    QMap<Node*,BCU*> _bcusMap;
 };
 
 class BMS_Poller:public QThread

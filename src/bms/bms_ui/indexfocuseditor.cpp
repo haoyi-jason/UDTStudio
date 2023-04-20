@@ -1,6 +1,12 @@
 #include "indexfocuseditor.h"
+#include <QKeyEvent>
+#include <QLineEdit>
+#include <QMenu>
+#include <QRegularExpression>
+#include <QDebug>
 
 IndexFocuseditor::IndexFocuseditor(const NodeObjectId &objId)
+    :AbstractIndexWidget(objId)
 {
     setObjId(objId);
 
@@ -9,7 +15,13 @@ IndexFocuseditor::IndexFocuseditor(const NodeObjectId &objId)
 
 void IndexFocuseditor::setTextEditValue(const QVariant &value)
 {
+    this->setText(value.toString());
+}
 
+void IndexFocuseditor::textEdited()
+{
+    qDebug()<<Q_FUNC_INFO<<" Request write:"<<text();
+    requestWriteValue(text());
 }
 
 QVariant IndexFocuseditor::textEditValue() const
@@ -17,26 +29,27 @@ QVariant IndexFocuseditor::textEditValue() const
 
 }
 
-void IndexFocuseditor::setDisplayValue(const QVariant &value, DisplayAttribute flats)
+void IndexFocuseditor::setDisplayValue(const QVariant &value, DisplayAttribute flags)
 {
     if (flags == DisplayAttribute::Error)
     {
         QFont mfont = font();
         mfont.setItalic(true);
-        lineEdit()->setFont(mfont);
+        setFont(mfont);
+
     }
     else
     {
         QFont mfont = font();
         mfont.setItalic(false);
-        lineEdit()->setFont(mfont);
+        setFont(mfont);
     }
     setTextEditValue(value);
 }
 
 bool IndexFocuseditor::isEditing() const
 {
-    return lineEdit()->hasFocus();
+    return hasFocus();
 }
 
 void IndexFocuseditor::updateHint()

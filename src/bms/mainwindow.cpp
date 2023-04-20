@@ -31,6 +31,7 @@
 #include "busdriver/canbustcpudt.h"
 #include "busdriver/canbusvci.h"
 #include "system/login.h"
+#include "system/gsettings.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -64,11 +65,23 @@ MainWindow::MainWindow(QWidget *parent) :
         for(int i=0;i<sz;i++){
             progSetting->setArrayIndex(i);
             QStringList sl = progSetting->value("BUS").toString().split(",");
+            b = nullptr;
             if(sl.size() > 2){
+#ifdef Q_OS_WIN
                 if(sl[0] == "VCI"){
                     b = new CanOpenBus(new CanBusVCI(sl[1]));
                     b->setBusName(sl[0]);
+
                     //busList.append(b);
+                }
+#endif
+#ifdef Q_OS_UNIX
+                if(sl[0] == "SOCKETCAN"){
+                    b = new CanOpenBus(new CanBusSocketCan(sl[1]));
+                    b->setBusName(sl[0]);
+                }
+#endif
+                if(b != nullptr){
                     CanOpen::addBus(b);
                 }
             }
@@ -89,33 +102,30 @@ MainWindow::MainWindow(QWidget *parent) :
 #ifdef Q_OS_UNIX
 
 #endif
-//    bus = new CanOpenBus(new CanBusDriver(""));
-//    bus->setBusName("VBus eds");
-//    CanOpen::addBus(bus);
-    int id = 1;
-    for(const QString &edsFile:qAsConst(OdDb::edsFiles())){
-        //Node *node = new Node(id,QFileInfo(edsFile).completeBaseName(),edsFile);
-        if(edsFile.contains("BCU")){
-            //if(progSetting->contains("BCUS")){
-            int sz = progSetting->beginReadArray("BCUS");
-            if(sz > 0){
-                for(int i=0;i<sz;i++){
-                    progSetting->setArrayIndex(i);
-                    int bid = progSetting->value("BUS_ID").toInt();
-                    int nid = progSetting->value("NODE_ID").toInt();
-                    quint8 mode = progSetting->value("START_MODE").toInt();
-                    BCU *node = new BCU(nid,QFileInfo(edsFile).completeBaseName(),edsFile);
-                    node->setStartMode(mode);
-                    if(bid < CanOpen::buses().count()){
-                        //busList[bus_id]->addNode(node);
-                        CanOpen::bus(bid)->addNode(node);
-                    }
-                }
-                progSetting->endArray();
-            }
-        }
-        id++;
-    }
+//    int id = 1;
+//    for(const QString &edsFile:qAsConst(OdDb::edsFiles())){
+//        //Node *node = new Node(id,QFileInfo(edsFile).completeBaseName(),edsFile);
+//        if(edsFile.contains("BCU")){
+//            //if(progSetting->contains("BCUS")){
+//            int sz = progSetting->beginReadArray("BCUS");
+//            if(sz > 0){
+//                for(int i=0;i<sz;i++){
+//                    progSetting->setArrayIndex(i);
+//                    int bid = progSetting->value("BUS_ID").toInt();
+//                    int nid = progSetting->value("NODE_ID").toInt();
+//                    quint8 mode = progSetting->value("START_MODE").toInt();
+//                    BCU *node = new BCU(nid,QFileInfo(edsFile).completeBaseName(),edsFile);
+//                    node->setStartMode(mode);
+//                    if(bid < CanOpen::buses().count()){
+//                        //busList[bus_id]->addNode(node);
+//                        CanOpen::bus(bid)->addNode(node);
+//                    }
+//                }
+//                progSetting->endArray();
+//            }
+//        }
+//        id++;
+//    }
 
     //resize(QApplication::screens().at(0)->size()*3/4);
     resize(1280,800);
@@ -124,22 +134,22 @@ MainWindow::MainWindow(QWidget *parent) :
 
     _logger = new BMS_Logger();
 
-    foreach (CanOpenBus *b, CanOpen::buses()) {
-        foreach (Node *n, b->nodes()) {
-            BCU *bcu = static_cast<BCU*>(n);
-            bcu->alarmManager()->set_cell_voltage_criteria(_cvwarning,_cvalarm);
-            bcu->alarmManager()->set_cell_temperature_criteria(_ctwarning,_ctalarm);
-            bcu->alarmManager()->set_soc_criteria(_socwarning,_socalarm);
-            _logger->addBCU(bcu);
-        }
-    }
+//    foreach (CanOpenBus *b, CanOpen::buses()) {
+//        foreach (Node *n, b->nodes()) {
+//            BCU *bcu = static_cast<BCU*>(n);
+//            bcu->alarmManager()->set_cell_voltage_criteria(_cvwarning,_cvalarm);
+//            bcu->alarmManager()->set_cell_temperature_criteria(_ctwarning,_ctalarm);
+//            bcu->alarmManager()->set_soc_criteria(_socwarning,_socalarm);
+//            _logger->addBCU(bcu);
+//        }
+//    }
     //
 
     // trigger "reloadEds"
-    _busNodesManagerView->reloadEds(-1);
+//    _busNodesManagerView->reloadEds(-1);
     //_busNodesManagerView->startBcu(-1);
     //_busNodesManagerView->startPoll(2000);
-    _logger->startLog(10);
+//    _logger->startLog(10);
 
     //Login::instance()->show();
     connect(Login::instance(),&Login::expired,this,&MainWindow::exitSuperUser);
@@ -214,8 +224,8 @@ void MainWindow::createWidgets()
 
     _tabWidget = new QTabWidget();
 
-    _tabWidget->addTab(_nodeScreens,"BCU");
-    _tabWidget->addTab(_configScreens,"CONFIG");
+    //_tabWidget->addTab(_nodeScreens,"BCU");
+    //_tabWidget->addTab(_configScreens,"CONFIG");
     _tabWidget->setCurrentIndex(0);
 
     _stackWidget = new QStackedWidget();
@@ -422,5 +432,5 @@ void MainWindow::setActiveNode(Node *node)
 
 void MainWindow::exitSuperUser()
 {
-    setActiveNode(nullptr);
+    //setActiveNode(nullptr);
 }

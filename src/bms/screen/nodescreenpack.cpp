@@ -24,7 +24,7 @@ NodeScreenPack::NodeScreenPack(QWidget *parent)
     emit SetBmuIndex(_bmuIndex);
 
     QFont f = font();
-    f.setPointSize(14);
+    f.setPointSize(12);
     setFont(f);
 
     _configLoaded = false;
@@ -121,30 +121,34 @@ QString NodeScreenPack::title() const
 void NodeScreenPack::setNodeInternal(Node *node, uint8_t axis)
 {
     Q_UNUSED(axis);
-    qDebug()<<Q_FUNC_INFO;
+    //qDebug()<<Q_FUNC_INFO;
     setNodeInterrest(node);
-    _bcu = static_cast<BCU*>(node);
-    if(_bcu != nullptr){
-        connect(_bcu,&BCU::configReady,this,&NodeScreenPack::BCUConfigReady);
+    //_bcu = static_cast<BCU*>(node);
+    _node = node;
+    if(_node != nullptr){
+        //connect(_bcu,&BCU::configReady,this,&NodeScreenPack::BCUConfigReady);
         NodeObjectId objId;
         objId = NodeObjectId(0x2001,0x01);
+        _packs = _node->nodeOd()->value(objId).toInt();
         registerObjId(objId);
         objId = NodeObjectId(0x2001,0x02);
+        _cells = _node->nodeOd()->value(objId).toInt();
         registerObjId(objId);
         objId = NodeObjectId(0x2001,0x03);
+        _ntcs = _node->nodeOd()->value(objId).toInt();
         registerObjId(objId);
-
-        connect(_bcu,&BCU::updateState,this, &NodeScreenPack::updateBCUInfo);
+        refreshContent();
+        //connect(_bcu,&BCU::updateState,this, &NodeScreenPack::updateBCUInfo);
     }
 }
 
 void NodeScreenPack::refreshContent()
 {
-    int packs =  _bcu->nofPacks();
-    int cells =  _bcu->nofCellsPerPack();
-    int ntcs =  _bcu->nofNtcsPerPack();
+    int packs =  _packs;
+    int cells =  _cells;
+    int ntcs =  _ntcs;
 
-    qDebug()<<Q_FUNC_INFO<<QString(" Pack:%1, CELLS:%2, NTCs:%3").arg(packs).arg(cells).arg(ntcs);
+    //qDebug()<<Q_FUNC_INFO<<QString(" Pack:%1, CELLS:%2, NTCs:%3").arg(packs).arg(cells).arg(ntcs);
 
     int count = 0;
     _socLabel->setNode(_node);
@@ -263,24 +267,37 @@ void NodeScreenPack::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest fl
     int pack = objId.index() - 0x2100;
     if(objId.index() == 0x2001){
         //qDebug()<<Q_FUNC_INFO;
-        _bcu->configReceived(objId.index(),objId.subIndex());
+//        _bcu->configReceived(objId.index(),objId.subIndex());
+
+        switch(objId.subIndex()){
+        case 0x01:
+            _packs = _node->nodeOd()->value(objId).toInt();
+            break;
+        case 0x02:
+            _cells = _node->nodeOd()->value(objId).toInt();
+            break;
+        case 0x03:
+            _ntcs = _node->nodeOd()->value(objId).toInt();
+            refreshContent();
+            break;
+        }
     }
     else if(objId.index() == 0x1018){
 
     }
-    else if((pack >= 0) && (pack < _bcu->nofPacks())){
-        quint16 mask = (quint16)(_bcu->nodeOd()->value(objId).toInt());
-        int base = pack *(_bcu->nofCellsPerPack() + _bcu->nofNtcsPerPack() + 1) + 1;
+    else if((pack >= 0) && (pack < _packs)){
+        quint16 mask = (quint16)(_node->nodeOd()->value(objId).toInt());
+        int base = pack *(_cells + _ntcs + 1) + 1;
         switch(objId.subIndex()){
         case 0x02:
             //qDebug()<<Q_FUNC_INFO << "Read Balance mask";
-            for(int i=0;i<_bcu->nofCellsPerPack();i++){
+            for(int i=0;i<_cells;i++){
                 _lcdNumbers[base+i]->setBalancing((mask & (1 << i)) != 0);
             }
             break;
         case 0x03:
             //qDebug()<<Q_FUNC_INFO << "Read open wire mask";
-            for(int i=0;i<_bcu->nofCellsPerPack();i++){
+            for(int i=0;i<_cells;i++){
                 _lcdNumbers[base+i]->setOpenWire((mask & (1 << i)) != 0);
             }
             break;
@@ -328,15 +345,15 @@ void NodeScreenPack::loadCriteria()
 void NodeScreenPack::BCUConfigReady()
 {
       //qDebug()<<Q_FUNC_INFO;
-      refreshContent();
+      //refreshContent();
 }
 
 void NodeScreenPack::updateBCUInfo()
 {
     //qDebug()<<Q_FUNC_INFO;
     QString msg =_odError?"通訊錯誤: ":"系統狀態: ";
-    msg += _bcu->chargeStr() +"\n";
-    msg += _bcu->cvStr() +" ";
-    msg += _bcu->ctStr() +" ";
+//    msg += _bcu->chargeStr() +"\n";
+//    msg += _bcu->cvStr() +" ";
+//    msg += _bcu->ctStr() +" ";
     _bcuInfo->setText(msg);
 }

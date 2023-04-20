@@ -17,6 +17,7 @@ public:
 
 signals:
     void focused(bool on);
+    void edited();
 
 public slots:
     void accepted();
@@ -27,8 +28,10 @@ private slots:
 //    void setText(QString &text);
 
 protected:
+    virtual void textEdited() ;
     //virtual void focusInEvent(QFocusEvent *e);
     //virtual void focusOutEvent(QFocusEvent *e);
+
 
 private:
     int _max;

@@ -117,6 +117,7 @@ void NumberPad::padClicked()
         break;
     case 10:
         str += btn->text();
+        _inBox->setText(str);
         break;
     case 11:
         if(_checkInput){
@@ -151,6 +152,7 @@ void NumberPad::padClicked()
         else{
             str = "-"+str;
         }
+        _inBox->setText(str);
         break;
     default:break;
     }

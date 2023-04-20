@@ -72,6 +72,10 @@ private:
 
     bool _odError;
 
+    int _packs;
+    int _cells;
+    int _ntcs;
+
 protected:
     void odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags) override;
 //    QLineEdit *_edIndex;
