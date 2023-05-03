@@ -17,6 +17,9 @@
 #include "canopen/bootloaderWidget/bootloaderwidget.h"
 
 #include "widgets/bmuwidget.h"
+#include "system/login.h"
+#include <QDebug>
+#include "bms_ui/indexfocuseditor.h"
 
 NodeScreenBCU::NodeScreenBCU()
 {
@@ -45,6 +48,7 @@ void NodeScreenBCU::createWidgets()
     layout->setSpacing(0);
 
     layout->addWidget(createSumaryWidget());
+    layout->addWidget(createControlWidget());
 //    layout->addWidget(createInfoWidget());
 //    layout->addWidget(createStatusWidget());
 
@@ -58,8 +62,9 @@ void NodeScreenBCU::createWidgets()
 }
 QWidget *NodeScreenBCU::createSumaryWidget()
 {
-    QGroupBox *groupBox = new QGroupBox("BCU Information");
-    QHBoxLayout *hlayout = new QHBoxLayout();
+    IndexFocuseditor *editor;
+    _groupBCU = new QGroupBox("BCU 資訊");
+    QVBoxLayout *hlayout = new QVBoxLayout();
 
     _summaryIconLabel = new QLabel();
     _summaryIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
@@ -72,93 +77,93 @@ QWidget *NodeScreenBCU::createSumaryWidget()
 
     IndexLabel *indexLabel;
     indexLabel = new IndexLabel(NodeObjectId(0x1008, 0));
-    sumaryLayout->addRow(tr("Device name:"), indexLabel);
+    sumaryLayout->addRow(tr("裝置名稱:"), indexLabel);
     _indexWidgets.append(indexLabel);
 
-    _summaryProfileLabel = new QLabel();
-    sumaryLayout->addRow(tr("Profile:"), _summaryProfileLabel);
+//    _summaryProfileLabel = new QLabel();
+//    sumaryLayout->addRow(tr("Profile:"), _summaryProfileLabel);
 
     indexLabel = new IndexLabel(NodeObjectId(0x1009, 0));
-    sumaryLayout->addRow(tr("Hardware version:"), indexLabel);
+    sumaryLayout->addRow(tr("硬體版本:"), indexLabel);
     _indexWidgets.append(indexLabel);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x2001, 0));
-    sumaryLayout->addRow(tr("Manufacture date:"), indexLabel);
-    _indexWidgets.append(indexLabel);
+//    indexLabel = new IndexLabel(NodeObjectId(0x2001, 0));
+//    sumaryLayout->addRow(tr("Manufacture date:"), indexLabel);
+//    _indexWidgets.append(indexLabel);
 
     indexLabel = new IndexLabel(NodeObjectId(0x1018, 4));
     indexLabel->setDisplayHint(AbstractIndexWidget::DisplayHexa);
-    sumaryLayout->addRow(tr("Serial number:"), indexLabel);
+    sumaryLayout->addRow(tr("序號:"), indexLabel);
     _indexWidgets.append(indexLabel);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x100A, 0));
-    sumaryLayout->addRow(tr("Software version:"), indexLabel);
-    _indexWidgets.append(indexLabel);
+//    indexLabel = new IndexLabel(NodeObjectId(0x100A, 0));
+//    sumaryLayout->addRow(tr("Software version:"), indexLabel);
+//    _indexWidgets.append(indexLabel);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x2003, 0));
-    sumaryLayout->addRow(tr("Software build:"), indexLabel);
-    _indexWidgets.append(indexLabel);
+//    indexLabel = new IndexLabel(NodeObjectId(0x2003, 0));
+//    sumaryLayout->addRow(tr("Software build:"), indexLabel);
+//    _indexWidgets.append(indexLabel);
 
-    indexLabel = new IndexLabel(NodeObjectId(0x2001, 1));
-    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+    //indexLabel = new IndexLabel(NodeObjectId(0x2001, 1));
+    //indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
 //    indexLabel->setScale(1.0);
 //    indexLabel->setUnit(" ");
-    sumaryLayout->addRow(tr("Packs in Stack"), indexLabel);
-    _indexWidgets.append(indexLabel);
+    editor = new IndexFocuseditor(NodeObjectId(0x2001,1));
+    //editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+    //editor->setObjId(NodeObjectId(0x2001,1));
+    sumaryLayout->addRow(tr("本串電池數量:"), editor);
+    //_indexWidgets.append(indexLabel);
+    editor->setFixedWidth(200);
+    _indexWidgets.append(editor);
 
     indexLabel = new IndexLabel(NodeObjectId(0x2001, 2));
     indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
     indexLabel->setScale(1.0);
     indexLabel->setUnit(" ");
-    sumaryLayout->addRow(tr("Cells Per Pack"), indexLabel);
+    editor = new IndexFocuseditor(NodeObjectId(0x2001,2));
+    editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+    editor->setFixedWidth(200);
+    sumaryLayout->addRow(tr("每顆電池電芯數:"), editor);
     _indexWidgets.append(indexLabel);
+    _indexWidgets.append(editor);
 
     indexLabel = new IndexLabel(NodeObjectId(0x2001, 3));
     indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
     indexLabel->setScale(1.0);
     indexLabel->setUnit(" ");
-    sumaryLayout->addRow(tr("NTCs Per Pack"), indexLabel);
+    editor = new IndexFocuseditor(NodeObjectId(0x2001,3));
+    editor->setFixedWidth(200);
+    editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+    sumaryLayout->addRow(tr("每顆電池溫度感測器數量:"), editor);
     _indexWidgets.append(indexLabel);
-
-//    IndexComboBox *indexCombo;
-//    indexCombo = new IndexComboBox(NodeObjectId(0x2001,0x04));
-//    indexCombo->setMinValue(1);
-//    indexCombo->setMaxValue(2);
-//    sumaryLayout->addRow(tr("BMU Type"), indexCombo);
-
-//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 1));
-//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-//    indexLabel->setScale(1.0);
-//    indexLabel->setUnit("%");
-//    sumaryLayout->addRow(tr("SOC"), indexLabel);
-//    _indexWidgets.append(indexLabel);
-
-//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 2));
-//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-//    indexLabel->setScale(0.1);
-//    indexLabel->setUnit(" ");
-//    sumaryLayout->addRow(tr("SOH"), indexLabel);
-//    _indexWidgets.append(indexLabel);
-
-//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 3));
-//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-//    indexLabel->setScale(1.0);
-//    indexLabel->setUnit("V");
-//    sumaryLayout->addRow(tr("Stack Voltage"), indexLabel);
-//    _indexWidgets.append(indexLabel);
-
-//    indexLabel = new IndexLabel(NodeObjectId(0x2002, 4));
-//    indexLabel->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-//    indexLabel->setScale(0.1);
-//    indexLabel->setUnit("A");
-//    sumaryLayout->addRow(tr("Current"), indexLabel);
-//    _indexWidgets.append(indexLabel);
+    _indexWidgets.append(editor);
 
     hlayout->addItem(sumaryLayout);
 
-//    QVBoxLayout *buttonlayout = new QVBoxLayout();
-//    buttonlayout->setSpacing(3);
-//    QPushButton *updateFirmwareButton = new QPushButton(tr("&Update firmware"));
+    QVBoxLayout *buttonlayout = new QVBoxLayout();
+    buttonlayout->setSpacing(3);
+    QPushButton *btn;
+
+//    btn = new QPushButton(tr("啟動BCU"));
+//    btn->setFixedWidth(200);
+//    connect(btn,&QPushButton::released,this,[=](){startBCU();});
+//    buttonlayout->addWidget(btn);
+
+    btn = new QPushButton(tr("設定模式"));
+    btn->setFixedWidth(200);
+    connect(btn,&QPushButton::released,this,[=](){setCanState();});
+    buttonlayout->addWidget(btn);
+
+    btn = new QPushButton(tr("儲存參數"));
+    btn->setFixedWidth(200);
+    connect(btn,&QPushButton::released,this,[=](){saveParam();});
+    buttonlayout->addWidget(btn);
+
+    btn = new QPushButton(tr("回復預設值"));
+    btn->setFixedWidth(200);
+    connect(btn,&QPushButton::released,this,[=](){loadDefault();});
+    buttonlayout->addWidget(btn);
+    //    QPushButton *updateFirmwareButton = new QPushButton(tr("&Update firmware"));
 //    updateFirmwareButton->setFixedWidth(200);
 //    connect(updateFirmwareButton,
 //            &QPushButton::released,
@@ -181,12 +186,37 @@ QWidget *NodeScreenBCU::createSumaryWidget()
 //    buttonlayout->addWidget(resetHardwareButton);
 
 //    buttonlayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
-//    hlayout->addItem(buttonlayout);
 
-    groupBox->setLayout(hlayout);
-    return groupBox;
+    hlayout->addItem(buttonlayout);
+    hlayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::MinimumExpanding));
+
+    _groupBCU->setLayout(hlayout);
+    _groupBCU->setEnabled(false);
+    return _groupBCU;
 
 }
+
+QWidget *NodeScreenBCU::createControlWidget()
+{
+    QWidget *w = new QWidget();
+    QHBoxLayout *layout = new QHBoxLayout();
+
+    QPushButton *btn;
+
+    btn = new QPushButton(tr("更改設定"));
+    btn->setFixedWidth(200);
+    connect(btn,&QPushButton::released,this,[=](){logIn();});
+    layout->addWidget(btn);
+
+    btn = new QPushButton(tr("啟動BCU"));
+    btn->setFixedWidth(200);
+    connect(btn,&QPushButton::released,this,[=](){startBCU();});
+    layout->addWidget(btn);
+
+    w->setLayout(layout);
+    return w;
+}
+
 QWidget *NodeScreenBCU::createInfoWidget()
 {
     IndexLabel *indexLabel;
@@ -243,17 +273,103 @@ void NodeScreenBCU::updateInfos(BCU *bcu)
 
 QString NodeScreenBCU::title() const
 {
-    return QString(tr("BCU"));
+    return QString(tr("BCU資訊"));
 }
 
 void NodeScreenBCU::setNodeInternal(Node *node, uint8_t axis)
 {
     Q_UNUSED(axis);
 
-    for(AbstractIndexWidget *indexWidget:qAsConst(_indexWidgets)){
-        indexWidget->setNode(node);
+    if(node != nullptr){
+
+        for(AbstractIndexWidget *indexWidget:qAsConst(_indexWidgets)){
+            indexWidget->setNode(node);
+        }
     }
 
-    updateInfos((BCU*)node);
 
+//    for(AbstractIndexWidget *indexWidget:qAsConst(_indexEditors)){
+//        indexWidget->setNode(node);
+//    }
+
+    //updateInfos((BCU*)node);
+
+}
+
+void NodeScreenBCU::startBCU()
+{
+    QPushButton *btn = static_cast<QPushButton*>(sender());
+    TPDO *pdo = node()->tpdos().at(0);
+    if(pdo->isEnabled()){
+        pdo->setEnabled(false);
+        btn->setText(tr("啟動BCU"));
+        if(_bcu != nullptr){
+            _bcu->stopPoll();
+        }
+    }
+    else{
+        pdo->setEnabled(true);
+        btn->setText(tr("停止BCU"));
+        if(_bcu != nullptr){
+            _bcu->startPoll();
+        }
+    }
+}
+
+void NodeScreenBCU::setCanState()
+{
+    QPushButton *btn = static_cast<QPushButton*>(sender());
+    if(node()->status() == Node::STARTED){
+        node()->sendPreop();
+        btn->setText(tr("運行模式"));
+    }
+    else if(node()->status() == Node::PREOP){
+        node()->sendStart();
+        btn->setText(tr("設定模式"));
+    }
+}
+
+void NodeScreenBCU::saveParam()
+{
+    Node::StoreSegment segment = Node::StoreAll;
+    node()->store(segment);
+}
+
+void NodeScreenBCU::loadDefault()
+{
+    Node::RestoreSegment segment = Node::RestoreFactoryAll;
+    node()->restore(segment);
+}
+
+BCU *NodeScreenBCU::bcu() const
+{
+    return _bcu;
+}
+
+void NodeScreenBCU::setBCU(BCU *bcu)
+{
+    qDebug()<<Q_FUNC_INFO;
+    _bcu = bcu;
+    if(_bcu != nullptr){
+        setNodeInternal(_bcu->node(),0);
+    }
+}
+
+void NodeScreenBCU::logIn()
+{
+    QPushButton *btn = static_cast<QPushButton*>(sender());
+    if(_groupBCU->isEnabled()){
+        _groupBCU->setEnabled(false);
+        btn->setText(tr("更改設定"));
+    }
+    else{
+        if(Login::instance()->exec() == QDialog::Accepted){
+            _groupBCU->setEnabled(true);
+            btn->setText(tr("完成"));
+        }
+        else{
+            _groupBCU->setEnabled(false);
+            btn->setText(tr("更改設定"));
+        }
+    }
 }

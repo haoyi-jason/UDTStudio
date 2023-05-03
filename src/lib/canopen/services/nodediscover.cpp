@@ -145,7 +145,7 @@ void NodeDiscover::exploreBusNext()
         return;
     }
 
-    if (_exploreBusNodeId > 5)
+    if (_exploreBusNodeId > 0x7f)
     {
         _exploreBusNodeId = 0;
         _exploreBusTimer.stop();
@@ -202,7 +202,7 @@ void NodeDiscover::exploreNodeNext()
             node->reset();
             NodeProfileFactory::profileFactory(node);
 
-            QString name = QString("%1-#%2").arg(node->nodeOd()->value(0x1008,0).toString()).arg(node->nodeId());
+            QString name = QString("%1[#%2]").arg(node->nodeOd()->value(0x1008,0).toString()).arg(node->nodeId());
             node->setName(name);
         }
 

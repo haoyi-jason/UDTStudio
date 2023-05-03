@@ -38,6 +38,7 @@ private:
     QString _recordPath;
     QString _eventPath;
     QString _appPath;
+    QMutex _mutex;
 
 };
 

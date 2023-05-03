@@ -25,6 +25,9 @@ public:
         DISCHARGING
     };
 
+    const int CV_START_ADDR= 0x0A;
+    const int CT_START_ADDR = 0x1A;
+
 //    BCU(quint8 nodeId, const QString &name = QString(), const QString &edsFileName = QString());
     BCU(QObject *parent = nullptr);
     BCU(Node *node,bool autoStart = false, QObject *parent = nullptr);
@@ -65,7 +68,7 @@ public:
     bool isConfigReady() ;
     void reConfig();
     bool canPoll();
-
+    bool isPolling();
     void reset();
     void identify();
 

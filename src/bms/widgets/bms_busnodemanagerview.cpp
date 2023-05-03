@@ -28,6 +28,9 @@ BMS_BusNodesManagerView::BMS_BusNodesManagerView(CanOpen *canOpen, QWidget *pare
 
     _poller = nullptr;
     //connect(_pollTimer,&QTimer::timeout,this,&BMS_BusNodesManagerView::pollProc);
+    _logger = new BMS_Logger();
+    _logger->startLog(10);
+
 }
 
 CanOpen *BMS_BusNodesManagerView::canOpen() const
@@ -84,7 +87,10 @@ void BMS_BusNodesManagerView::addBcu(CanOpenBus *bus, quint8 id)
     _bcusMap.insert(node,bcu);
     connect(bcu,&BCU::stateChanged,this,&BMS_BusNodesManagerView::bcuStateChanged);
     connect(node,&Node::nameChanged,this,&BMS_BusNodesManagerView::nodeNameChanged);
-//    QVBoxLayout *bcuLayout = (QVBoxLayout*)_bcuGroup->layout();
+
+    _logger->addBCU(bcu);
+
+    //    QVBoxLayout *bcuLayout = (QVBoxLayout*)_bcuGroup->layout();
 //    QString title = QString("BCU ID: %1").arg(node->nodeId());
 //    bcu->readConfig();
 }
@@ -106,9 +112,9 @@ void BMS_BusNodesManagerView::removeBcu(CanOpenBus *bus, quint8 id)
     QMap<Node*,BCU*>::ConstIterator it = _bcusMap.constBegin();
     foreach(Node *n, _bcusMap.keys()){
         if(n->nodeId() == id && n->bus() == bus){
+            _logger->removeBCU(_bcusMap.value(n));
             _bcusMap.value(n)->deleteLater();
             _bcusMap.remove(n);
-
         }
     }
 //    foreach(Node *n,_nodes){

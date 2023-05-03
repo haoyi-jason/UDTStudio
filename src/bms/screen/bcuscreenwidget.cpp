@@ -111,6 +111,7 @@ void BcuScreenWidget::addNode(Node *node)
     NodeScreen *screen;
 
     screen = new NodeScreenBCU();
+    connect(this,&BcuScreenWidget::bcuSelected,static_cast<NodeScreenBCU*>(screen),&NodeScreenBCU::setBCU);
     screen->setNode(node);
     screen->setScreenWidget(this);
     nodeScreens.screens.append(screen);
@@ -133,11 +134,11 @@ void BcuScreenWidget::addNode(Node *node)
     screen->setScreenWidget(this);
     nodeScreens.screens.append(screen);
 
-//    QApplication::processEvents();
-//    screen = new NodeScreenPDO();
-//    screen->setNode(node);
-//    screen->setScreenWidget(this);
-//    nodeScreens.screens.append(screen);
+    QApplication::processEvents();
+    screen = new NodeScreenPDO();
+    screen->setNode(node);
+    screen->setScreenWidget(this);
+    nodeScreens.screens.append(screen);
 
     // add specific screens node
 //    switch (node->profileNumber())

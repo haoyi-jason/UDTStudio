@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
     createDocks();
     createWidgets();
 //    createMenus();
-//    connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,_nodeScreens,&NodeScreensWidget::setActiveNode);
+    connect(_busNodesManagerView,&BMS_BusNodesManagerView::bcuSelected,_nodeScreens,&BcuScreenWidget::bcuSelected);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,_nodeScreens,&BcuScreenWidget::setActiveNode);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,this,&MainWindow::setActiveNode);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::functionSelected,this,&MainWindow::setFunction);
@@ -132,7 +132,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     readSettings();
 
-    _logger = new BMS_Logger();
 
 //    foreach (CanOpenBus *b, CanOpen::buses()) {
 //        foreach (Node *n, b->nodes()) {

@@ -54,14 +54,14 @@ void BMS_BusManagerWidget::updateBusData()
         _actionSyncStart->blockSignals(false);
 
 
-        _busNameEdit->setText(_bus->busName());
+        //_busNameEdit->setText(_bus->busName());
 
         _actionExplore->setEnabled(_bus->isConnected());
         _actionSyncOne->setEnabled(_bus->isConnected());
         _actionSyncStart->setEnabled(_bus->isConnected());
 
-        _busAddressEdit->setText(_bus->driverAddress());
-        _btnSetBusAddress->setEnabled(true);
+        //_busAddressEdit->setText(_bus->driverAddress());
+        //_btnSetBusAddress->setEnabled(true);
     }
 
     if(_bus == nullptr){
@@ -71,7 +71,7 @@ void BMS_BusManagerWidget::updateBusData()
         _actionSyncOne->setEnabled(false);
         _actionSyncStart->setEnabled(false);
 
-        _btnSetBusAddress->setEnabled(false);
+        //_btnSetBusAddress->setEnabled(false);
     }
 }
 
@@ -138,10 +138,10 @@ void BMS_BusManagerWidget::setSyncTimer(int i)
 
 void BMS_BusManagerWidget::setBusName()
 {
-    if (_bus != nullptr)
-    {
-        _bus->setBusName(_busNameEdit->text());
-    }
+//    if (_bus != nullptr)
+//    {
+//        _bus->setBusName(_busNameEdit->text());
+//    }
 }
 
 void BMS_BusManagerWidget::createWidgets()
@@ -203,19 +203,18 @@ void BMS_BusManagerWidget::createWidgets()
     layoutGroupBox->addRow(_toolBar);
     layoutGroupBox->addItem(new QSpacerItem(0, 2));
 
-    _busNameEdit = new QLineEdit();
-    layoutGroupBox->addRow(tr("Name:"), _busNameEdit);
-    connect(_busNameEdit, &QLineEdit::returnPressed, this, &BMS_BusManagerWidget::setBusName);
+//    _busNameEdit = new QLineEdit();
+//    layoutGroupBox->addRow(tr("Name:"), _busNameEdit);
+//    connect(_busNameEdit, &QLineEdit::returnPressed, this, &BMS_BusManagerWidget::setBusName);
 
-    QHBoxLayout *busNameLayout = new QHBoxLayout();
-    busNameLayout->setContentsMargins(0,0,0,0);
-    _busAddressEdit = new QLineEdit();
-//    busNameLayout->addWidget(new QLabel("Address"));
-    busNameLayout->addWidget(_busAddressEdit);
-    _btnSetBusAddress = new QPushButton("Set");
-    connect(_btnSetBusAddress,&QPushButton::clicked,this,&BMS_BusManagerWidget::setBusAddress);
-    busNameLayout->addWidget(_btnSetBusAddress);
-    layoutGroupBox->addRow(tr("Address"),busNameLayout);
+    //QHBoxLayout *busNameLayout = new QHBoxLayout();
+    //busNameLayout->setContentsMargins(0,0,0,0);
+    //_busAddressEdit = new QLineEdit();
+    //busNameLayout->addWidget(_busAddressEdit);
+    //_btnSetBusAddress = new QPushButton("Set");
+    //connect(_btnSetBusAddress,&QPushButton::clicked,this,&BMS_BusManagerWidget::setBusAddress);
+    //busNameLayout->addWidget(_btnSetBusAddress);
+    //layoutGroupBox->addRow(tr("Address"),busNameLayout);
     _groupBox->setLayout(layoutGroupBox);
     layout->addWidget(_groupBox);
 

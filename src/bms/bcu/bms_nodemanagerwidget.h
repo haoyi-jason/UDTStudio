@@ -10,7 +10,7 @@
 
 #include "node.h"
 #include "system/bmsstack.h"
-
+#include "../bms_ui/focusededitor.h"
 
 class BMS_NodeManagerWidget : public QWidget
 {
@@ -94,7 +94,7 @@ protected:
     QGroupBox *_bcuGroup;
     QLabel *_statusLabel;
 
-
+    FocusedEditor *_feInterval;
 signals:
     void nodeSelected(BCU *bcu);
 };

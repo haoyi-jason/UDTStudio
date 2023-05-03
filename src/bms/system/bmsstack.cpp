@@ -105,12 +105,12 @@ void BCU::identify()
 
 double BCU::voltage() const{
 
-    return _voltage;
+    return node()->nodeOd()->value(0x2002,0x03).toDouble();
 }
 
 double BCU::current() const
 {
-    return _current;
+    return node()->nodeOd()->value(0x2002,0x04).toInt()/10.;
 }
 
 
@@ -302,7 +302,7 @@ bool BCU::validate()
         _alarmManager->set_soc(_node->nodeOd()->value(0x2102,0x01).toDouble());
 
         // todo : add alarm output function to fire output
-        quint32 org = _node->nodeOd()->value(0x2004,0x02).toInt();
+        quint32 org = _node->nodeOd()->value(0x6300,0x01).toInt();
         quint32 out = 0x0;
         if(_alarmManager->isAlarm()){
             out = 0x02;
@@ -315,7 +315,7 @@ bool BCU::validate()
             QVariant valueToWrite;
             valueToWrite.setValue(out);
             qDebug()<< Q_FUNC_INFO << " :Issue digital output";
-            writeObject(0x2004,0x02, valueToWrite);
+            writeObject(0x6300,0x01, valueToWrite);
         }
 
         emit updateState();
@@ -411,7 +411,7 @@ void BCU::resetError()
 
 void BCU::startPoll(int interval)
 {
-    qDebug()<<Q_FUNC_INFO;
+//    qDebug()<<Q_FUNC_INFO;
 //    if(!canPoll()) return;
 
     if(_pollConfig){
@@ -430,7 +430,8 @@ void BCU::startPoll(int interval)
             else{
                 _accessOnece = false;
             }
-            _pollTimer->start(150);
+            _pollTimer->start(interval);
+            node()->tpdos().at(0)->setEnabled(true);
         }
     }
 }
@@ -438,6 +439,7 @@ void BCU::startPoll(int interval)
 void BCU::stopPoll()
 {
 //    qDebug()<<Q_FUNC_INFO;
+    node()->tpdos().at(0)->setEnabled(false);
     _pollConfig = false;
     _pollTimer->stop();
 }
@@ -458,6 +460,7 @@ void BCU::accessData()
             _pollRetry++;
         }
         else if(_configReady == 0x07){
+            _node->readObject(0x1018,0x04);
             _pollRetry++;
             stopPoll();
         }
@@ -477,6 +480,7 @@ void BCU::accessData()
                 _pollTimer->stop();
             }
             _accessIdIterator = _accessIds.begin();
+            validate();
         }
     }
 }
@@ -505,6 +509,11 @@ void BCU::reConfig()
 bool BCU::canPoll()
 {
     return (isConfigReady());
+}
+
+bool BCU::isPolling()
+{
+    return (_pollTimer->isActive());
 }
 
 void BCU::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
@@ -548,10 +557,10 @@ void BCU::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
                     _accessIds.append(NodeObjectId(0x2100+i,j+0x01));
                 }
                 for(int j=0;j<_cellsPerPack;j++){
-                    _accessIds.append(NodeObjectId(0x2100+i,j+0x0A));
+                    _accessIds.append(NodeObjectId(0x2100+i,j+CV_START_ADDR));
                 }
                 for(int j=0;j<_ntcsPerPack;j++){
-                    _accessIds.append(NodeObjectId(0x2100+i,j+0x18));
+                    _accessIds.append(NodeObjectId(0x2100+i,j+CT_START_ADDR));
                 }
             }
             _accessIds.append(NodeObjectId(0x1001,0x0));

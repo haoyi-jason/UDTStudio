@@ -129,7 +129,7 @@ void NodeScreenPack::setNodeInternal(Node *node, uint8_t axis)
         //connect(_bcu,&BCU::configReady,this,&NodeScreenPack::BCUConfigReady);
         NodeObjectId objId;
         objId = NodeObjectId(0x2001,0x01);
-        _packs = _node->nodeOd()->value(objId).toInt();
+        _packs = _node->nodeOd()->value(objId).toInt()-1;
         registerObjId(objId);
         objId = NodeObjectId(0x2001,0x02);
         _cells = _node->nodeOd()->value(objId).toInt();
@@ -148,6 +148,7 @@ void NodeScreenPack::refreshContent()
     int cells =  _cells;
     int ntcs =  _ntcs;
 
+    if(_packs==0 || _cells == 0 || _ntcs == 0) return;
     //qDebug()<<Q_FUNC_INFO<<QString(" Pack:%1, CELLS:%2, NTCs:%3").arg(packs).arg(cells).arg(ntcs);
 
     int count = 0;
@@ -159,7 +160,13 @@ void NodeScreenPack::refreshContent()
     _lcdNumbers.clear();
     QGridLayout *_cellLayout = (QGridLayout*)_cellGroup->layout();
 
-
+    QLayoutItem *item;
+    while((item = _cellLayout->takeAt(0)) != nullptr){
+        if(item->widget()){
+            delete item->widget();
+        }
+        delete item;
+    }
 
     _cellLayout->addWidget(new QLabel("Pack#"),0,0);
     _cellLayout->addWidget(new QLabel("Voltage"),0,1);
@@ -200,7 +207,7 @@ void NodeScreenPack::refreshContent()
 
         }
         for(int j=0;j<ntcs;j++){
-            objId = NodeObjectId(0x2100 + i,j+0x18);
+            objId = NodeObjectId(0x2100 + i,j+0x1a);
             registerObjId(objId);
             lcdNumber = new IndexLCDNumber();
             lcdNumber->setProperty("ID",3);
@@ -271,7 +278,7 @@ void NodeScreenPack::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest fl
 
         switch(objId.subIndex()){
         case 0x01:
-            _packs = _node->nodeOd()->value(objId).toInt();
+            _packs = _node->nodeOd()->value(objId).toInt()-1;
             break;
         case 0x02:
             _cells = _node->nodeOd()->value(objId).toInt();

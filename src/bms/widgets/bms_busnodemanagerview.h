@@ -14,6 +14,7 @@
 #include "system/bms_systemmanagerwidget.h"
 #include <QActionGroup>
 #include <QThread>>
+#include "system/bms_logger.h"
 
 class BMS_Poller;
 
@@ -38,6 +39,8 @@ public:
     void saveState(QSettings &settings);
     void restoreState(QSettings &settings);
     void reloadEds(int id);
+
+    BMS_Logger *logger() const;
 
 signals:
     void busSelected(CanOpenBus *currentBus);
@@ -95,6 +98,7 @@ private:
     BMS_Poller *_poller;
     QActionGroup *_groupControl;
     QMap<Node*,BCU*> _bcusMap;
+    BMS_Logger *_logger;
 };
 
 class BMS_Poller:public QThread

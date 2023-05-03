@@ -82,7 +82,7 @@ void BMS_NodeManagerWidget::setNode(Node *node)
 void BMS_NodeManagerWidget::updateData()
 {
     if(_node != nullptr){
-        _nodeNameEdit->setText(_node->name());
+        //_nodeNameEdit->setText(_node->name());
 
         _groupNmt->blockSignals(true);
         for(QAction *action:_groupNmt->actions()){
@@ -102,23 +102,34 @@ void BMS_NodeManagerWidget::updateData()
         //_statusLabel->setText(_bcu->statusStr());
     }
     else{
-        _nodeNameEdit->setText("");
+        //_nodeNameEdit->setText("");
     }
 }
 
 void BMS_NodeManagerWidget::updateThreadState(bool state)
 {
     if(state){
-        _actionStartPoll->setToolTip("Stop activity");
+        //_actionStartPoll->setToolTip("Stop activity");
     }
     else{
-        _actionStartPoll->setToolTip("Start activity");
+        //_actionStartPoll->setToolTip("Start activity");
     }
 }
 
 void BMS_NodeManagerWidget::pollNode()
 {
-    _bcu->startPoll();
+    qDebug()<<Q_FUNC_INFO<<_bcu->isPolling();
+    if(_bcu->isPolling()){
+        _bcu->stopPoll();
+        _actionStartPoll->setIcon(QIcon(":/icons/img/icons8-sort-desc.png"));
+    }
+    else{
+        int interval = _feInterval->text().toInt();
+        if(interval < 10) interval = 10;
+        if(interval > 10000) interval = 10000;
+        _bcu->startPoll(interval);
+        _actionStartPoll->setIcon(QIcon(":/icons/img/icons8-stop.png"));
+    }
 }
 
 void BMS_NodeManagerWidget::preop()
@@ -199,7 +210,7 @@ void BMS_NodeManagerWidget::reloadEds()
 void BMS_NodeManagerWidget::setNodeName()
 {
     if(_node != nullptr){
-        _node->setName(_nodeNameEdit->text());
+        //_node->setName(_nodeNameEdit->text());
     }
 }
 
@@ -235,10 +246,10 @@ void BMS_NodeManagerWidget::createWidgets()
     _groupNmt = new QActionGroup(this);
     _groupNmt->setExclusive(true);
 
-    _actionSelect = _toolBar->addAction(tr("SEL"));
-    _actionSelect->setCheckable(false);
-    _actionSelect->setIcon(QIcon(":/icons/img/icons8-system-information.png"));
-    connect(_actionSelect,&QAction::triggered,this,&BMS_NodeManagerWidget::select);
+    //_actionSelect = _toolBar->addAction(tr("SEL"));
+    //_actionSelect->setCheckable(false);
+    //_actionSelect->setIcon(QIcon(":/icons/img/icons8-system-information.png"));
+    //connect(_actionSelect,&QAction::triggered,this,&BMS_NodeManagerWidget::select);
 
     _actionPreop = _groupNmt->addAction(tr("Pre operationnal"));
     _actionPreop->setCheckable(true);
@@ -264,12 +275,11 @@ void BMS_NodeManagerWidget::createWidgets()
 //    _actionReset->setStatusTip(tr("Reread bcu config"));
 //    connect(_actionReset, &QAction::triggered, this, &BMS_NodeManagerWidget::resetCom);
 
-    _actionResetCom = _groupNmt->addAction(tr("Reconfig "));
-    _actionResetCom->setCheckable(true);
-    _actionResetCom->setIcon(QIcon(":/icons/img/icons8-sync.png"));
-    _actionResetCom->setStatusTip(tr("Reread bcu config"));
-//    _actionResetCom->setStatusTip(tr("Request node to reset com. parameters"));
-    connect(_actionResetCom, &QAction::triggered, this, &BMS_NodeManagerWidget::resetCom);
+//    _actionResetCom = _groupNmt->addAction(tr("Reconfig "));
+//    _actionResetCom->setCheckable(true);
+//    _actionResetCom->setIcon(QIcon(":/icons/img/icons8-sync.png"));
+//    _actionResetCom->setStatusTip(tr("Reread bcu config"));
+//    connect(_actionResetCom, &QAction::triggered, this, &BMS_NodeManagerWidget::resetCom);
 
     _actionReset = _groupNmt->addAction(tr("Reset node"));
     _actionReset->setCheckable(true);
@@ -277,13 +287,20 @@ void BMS_NodeManagerWidget::createWidgets()
     _actionReset->setStatusTip(tr("Request node to reset all values"));
     connect(_actionReset, &QAction::triggered, this, &BMS_NodeManagerWidget::resetNode);
 
-    _actionStartPoll = _toolBar->addAction(tr("Poll"));
-    _actionStartPoll->setStatusTip(tr("Poll BCU"));
-    connect(_actionStartPoll,&QAction::triggered,this,&BMS_NodeManagerWidget::pollNode);
-
     _toolBar->addActions(_groupNmt->actions());
 
-    _statusLabel = new QLabel("Status");
+    _feInterval = new FocusedEditor();
+    _feInterval->setText(tr("100"));
+    _feInterval->setStatusTip("Set scan interval in ms");
+    _toolBar->addWidget(_feInterval);
+
+    _actionStartPoll = _toolBar->addAction(tr("Poll BCU"));
+    _actionStartPoll->setStatusTip(tr("Poll BCU"));
+    _actionStartPoll->setIcon(QIcon(":/icons/img/icons8-sort-desc.png"));
+    connect(_actionStartPoll,&QAction::triggered,this,&BMS_NodeManagerWidget::pollNode);
+
+
+    //_statusLabel = new QLabel("Status");
     //_toolBar->addWidget(_statusLabel);
 
     // Remove node
@@ -318,9 +335,9 @@ void BMS_NodeManagerWidget::createWidgets()
     layoutGroupBox->addRow(_toolBar);
     layoutGroupBox->addItem(new QSpacerItem(0, 2));
 
-    _nodeNameEdit = new QLineEdit();
+//    _nodeNameEdit = new QLineEdit();
 //    layoutGroupBox->addRow(tr("Name:"), _nodeNameEdit);
-    connect(_nodeNameEdit, &QLineEdit::returnPressed, this, &BMS_NodeManagerWidget::setNodeName);
+//    connect(_nodeNameEdit, &QLineEdit::returnPressed, this, &BMS_NodeManagerWidget::setNodeName);
 
     _groupBox->setLayout(layoutGroupBox);
     layout->addWidget(_groupBox);

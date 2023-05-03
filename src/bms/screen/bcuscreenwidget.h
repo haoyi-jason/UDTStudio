@@ -24,6 +24,10 @@ public slots:
     void setActiveTab(const QString &name);
 
     void setOneShot();
+//    void setBCU(BCU *bcu);
+
+signals:
+    void bcuSelected(BCU *bcu);
 
 protected:
     BCU *_activeBcu;
