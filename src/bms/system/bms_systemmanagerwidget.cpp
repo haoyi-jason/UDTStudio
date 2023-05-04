@@ -2,6 +2,8 @@
 
 #include <QDebug>
 #include <QVBoxLayout>
+#include <QSpacerItem>
+#include <QSizePolicy>
 
 BMS_SystemManagerWidget::BMS_SystemManagerWidget(QWidget *parent) : QWidget(parent)
 {
@@ -11,8 +13,11 @@ BMS_SystemManagerWidget::BMS_SystemManagerWidget(QWidget *parent) : QWidget(pare
 void BMS_SystemManagerWidget::createWidgets()
 {
     QVBoxLayout *layout = new QVBoxLayout();
-    layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(2);
+    //layout->setContentsMargins(0,0,0,0);
+
+    layout->setSpacing(10);
+
+
 
     QPushButton *button;
 
@@ -35,6 +40,8 @@ void BMS_SystemManagerWidget::createWidgets()
     button->setProperty("ID", 4);
     connect(button,&QPushButton::clicked,this,&BMS_SystemManagerWidget::buttonClicked);
     layout->addWidget(button);
+
+    //layout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Maximum));
 
     setLayout(layout);
 

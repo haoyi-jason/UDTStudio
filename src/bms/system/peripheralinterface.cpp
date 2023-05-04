@@ -2,6 +2,7 @@
 #include <QFile>
 
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 PeripheralInterface::PeripheralInterface()
@@ -65,7 +66,8 @@ int IIODevice::closeDevice()
     system(cmd);
 
     if(fd){
-        close(fd);
+
+        ::close(fd);
         fd = -1;
     }
     return 0;

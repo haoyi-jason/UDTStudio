@@ -56,8 +56,17 @@ void Login::createWidgets()
     flayout->addWidget(btnCancel);
     flayout->addWidget(btnModifyPasswd);
 
+    layout->addStretch(0);
     layout->addLayout(flayout);
-    setLayout(layout);
+    layout->addStretch(0);
+
+    QVBoxLayout *vlayout = new QVBoxLayout();
+    vlayout->addStretch(0);
+    vlayout->addLayout(layout);
+    vlayout->addStretch(0);
+    setLayout(vlayout);
+
+
 }
 
 void Login::validate()
@@ -98,5 +107,9 @@ void Login::showEvent(QShowEvent *e)
 {
     _edPassword1->setText("");
     _edPassword2->setText("");
+    //resize(320,240);
+    setGeometry(100,100,320,240);
+    //move(100,100);
+    //showFullScreen();
     //showEvent(e);
 }

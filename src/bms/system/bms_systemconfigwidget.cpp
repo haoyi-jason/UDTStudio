@@ -37,7 +37,7 @@ void BMS_SystemConfigWidget::createWidgets()
     addWidget(createAlarmWidget());
     addWidget(createEventViewWidget());
 
-    qDebug()<<Q_FUNC_INFO<<" Widgets:"<<count();
+    //qDebug()<<Q_FUNC_INFO<<" Widgets:"<<count();
 }
 
 void BMS_SystemConfigWidget::setActivePage(int id)

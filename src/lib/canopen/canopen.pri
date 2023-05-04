@@ -46,7 +46,6 @@ SOURCES += \
     $$PWD/busdriver/qcanbusframe.cpp \
     $$PWD/busdriver/canbusdriver.cpp \
     $$PWD/busdriver/canbustcpudt.cpp \
-    $$PWD/busdriver/canbusvci.cpp \
     $$PWD/bootloader/bootloader.cpp \
     $$PWD/bootloader/model/ufwmodel.cpp \
     $$PWD/bootloader/parser/hexparser.cpp \
@@ -104,7 +103,6 @@ HEADERS += \
     $$PWD/busdriver/qcanbusframe.h \
     $$PWD/busdriver/canbusdriver.h \
     $$PWD/busdriver/canbustcpudt.h \
-    $$PWD/busdriver/canbusvci.h \
     $$PWD/bootloader/bootloader.h \
     $$PWD/bootloader/model/ufwmodel.h \
     $$PWD/bootloader/parser/hexparser.h \
@@ -123,6 +121,10 @@ HEADERS += \
 unix:{
     SOURCES += $$PWD/busdriver/canbussocketcan.cpp
     HEADERS += $$PWD/busdriver/canbussocketcan.h
+}
+win32:{
+    SOURCES += $$PWD/busdriver/canbusvci.cpp
+    HEADERS += $$PWD/busdriver/canbusvci.h
 }
 
 INCLUDEPATH += $$PWD/../od/

@@ -4,6 +4,7 @@
 #include <QScrollArea>
 #include <QEventLoop>
 #include <QDebug>
+#include <QVBoxLayout>
 
 BMS_BusNodesManagerView::BMS_BusNodesManagerView(QWidget *parent)
     :BMS_BusNodesManagerView(nullptr,parent)
@@ -141,9 +142,9 @@ Node *BMS_BusNodesManagerView::currentNode() const
 
 void BMS_BusNodesManagerView::createWidgets()
 {
-    QLayout *layout = new QVBoxLayout();
-    layout->setSpacing(0);
-    layout->setContentsMargins(2, 2, 2, 2);
+    QVBoxLayout *layout = new QVBoxLayout();
+    layout->setSpacing(10);
+    //layout->setContentsMargins(2, 2, 2, 2);
 
 
     _busNodeTreeView = new BusNodesTreeView();
@@ -165,58 +166,62 @@ void BMS_BusNodesManagerView::createWidgets()
 
     //layout->addWidget(_bcuManagerWidget);
 
-    QVBoxLayout *vlayout = new QVBoxLayout();
-    vlayout->setContentsMargins(0,0,0,0);
-    vlayout->setSpacing(2);
-    QToolBar *toolbar = new QToolBar("BCU Control");
+//    QVBoxLayout *vlayout = new QVBoxLayout();
+//    vlayout->setContentsMargins(0,0,0,0);
+//    vlayout->setSpacing(2);
+//    QToolBar *toolbar = new QToolBar("BCU Control");
 
-    toolbar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-    _groupControl = new QActionGroup(this);
-    _groupControl->setExclusive(true);
-    _actionSingle = toolbar->addAction(tr("Single"));
-    _actionSingle->setCheckable(false);
-    _actionSingle->setIcon(QIcon(":/icons/img/icons8-update.png"));
-    _actionSingle->setStatusTip(tr("Acquire BCU data onece"));
-    connect(_actionSingle, &QAction::triggered, this, &BMS_BusNodesManagerView::single);
+//    toolbar->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+//    _groupControl = new QActionGroup(this);
+//    _groupControl->setExclusive(true);
+//    _actionSingle = toolbar->addAction(tr("Single"));
+//    _actionSingle->setCheckable(false);
+//    _actionSingle->setIcon(QIcon(":/icons/img/icons8-update.png"));
+//    _actionSingle->setStatusTip(tr("Acquire BCU data onece"));
+//    connect(_actionSingle, &QAction::triggered, this, &BMS_BusNodesManagerView::single);
 
-    _actionStart = _groupControl->addAction(tr("Start"));
-    _actionStart->setCheckable(false);
-    _actionStart->setIcon(QIcon(":/icons/img/icons8-play.png"));
-    _actionStart->setStatusTip(tr("Start Acquire BCU data"));
-    connect(_actionStart, &QAction::triggered, this, &BMS_BusNodesManagerView::start);
+//    _actionStart = _groupControl->addAction(tr("Start"));
+//    _actionStart->setCheckable(false);
+//    _actionStart->setIcon(QIcon(":/icons/img/icons8-play.png"));
+//    _actionStart->setStatusTip(tr("Start Acquire BCU data"));
+//    connect(_actionStart, &QAction::triggered, this, &BMS_BusNodesManagerView::start);
 
-    _actionStop = _groupControl->addAction(tr("Stop"));
-    _actionStop->setCheckable(false);
-    _actionStop->setIcon(QIcon(":/icons/img/icons8-stop.png"));
-    _actionStop->setStatusTip(tr("Stop Acquire BCU data"));
-    connect(_actionStop, &QAction::triggered, this, &BMS_BusNodesManagerView::stop);
+//    _actionStop = _groupControl->addAction(tr("Stop"));
+//    _actionStop->setCheckable(false);
+//    _actionStop->setIcon(QIcon(":/icons/img/icons8-stop.png"));
+//    _actionStop->setStatusTip(tr("Stop Acquire BCU data"));
+//    connect(_actionStop, &QAction::triggered, this, &BMS_BusNodesManagerView::stop);
 
-    _actionScan = _groupControl->addAction(tr("Scan"));
-    _actionScan->setCheckable(false);
-    _actionScan->setIcon(QIcon(":/icons/img/icons8-stop.png"));
-    _actionScan->setStatusTip(tr("Scan BCUs on the bus"));
-    connect(_actionScan, &QAction::triggered, this, &BMS_BusNodesManagerView::scanBus);
+//    _actionScan = _groupControl->addAction(tr("Scan"));
+//    _actionScan->setCheckable(false);
+//    _actionScan->setIcon(QIcon(":/icons/img/icons8-stop.png"));
+//    _actionScan->setStatusTip(tr("Scan BCUs on the bus"));
+//    connect(_actionScan, &QAction::triggered, this, &BMS_BusNodesManagerView::scanBus);
 
-    toolbar->addActions(_groupControl->actions());
+//    toolbar->addActions(_groupControl->actions());
 
-    vlayout->addWidget(toolbar);
+//    vlayout->addWidget(toolbar);
 
-    BMS_NodeManagerWidget *nm;
-    _bcuGroup = new QGroupBox();
-    _bcuGroup->setLayout(vlayout);
-    QScrollArea *scroll = new QScrollArea();
-    scroll->setWidgetResizable(true);
-    scroll->setWidget(_bcuGroup);
+//    BMS_NodeManagerWidget *nm;
+//    _bcuGroup = new QGroupBox();
+//    _bcuGroup->setLayout(vlayout);
     //layout->addWidget(scroll);
 
     _sysManager = new BMS_SystemManagerWidget();
     connect(_sysManager,&BMS_SystemManagerWidget::validFunction,this,&BMS_BusNodesManagerView::functionSelected);
-    layout->addWidget(_sysManager);
 
 
-    layout->addWidget(_busNodeTreeView);
-    layout->addWidget(_busManagerWidget);
+
+    QScrollArea *scroll = new QScrollArea();
+
+    scroll->setWidgetResizable(true);
+    scroll->setWidget(_busNodeTreeView);
+
+
     layout->addWidget(_nodeManagerWidget);
+    layout->addWidget(_busManagerWidget);
+    layout->addWidget(scroll);
+    layout->addWidget(_sysManager);
 
     setLayout(layout);
 

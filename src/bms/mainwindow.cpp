@@ -48,8 +48,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::functionSelected,this,&MainWindow::setFunction);
 
     QString path = QCoreApplication::applicationDirPath();
+#ifdef Q_OS_WIN
     path  += "//config.ini";
-
+#else
+    path  += "/config.ini";
+#endif
+    //qDebug()<<"INI PATH:"<<path;
     QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
     progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
@@ -61,10 +65,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     int sz = progSetting->beginReadArray("INTERFACE");
+    //qDebug()<<"Interface:"<<sz;
     if(sz > 0){
         for(int i=0;i<sz;i++){
             progSetting->setArrayIndex(i);
             QStringList sl = progSetting->value("BUS").toString().split(",");
+            //qDebug()<<Q_FUNC_INFO<<sl;
             b = nullptr;
             if(sl.size() > 2){
 #ifdef Q_OS_WIN
@@ -76,8 +82,8 @@ MainWindow::MainWindow(QWidget *parent) :
                 }
 #endif
 #ifdef Q_OS_UNIX
-                if(sl[0] == "SOCKETCAN"){
-                    b = new CanOpenBus(new CanBusSocketCan(sl[1]));
+                if(sl[0].compare("SOCKETCAN") == 0){
+                    b = new CanOpenBus(new CanBusSocketCAN(sl[1]));
                     b->setBusName(sl[0]);
                 }
 #endif
@@ -128,7 +134,13 @@ MainWindow::MainWindow(QWidget *parent) :
 //    }
 
     //resize(QApplication::screens().at(0)->size()*3/4);
+#ifdef Q_OS_WIN
     resize(1280,800);
+#endif
+#ifdef Q_OS_UNIX
+    setWindowState(Qt::WindowFullScreen);
+    showFullScreen();
+#endif
 
     readSettings();
 
