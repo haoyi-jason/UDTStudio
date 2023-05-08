@@ -5,6 +5,8 @@
 #include <QMutex>
 #include <QThread>
 
+class QProcess;
+
 class PeripheralInterface
 {
 public:
@@ -25,6 +27,8 @@ public:
     void stopSample();
     int readDevice(unsigned char *buffer, int size);
     bool isStarted();
+    int readChannel(int channel);
+    void trigger();
 
 protected:
     void run() override;
@@ -36,6 +40,7 @@ private:
     QByteArray *buffer;
     QMutex *_mutex;
     bool _started;
+    QProcess *_iop;
 };
 
 

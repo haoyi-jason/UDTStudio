@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <QProcess>
 
 PeripheralInterface::PeripheralInterface()
 {
@@ -22,6 +23,7 @@ IIODevice::IIODevice(QObject *parent, QString devName, QByteArray *pBuffer, QMut
 {
     _abort = false;
     _started =false;
+    _iop = new QProcess();
 }
 
 int IIODevice::openDevice()
@@ -29,12 +31,34 @@ int IIODevice::openDevice()
     QString cmdStr = "echo 1 > /sys/bus/iio/devices/"+fileName+"/scan_elements/in_voltage0_en";
     QByteArray cmdBuffer = cmdStr.toLocal8Bit();
     char *cmd = cmdBuffer.data();
-    system(cmd);
 
-    cmdStr = "echo 1 > /sys/bus/iio/devices/"+fileName+"/buffer/enable";
+    // enable iio channel, only channel-0 is enable due to scan_element error if trying to enable more than 1 channel
+    for(int i=0;i<1;i++){
+        cmdStr = QString("echo 1 >/sys/bus/iio/devices/%1/scan_elements/in_voltage%2_en").arg(fileName).arg(i);
+        cmdBuffer = cmdStr.toLocal8Bit();
+        cmd = cmdBuffer.data();
+        system(cmd);
+    }
+    // setup trigger
+    cmdStr = "echo 2 > /sys/bus/iio/devices/iio_sysfs_trigger/add_trigger";
     cmdBuffer = cmdStr.toLocal8Bit();
     cmd = cmdBuffer.data();
     system(cmd);
+
+    cmdStr = QString("echo sysfstrig2 >/sys/bus/iio/devices/%1/trigger/current_trigger").arg(fileName);
+    cmdBuffer = cmdStr.toLocal8Bit();
+    cmd = cmdBuffer.data();
+    system(cmd);
+
+    // set buffer length
+    cmdStr = "echo 8 > /sys/bus/iio/devices/"+fileName+"/buffer/length";
+    cmdBuffer = cmdStr.toLocal8Bit();
+    cmd = cmdBuffer.data();
+    system(cmd);
+
+    // enable buffer
+    cmdStr = "echo 1 > /sys/bus/iio/devices/"+fileName+"/buffer/enable";
+    system(cmdStr.toLocal8Bit().data());
 
     QString path = "/dev/"+fileName;
     QFile *file = new QFile();
@@ -55,15 +79,20 @@ int IIODevice::closeDevice()
 {
     QString cmdStr;
     QByteArray cmdBuffer;
-    cmdStr = "echo 0 > /sys/bus/iio/devices/" + fileName + "/buffer/enable";
-    cmdBuffer = cmdStr.toLocal8Bit();
-    char *cmd = cmdBuffer.data();
-    system(cmd);
-
-    cmdStr = "echo 0 > /sys/bus/iio/devices/"+fileName + "/scan_elements/in_voltage0_en";
+    char *cmd;
+    // disable buffer
+    cmdStr = "echo 0 > /sys/bus/iio/devices/"+fileName+"/buffer/enable";
     cmdBuffer = cmdStr.toLocal8Bit();
     cmd = cmdBuffer.data();
     system(cmd);
+
+    // disable iio channel
+    for(int i=0;i<1;i++){
+        cmdStr = QString("echo 0 >/sys/bus/iio/devices/%1/in_voltage%2_en").arg(fileName).arg(i);
+        cmdBuffer = cmdStr.toLocal8Bit();
+        cmd = cmdBuffer.data();
+        system(cmd);
+    }
 
     if(fd){
 
@@ -73,10 +102,23 @@ int IIODevice::closeDevice()
     return 0;
 }
 
+void IIODevice::trigger()
+{
+    QString cmdStr;
+    QByteArray cmdBuffer;
+    char *cmd;
+    cmdStr = "echo 1 > /sys/bus/iio/devices/trigger0/trigger_now";
+    cmdBuffer = cmdStr.toLocal8Bit();
+    cmd = cmdBuffer.data();
+    system(cmd);
+}
+
 int IIODevice::readDevice(unsigned char *buffer, int size)
 {
     int length = 0;
-    length = read(fd,buffer,size);
+    //the size must meet the channel*data length
+    // current 2 for single channel ad
+    length = read(fd,buffer,2);
     return length;
 }
 
@@ -132,4 +174,20 @@ void IIODevice::run()
         }
         usleep(600);
     }
+}
+
+int IIODevice::readChannel(int channel)
+{
+    QString cmdStr;
+    QByteArray cmdBuffer;
+    cmdStr = QString("cat /sys/bus/iio/devices/%1/in_voltage%2_raw").arg(fileName).arg(channel);
+
+    //QProcess process;
+    //process.start(cmdStr);
+    //process.waitForFinished();
+    _iop->start(cmdStr);
+    _iop->waitForFinished();
+    QString ret = _iop->readAll();
+
+    return ret.toInt();
 }
