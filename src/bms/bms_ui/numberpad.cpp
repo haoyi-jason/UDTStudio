@@ -81,7 +81,7 @@ NumberPad::NumberPad(QWidget *parent)
     setLayout(ml);
     setWindowTitle("Input");
 
-    move(x() + (width() - parent->width())/2,y() + (height() - parent->height())/2);
+    //move(x() + (width() - parent->width())/2,y() + (height() - parent->height())/2);
 }
 
 void NumberPad::padClicked()

@@ -177,7 +177,7 @@ void NodeScreensWidget::createWidgets()
 
     _logoLabel->setPixmap(p.scaled(800,100));
     _logoLabel->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-    layout->addWidget(_logoLabel);
+    //layout->addWidget(_logoLabel);
 
     _tabWidget = new QTabWidget();
     layout->addWidget(_tabWidget);
