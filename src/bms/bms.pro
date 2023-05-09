@@ -38,7 +38,6 @@ SOURCES += \
         bms_ui/indexfocuseditor.cpp \
         system/gsettings.cpp \
         system/login.cpp \
-        system/peripheralinterface.cpp \
         widgets/bms_busmanagerwidget.cpp \
         widgets/bms_busnodemanagerview.cpp \
         widgets/bms_busnodetreeview.cpp \
@@ -74,7 +73,6 @@ HEADERS += \
         bms_ui/indexfocuseditor.h \
         system/gsettings.h \
         system/login.h \
-        system/peripheralinterface.h \
         widgets/bms_busmanagerwidget.h \
         widgets/bms_busnodemanagerview.h \
         widgets/bms_busnodetreeview.h \
@@ -105,6 +103,10 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
+unix:{
+    SOURCES += system/peripheralinterface.cpp
+    HEADERS += system/peripheralinterface.h
+}
 #LIBS += -L"$$PWD/../../bin"
 #LIBS += -lod -lcanopen -ludtgui
 
