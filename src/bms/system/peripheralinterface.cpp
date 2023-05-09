@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <QProcess>
+#include <QString>
 
 PeripheralInterface::PeripheralInterface()
 {
@@ -28,98 +29,55 @@ IIODevice::IIODevice(QObject *parent, QString devName, QByteArray *pBuffer, QMut
 
 int IIODevice::openDevice()
 {
-    QString cmdStr = "echo 1 > /sys/bus/iio/devices/"+fileName+"/scan_elements/in_voltage0_en";
-    QByteArray cmdBuffer = cmdStr.toLocal8Bit();
-    char *cmd = cmdBuffer.data();
+    QString cmdStr;
+    QByteArray cmdBuffer;
 
-    // enable iio channel, only channel-0 is enable due to scan_element error if trying to enable more than 1 channel
-    for(int i=0;i<1;i++){
-        cmdStr = QString("echo 1 >/sys/bus/iio/devices/%1/scan_elements/in_voltage%2_en").arg(fileName).arg(i);
-        cmdBuffer = cmdStr.toLocal8Bit();
-        cmd = cmdBuffer.data();
-        system(cmd);
+    // open first 2 channel only
+    for(int i=0;i<2;i++){
+        cmdStr = QString("/sys/bus/iio/devices/%1/in_voltage%2_raw").arg(fileName).arg(i);
+        QFile *file = new QFile();
+        file->setFileName(cmdStr);
+        if(file->exists()){
+            int _fd = ::open(cmdStr.toUtf8().data(), O_RDONLY | O_ASYNC);
+            if(_fd > 0){
+                _fds.append(_fd);
+            }
+        }
     }
-    // setup trigger
-    cmdStr = "echo 2 > /sys/bus/iio/devices/iio_sysfs_trigger/add_trigger";
-    cmdBuffer = cmdStr.toLocal8Bit();
-    cmd = cmdBuffer.data();
-    system(cmd);
-
-    cmdStr = QString("echo sysfstrig2 >/sys/bus/iio/devices/%1/trigger/current_trigger").arg(fileName);
-    cmdBuffer = cmdStr.toLocal8Bit();
-    cmd = cmdBuffer.data();
-    system(cmd);
-
-    // set buffer length
-    cmdStr = "echo 8 > /sys/bus/iio/devices/"+fileName+"/buffer/length";
-    cmdBuffer = cmdStr.toLocal8Bit();
-    cmd = cmdBuffer.data();
-    system(cmd);
-
-    // enable buffer
-    cmdStr = "echo 1 > /sys/bus/iio/devices/"+fileName+"/buffer/enable";
-    system(cmdStr.toLocal8Bit().data());
-
-    QString path = "/dev/"+fileName;
-    QFile *file = new QFile();
-    file->setFileName(path);
-    if(!file->exists()){
-        return -1;
-    }
-
-    fd = open(path.toUtf8().data(), O_RDONLY);
-    if(fd == -1){
-        return -2;
-    }
-
     return 0;
 }
 
 int IIODevice::closeDevice()
 {
-    QString cmdStr;
-    QByteArray cmdBuffer;
-    char *cmd;
-    // disable buffer
-    cmdStr = "echo 0 > /sys/bus/iio/devices/"+fileName+"/buffer/enable";
-    cmdBuffer = cmdStr.toLocal8Bit();
-    cmd = cmdBuffer.data();
-    system(cmd);
-
-    // disable iio channel
-    for(int i=0;i<1;i++){
-        cmdStr = QString("echo 0 >/sys/bus/iio/devices/%1/in_voltage%2_en").arg(fileName).arg(i);
-        cmdBuffer = cmdStr.toLocal8Bit();
-        cmd = cmdBuffer.data();
-        system(cmd);
-    }
-
-    if(fd){
-
-        ::close(fd);
-        fd = -1;
+    foreach(int _fd , _fds){
+        ::close(_fd);
+        _fds.removeOne(_fd);
     }
     return 0;
 }
 
-void IIODevice::trigger()
+int IIODevice::readDevice()
 {
     QString cmdStr;
-    QByteArray cmdBuffer;
-    char *cmd;
-    cmdStr = "echo 1 > /sys/bus/iio/devices/trigger0/trigger_now";
-    cmdBuffer = cmdStr.toLocal8Bit();
-    cmd = cmdBuffer.data();
-    system(cmd);
-}
+    char buf[8];
 
-int IIODevice::readDevice(unsigned char *buffer, int size)
-{
-    int length = 0;
-    //the size must meet the channel*data length
-    // current 2 for single channel ad
-    length = read(fd,buffer,2);
-    return length;
+    int sz = 0;
+    for(int i=0;i<2;i++){
+        cmdStr = QString("/sys/bus/iio/devices/%1/in_voltage%2_raw").arg(fileName).arg(i);
+        QFile *file = new QFile();
+        file->setFileName(cmdStr);
+        if(file->exists()){
+            int _fd = ::open(cmdStr.toUtf8().data(), O_RDONLY | O_ASYNC);
+            if(_fd > 0){
+                memset(buf,0,8);
+                sz = ::read(_fd,buf,8);
+                if(sz > 0)
+                    _results[i] = QString(buf).toInt();
+                ::close(_fd);
+            }
+        }
+    }
+    return 0;
 }
 
 IIODevice::~IIODevice()
@@ -136,7 +94,7 @@ void IIODevice::startSample()
     if(!buffer->isEmpty())
         buffer->remove(0,buffer->size());
     _mutex->unlock();
-    openDevice();
+    //openDevice();
     start();
 }
 
@@ -150,7 +108,7 @@ void IIODevice::stopSample()
     _mutex->lock();
     _abort = true;
     _started = false;
-    closeDevice();
+    //closeDevice();
     _mutex->unlock();
 
     wait();
@@ -164,30 +122,19 @@ void IIODevice::run()
     while(true){
         bytes = 4096;
         while(bytes == 4096){
-            bytes = readDevice(devBuf,TEMP_BUFFER_SIZE);
-            _mutex->lock();
-            buffer->append((const char*)devBuf,bytes);
-            _mutex->unlock();
+            bytes = readDevice();
         }
         if(_abort){
             return;
         }
-        usleep(600);
+        msleep(100);
     }
 }
 
 int IIODevice::readChannel(int channel)
 {
-    QString cmdStr;
-    QByteArray cmdBuffer;
-    cmdStr = QString("cat /sys/bus/iio/devices/%1/in_voltage%2_raw").arg(fileName).arg(channel);
-
-    //QProcess process;
-    //process.start(cmdStr);
-    //process.waitForFinished();
-    _iop->start(cmdStr);
-    _iop->waitForFinished();
-    QString ret = _iop->readAll();
-
-    return ret.toInt();
+    if(channel < 2){
+        return _results[channel];
+    }
+    return -1;
 }

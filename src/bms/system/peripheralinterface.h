@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QMutex>
 #include <QThread>
+#include <QList>
 
 class QProcess;
 
@@ -25,10 +26,11 @@ public:
     int closeDevice();
     void startSample();
     void stopSample();
-    int readDevice(unsigned char *buffer, int size);
+    int readDevice();
     bool isStarted();
     int readChannel(int channel);
-    void trigger();
+
+
 
 protected:
     void run() override;
@@ -41,6 +43,8 @@ private:
     QMutex *_mutex;
     bool _started;
     QProcess *_iop;
+    QList<int> _fds;
+    int _results[2];
 };
 
 
