@@ -12,6 +12,8 @@
 #include "screen/bms_eventviewer.h"
 #include "system/bms_eventmodel.h"
 
+class QLedIndicator;
+
 class BMS_SystemConfigWidget : public QStackedWidget
 {
     Q_OBJECT
@@ -32,7 +34,7 @@ private:
 
 signals:
     void resetSystem();
-
+    void setDigitalOutput(int id,bool state);
 public slots:
     void saveSerialPortSetting();
     void saveCanSetting();
@@ -43,6 +45,10 @@ public slots:
     void recordSettingChanged();
     void balanceSettingChanged();
     void modbusSettingChanged();
+    void updateDigitalInputs(int id, bool state);
+    void updateDigitalOutputs(int id, bool state);
+    void updateNTC(int id, QString msg);
+    void handleDigitalOutput();
 
 private:
     QComboBox *_cboPort;
@@ -87,6 +93,10 @@ private:
 
     // events
     BMS_EventModel *_evtModel;
+
+    QList<QLabel*> _ntcLabels;
+    QList<QLedIndicator*> _digitalOuts;
+    QList<QLedIndicator*> _digitalIns;
 
 };
 

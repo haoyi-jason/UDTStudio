@@ -5,6 +5,7 @@
 #include <QMutex>
 #include "bms_ui/focusededitor.h"
 #include <QTimer>
+#include <QDebug>
 
 class QTimer;
 
@@ -33,12 +34,12 @@ public:
         return Login::_logIn ;
     }
     inline static void resetTimer(){
+        qDebug()<<Q_FUNC_INFO;
         Login::instance()->_timer->stop();
-        Login::instance()->_timer->singleShot(600*1000,Login::instance(),&Login::timeout);
+        Login::instance()->_timer->start(600*1000);
+//        Login::instance()->_timer->singleShot(600*1000,Login::instance(),&Login::timeout);
 
     }
-
-
 
 signals:
     void expired();

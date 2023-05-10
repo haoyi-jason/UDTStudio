@@ -413,6 +413,7 @@ void MainWindow::setFunction(int func)
 //        _tabWidget->removeTab(0);
 //    }
 //    _tabWidget->addTab(_configScreens,"CONFIG");
+    Login::instance()->resetTimer();
     if(Login::instance()->isValid()){
         _stackWidget->setCurrentIndex(1);
         _configScreens->setActivePage(func);
@@ -443,5 +444,12 @@ void MainWindow::setActiveNode(Node *node)
 
 void MainWindow::exitSuperUser()
 {
-    //setActiveNode(nullptr);
+    setActiveNode(nullptr);
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
+{
+    qDebug()<<Q_FUNC_INFO;
+    ev->accept();
+    Login::instance()->resetTimer();
 }

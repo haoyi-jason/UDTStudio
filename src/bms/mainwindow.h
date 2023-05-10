@@ -64,7 +64,7 @@ protected:
 //    QWidget *_configScreens;
     BMS_SystemConfigWidget *_configScreens;
 
-
+    void mouseReleaseEvent(QMouseEvent *ev);
 
 public:
     bool event(QEvent *event) override;

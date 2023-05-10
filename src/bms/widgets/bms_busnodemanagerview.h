@@ -15,6 +15,7 @@
 #include <QActionGroup>
 #include <QThread>>
 #include "system/bms_logger.h"
+#include "system/peripheralinterface.h"
 
 class BMS_Poller;
 

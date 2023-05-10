@@ -9,6 +9,9 @@
 #include <QTableView>
 #include <QHeaderView>
 #include <QScrollArea>
+#include <QFormLayout>
+
+#include "../../hymcw/HYMCW/source/widgets/qledindicator.h"
 
 BMS_SystemConfigWidget::BMS_SystemConfigWidget(QWidget *parent) : QStackedWidget(parent)
 {
@@ -75,9 +78,10 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     QObject::connect(_cboBaudrate,qOverload<int>(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::serialPortConfigChanged);
     QPushButton *btn;
     _cboPort->addItem("COM1","/dev/ttymxc0");
-    _cboPort->addItem("COM2");
-    _cboPort->addItem("COM3");
-    _cboPort->addItem("COM4");
+    _cboPort->addItem("COM2","/dev/ttymxc1");
+    _cboPort->addItem("COM3","/dev/ttymxc3");
+    _cboPort->addItem("COM4","/dev/ttymxc4");
+    _cboPort->setMinimumWidth(200);
     hlayout->addWidget(new QLabel("Port #"));
     hlayout->addWidget(_cboPort);
 
@@ -87,13 +91,17 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     _cboBaudrate->addItem("38400");
     _cboBaudrate->addItem("57600");
     _cboBaudrate->addItem("115200");
-    hlayout->addWidget(new QLabel("Baudrate"));
+    _cboBaudrate->setMinimumWidth(200);
+    hlayout->addWidget(new QLabel("Baudrate "));
     hlayout->addWidget(_cboBaudrate);
     btn = new QPushButton(tr("Set"));
+    btn->setMinimumWidth(160);
     connect(btn,&QPushButton::clicked,this,&BMS_SystemConfigWidget::saveSerialPortSetting);
     hlayout->addWidget(btn);
     hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Fixed));
-    layout->addItem(hlayout);
+    QGroupBox *gb = new QGroupBox("Serial Ports");
+    gb->setLayout(hlayout);
+    layout->addWidget(gb);
 
     // ethernet config
     QGridLayout *glayout = new QGridLayout();
@@ -102,36 +110,29 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
 //    hlayout->setContentsMargins(0,0,0,0);
     _chkEthernet = new QCheckBox(tr("Static IP"));
     _chkEthernet->setChecked(false);
-    _grpEthernet = new QGroupBox("LAN Config");
+    _grpEthernet = new QGroupBox("IP Config");
     connect(_chkEthernet,&QCheckBox::clicked,_grpEthernet,&QGroupBox::setEnabled);
 //    hlayout->addWidget(_chkEthernet);
 //    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Minimum));
 //    layout->addItem(hlayout);
-    layout->addWidget(_chkEthernet);
+    //layout->addWidget(_chkEthernet);
     FocusedEditor *editor;
     QVBoxLayout *vlayout = new QVBoxLayout();
     vlayout->setContentsMargins(0,0,0,0);
     vlayout->setSpacing(5);
 
-//    hlayout = new QHBoxLayout();
-//    hlayout->setContentsMargins(0,0,0,0);
     glayout->addWidget(new QLabel("IP:"),1,0);
     for(int i=0;i<4;i++){
         editor = new FocusedEditor();
         _ip.append(editor);
         glayout->addWidget(editor,1,i+1);
     }
-//    vlayout->addItem(hlayout);
-
-//    hlayout = new QHBoxLayout();
-//    hlayout->setContentsMargins(0,0,0,0);
     glayout->addWidget(new QLabel("Gateway:"),2,0);
     for(int i=0;i<4;i++){
         editor = new FocusedEditor();
         _gw.append(editor);
         glayout->addWidget(editor,2,i+1);
     }
-//    vlayout->addItem(hlayout);
 
     glayout->addWidget(new QLabel("Net Mask:"),3,0);
     for(int i=0;i<4;i++){
@@ -139,16 +140,29 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
         _mask.append(editor);
         glayout->addWidget(editor,3,i+1);
     }
-//    vlayout->addItem(hlayout);
     hlayout = new QHBoxLayout();
     hlayout->addItem(glayout);
     hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed));
+
+
     _grpEthernet->setLayout(hlayout);
 
-    layout->addWidget(_grpEthernet);
+    gb = new QGroupBox(tr("Lan Settings"));
+    QVBoxLayout *vl = new QVBoxLayout();
+    vl->addWidget(_chkEthernet);
+    vl->addWidget(_grpEthernet);
+    gb->setLayout(vl);
+
+    layout->addWidget(gb);
+
+
 
     _sdLabel = new QLabel("SD Card Status:");
-    layout->addWidget(_sdLabel);
+    gb = new QGroupBox("SD Card");
+    vl = new QVBoxLayout();
+    vl->addWidget(_sdLabel);
+    gb->setLayout(vl);
+    layout->addWidget(gb);
 
     _chkModbusTcp = new QCheckBox("MODBUS TCP");
     _chkModbusRtu = new QCheckBox("MODBUS RTU");
@@ -160,6 +174,7 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     _tcpPort = new FocusedEditor();
     connect(_chkModbusTcp,&QCheckBox::toggled,_tcpPort,&FocusedEditor::setEnabled);
     connect(_chkModbusRtu,&QCheckBox::toggled,_rtuSlaveId,&FocusedEditor::setEnabled);
+    connect(_chkModbusRtu,&QCheckBox::toggled,_cboRtuPort,&QComboBox::setEnabled);
 
     connect(_chkModbusTcp,&QCheckBox::released,this,&BMS_SystemConfigWidget::modbusSettingChanged);
     connect(_chkModbusRtu,&QCheckBox::released,this,&BMS_SystemConfigWidget::modbusSettingChanged);
@@ -167,18 +182,63 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     connect(_rtuSlaveId,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::modbusSettingChanged);
     connect(_tcpPort,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::modbusSettingChanged);
 
-    hlayout = new QHBoxLayout();
-    hlayout->setContentsMargins(5,5,5,5);
-    hlayout->addWidget(new QLabel("MODBUS Function:"));
-    hlayout->addWidget(_chkModbusTcp);
-    hlayout->addWidget(new QLabel("Port#"));
-    hlayout->addWidget(_tcpPort);
-    hlayout->addWidget(_chkModbusRtu);
-    hlayout->addWidget(_cboRtuPort);
-    hlayout->addWidget(new QLabel("ID#"));
-    hlayout->addWidget(_rtuSlaveId);
-    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Minimum));
-    layout->addItem(hlayout);
+    QGridLayout *fl = new QGridLayout();
+    //gl->setContentsMargins(5,5,5,5);
+    //gl->addWidget(new QLabel("MODBUS Function:"));
+    fl->addWidget(_chkModbusTcp,0,0);
+    fl->addWidget(new QLabel("Port#"),0,1);
+    fl->addWidget(_tcpPort,0,2);
+    fl->addWidget(_chkModbusRtu,1,0);
+    fl->addWidget(new QLabel("Port#"),1,1);
+    fl->addWidget(_cboRtuPort,1,2);
+    fl->addWidget(new QLabel("ID#"),1,3);
+    fl->addWidget(_rtuSlaveId,1,4);
+//    fl->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Minimum));
+
+    gb = new QGroupBox("Modbus Config");
+    gb->setLayout(fl);
+
+    layout->addWidget(gb);
+
+    gb = new QGroupBox("NTC Inputs");
+    fl = new QGridLayout();
+    fl->addWidget(new QLabel("CH#1"),0,0);
+    fl->addWidget(new QLabel("CH#2"),0,2);
+    l = new QLabel("0.0");
+    fl->addWidget(l,0,1);
+    _ntcLabels.append(l);
+    l = new QLabel("0.0");
+    fl->addWidget(l,0,3);
+    _ntcLabels.append(l);
+    gb->setLayout(fl);
+    layout->addWidget(gb);
+
+    gb = new QGroupBox("Digital I/Os");
+    fl = new QGridLayout();
+    fl->addWidget(new QLabel("In #1"),0,0);
+    QLedIndicator *li = new QLedIndicator();
+    _digitalIns.append(li);
+    fl->addWidget(li,0,1);
+    fl->addWidget(new QLabel("In #2"),0,2);
+    li = new QLedIndicator();
+    _digitalIns.append(li);
+    fl->addWidget(li,0,3);
+
+    fl->addWidget(new QLabel("Out #1"),1,0);
+    li = new QLedIndicator();
+    li->setProperty("ID",0);
+    connect(li,&QLedIndicator::clicked,this,&BMS_SystemConfigWidget::handleDigitalOutput);
+    _digitalOuts.append(li);
+    fl->addWidget(li,1,1);
+
+    fl->addWidget(new QLabel("Out #2"),1,2);
+    li = new QLedIndicator();
+    li->setProperty("ID",1);
+    connect(li,&QLedIndicator::clicked,this,&BMS_SystemConfigWidget::handleDigitalOutput);
+    _digitalOuts.append(li);
+    fl->addWidget(li,1,3);
+    gb->setLayout(fl);
+    layout->addWidget(gb);
 
     layout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::Expanding));
     widget->setLayout(layout);
@@ -198,7 +258,7 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     l->setFont(f);
     layout->addWidget(l);
 
-    _grpRecords = new QGroupBox(tr("Records"));
+    _grpRecords = new QGroupBox(tr("系統記錄"));
     _storedDays = new FocusedEditor();
     _eventRecordInterval = new FocusedEditor();
     _eventRecordCount = new FocusedEditor();
@@ -212,7 +272,8 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     hlayout->addWidget(_storedDays);
     hlayout->addWidget(new QLabel(tr("記錄間隔(秒)")));
     hlayout->addWidget(_eventRecordInterval);
-    layout->addItem(hlayout);
+    _grpRecords->setLayout(hlayout);
+    layout->addWidget(_grpRecords);
 
     _grpBalancing = new QGroupBox("均衡設定");
     _balancingVoltage = new FocusedEditor();
@@ -229,22 +290,24 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     connect(_balancingVoltageMax,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
     connect(_balancingVoltageFaultDiff,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
 
-    hlayout = new QHBoxLayout();
-    hlayout->setContentsMargins(5,5,5,5);
-    hlayout->setSpacing(20);
-    hlayout->addWidget(new QLabel(tr("最低均衡電壓(V)")));
-    hlayout->addWidget(_balancingVoltageMin);
-    hlayout->addWidget(new QLabel(tr("最高均衡電壓(V)")));
-    hlayout->addWidget(_balancingVoltageMax);
-    hlayout->addWidget(new QLabel(tr("停止均衡壓差(V)")));
-    hlayout->addWidget(_balancingVoltageFaultDiff);
+    QGridLayout *gl = new QGridLayout();
+    //gl->setContentsMargins(5,5,5,5);
+    gl->setSpacing(20);
+    gl->addWidget(new QLabel(tr("最低均衡電壓(V)")),0,0);
+    gl->addWidget(_balancingVoltageMin,0,1);
+    gl->addWidget(new QLabel(tr("最高均衡電壓(V)")),1,0);
+    gl->addWidget(_balancingVoltageMax,1,1);
+    gl->addWidget(new QLabel(tr("停止均衡壓差(V)")),2,0);
+    gl->addWidget(_balancingVoltageFaultDiff,2,1);
 
 //    hlayout->addWidget(new QLabel(tr("均衡時間(秒)")));
 //    hlayout->addWidget(_balancingTime);
-    hlayout->addWidget(new QLabel(tr("允許誤差(V)")));
-    hlayout->addWidget(_balancingHystersis);
+    gl->addWidget(new QLabel(tr("允許誤差(V)")),3,0);
+    gl->addWidget(_balancingHystersis,3,1);
 
-    layout->addItem(hlayout);
+    _grpBalancing->setLayout(gl);
+
+    layout->addWidget(_grpBalancing);
 
 
     layout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::Expanding));
@@ -310,6 +373,7 @@ QWidget *BMS_SystemConfigWidget::createAlarmWidget()
     glayout->setSpacing(20);
     _grpAlarm = new QGroupBox("警報設定");
     _cboAlarmType = new QComboBox();
+    _cboAlarmType->setMinimumWidth(250);
     connect(_cboAlarmType,qOverload<int>(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::changeAlarmItem);
     glayout->addWidget(_cboAlarmType,0,0);
     glayout->addWidget(new QLabel("作動"),0,1);
@@ -751,4 +815,35 @@ void BMS_SystemConfigWidget::saveSettings(QString section, QString key, QString 
         progSetting->endArray();
 
     }
+}
+
+
+void BMS_SystemConfigWidget::updateDigitalInputs(int id,bool state)
+{
+    if(id < _digitalIns.size()){
+        _digitalIns[id]->setChecked(state);
+    }
+}
+
+void BMS_SystemConfigWidget::updateDigitalOutputs(int id, bool state)
+{
+    if(id < _digitalOuts.size()){
+        _digitalOuts[id]->setChecked(state);
+    }
+}
+
+void BMS_SystemConfigWidget::updateNTC(int id, QString msg)
+{
+    if(id < _ntcLabels.size()){
+        _ntcLabels[id]->setText(msg);
+    }
+}
+
+void BMS_SystemConfigWidget::handleDigitalOutput()
+{
+    QLedIndicator *li = static_cast<QLedIndicator*>(sender());
+
+    int id = li->property("ID").toInt();
+
+    emit setDigitalOutput(id,li->isChecked());
 }

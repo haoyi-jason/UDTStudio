@@ -32,6 +32,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++14
 
 SOURCES += \
+        ../../hymcw/HYMCW/source/widgets/qledindicator.cpp \
         bcu/bcupdomappingwidget.cpp \
         bcu/bms_bcumanagerwidget.cpp \
         bcu/bms_nodemanagerwidget.cpp \
@@ -67,6 +68,7 @@ SOURCES += \
         widgets/bmuwidget.cpp
 
 HEADERS += \
+        ../../hymcw/HYMCW/source/widgets/qledindicator.h \
         bcu/bcupdomappingwidget.h \
         bcu/bms_bcumanagerwidget.h \
         bcu/bms_nodemanagerwidget.h \

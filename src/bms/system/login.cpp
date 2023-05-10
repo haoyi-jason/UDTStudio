@@ -13,6 +13,7 @@ Login::Login(QWidget *parent) : QDialog(parent)
 {
     createWidgets();
     _timer = new QTimer();
+    _timer->setSingleShot(true);
     connect(_timer,&QTimer::timeout,this,&Login::timeout);
     setWindowTitle("帳戶切換");
 }
@@ -71,10 +72,10 @@ void Login::createWidgets()
 
 void Login::validate()
 {
-    qDebug()<<_edPassword1->text();
+    //qDebug()<<_edPassword1->text();
     _logIn = true;
-    //_timer->start(30*1000);
-    _timer->singleShot(600*1000,this,&Login::timeout);
+    _timer->start(10*1000);
+    //_timer->singleShot(600*1000,this,&Login::timeout);
     accept();
 }
 
