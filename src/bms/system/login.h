@@ -51,6 +51,7 @@ private slots:
 
 protected:
     void showEvent(QShowEvent *e);
+    bool eventFilter(QObject *pObject, QEvent *e);
 
 private:
     Login(QWidget *parent = nullptr);

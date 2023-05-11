@@ -65,9 +65,13 @@ class GPIOHandler:public QObject
     Q_OBJECT
 public:
     explicit GPIOHandler(QObject *parent = nullptr);
-    explicit GPIOHandler(QObject *parent = nullptr, int gpioId = 1, GPIODIR dir = INPUT);
+    explicit GPIOHandler(int gpioId = 1, GPIODIR dir = INPUT, QObject *parent = nullptr);
 
     int readValue();
+    void writeValue(int v);
+    GPIODIR direction() const;
+    int index() const;
+    void setIndex(int index);
 signals:
     void gpioChanged(int id, int value);
 
@@ -84,6 +88,7 @@ private:
     GPIODIR _dir;
     int _fd;
     QTimer *_timer;
+    int _index;
 };
 
 class ADCHandler:public QObject
@@ -97,14 +102,16 @@ public:
 
     int readValue();
     float scaledValue();
-signals:
-    void updateValue(int id, int value);
 
-private slots:
+protected:
+    virtual void processInternal() = 0;
     void handleTimeout();
-private:
     void openDevice();
-private:
+
+signals:
+    void updateValue(int id, QString value);
+
+protected:
     QFile *_file;
     QString _devName;
     int _lastValue;
@@ -115,4 +122,28 @@ private:
     float _scaledValue;
 };
 
+class NTCHandler:public ADCHandler
+{
+    Q_OBJECT
+public:
+    typedef enum {
+        NTC_SHUNT_TOP,
+        NTC_SHUNT_BOTTOM,
+    }_NTC_SHUNT;
+    Q_ENUM(_NTC_SHUNT);
+    explicit NTCHandler(QString devName ="", int channel=0, QObject *parent = nullptr);
+    void setParam(float ntc_res, float res_shunt, float beta, float beta_temp, float v_drive);
+protected:
+    void processInternal() override;
+
+signals:
+    void updateValue(int id, QString value);
+
+private:
+    float _shunt_res;
+    float _ntc_beta;
+    float _ntc_beta_temp;
+    float _ntc_drive_v;
+    float _ntc_resistance;
+};
 #endif // PERIPHERALINTERFACE_H

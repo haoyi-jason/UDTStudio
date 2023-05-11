@@ -1,6 +1,7 @@
 #include "focusededitor.h"
 #include <QEvent>
 #include <QDebug>
+#include <QMouseEvent>
 
 FocusedEditor::FocusedEditor(QWidget *parent)
     :QLineEdit(parent)
@@ -34,7 +35,8 @@ bool FocusedEditor::event(QEvent *e)
 
 void FocusedEditor::focusInternal()
 {
-    NumberPad *nPad = new NumberPad();
+    NumberPad *nPad = new NumberPad(this);
+
     QString str = text();
     nPad->setText(str);
     nPad->setMax(_max);
@@ -42,6 +44,7 @@ void FocusedEditor::focusInternal()
     nPad->passwordMode(echoMode()==QLineEdit::Password);
     nPad->move(nPad->x() + (nPad->width()-width())/2, nPad->y()+(nPad->height() - height())/2);
     //connect(nPad,&NumberPad::accepted,this,&FocusedEditor::accepted);
+    //nPad->showFullScreen();
     if(nPad->exec() == QDialog::Accepted){
         setText(nPad->result());
         textEdited();
@@ -62,4 +65,14 @@ void FocusedEditor::accepted()
 void FocusedEditor::rejected()
 {
 
+}
+
+void FocusedEditor::mousePressEvent(QMouseEvent *e)
+{
+    e->accept();
+}
+
+void FocusedEditor::mouseReleaseEvent(QMouseEvent *e)
+{
+    e->accept();
 }

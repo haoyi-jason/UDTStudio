@@ -22,6 +22,8 @@
 #include "system/bms_alarmcriteria.h"
 #include "system/bms_logger.h"
 
+#include "system/peripheralinterface.h"
+
 
 namespace Ui {
 class MainWindow;
@@ -43,6 +45,11 @@ public slots:
     void setFunction(int func);
     void setActiveNode(Node *node);
     void exitSuperUser();
+
+    void handleGpioValue(int id, int value);
+    void handleAdcValue(int id, int value);
+
+    void handleOutputToggle(int id, bool state);
 
 protected:
     QDockWidget *_dockWidget;
@@ -75,6 +82,9 @@ public:
 
 signals:
     void windowIdle();
+    void updateGpioState(int,int);
+    void updateAdcValue(int,QString);
+
 
 private:
 //    Ui::MainWindow *ui;
@@ -89,6 +99,11 @@ private:
     QList<SetResetPair*> _socalarm;
 
     BMS_Logger *_logger;
+
+    QList<GPIOHandler*> _inputHandlers;
+    QList<GPIOHandler*> _outputHandlers;
+    QList<ADCHandler*> _ntcHandlers;
+
 };
 
 #endif // MAINWINDOW_H

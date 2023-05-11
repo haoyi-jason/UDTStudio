@@ -32,6 +32,7 @@ BMS_BusNodesManagerView::BMS_BusNodesManagerView(CanOpen *canOpen, QWidget *pare
     _logger = new BMS_Logger();
     _logger->startLog(10);
 
+
 }
 
 CanOpen *BMS_BusNodesManagerView::canOpen() const
@@ -209,7 +210,6 @@ void BMS_BusNodesManagerView::createWidgets()
 
     _sysManager = new BMS_SystemManagerWidget();
     connect(_sysManager,&BMS_SystemManagerWidget::validFunction,this,&BMS_BusNodesManagerView::functionSelected);
-
 
 
     QScrollArea *scroll = new QScrollArea();

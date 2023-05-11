@@ -36,6 +36,11 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
+    resize(1280,800);
+#ifdef Q_OS_UNIX
+    setWindowState(Qt::WindowFullScreen);
+    showFullScreen();
+#endif
     setWindowTitle(tr("BMS-GE"));
     statusBar()->setVisible(true);
 
@@ -134,13 +139,6 @@ MainWindow::MainWindow(QWidget *parent) :
 //    }
 
     //resize(QApplication::screens().at(0)->size()*3/4);
-#ifdef Q_OS_WIN
-    resize(1280,800);
-#endif
-#ifdef Q_OS_UNIX
-    setWindowState(Qt::WindowFullScreen);
-    showFullScreen();
-#endif
 
     readSettings();
 
@@ -164,6 +162,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Login::instance()->show();
     connect(Login::instance(),&Login::expired,this,&MainWindow::exitSuperUser);
+#ifdef Q_OS_UNIX
+    initSettings();
+#endif
 }
 
 MainWindow::~MainWindow()
@@ -232,6 +233,9 @@ void MainWindow::createWidgets()
     _nodeScreens = new BcuScreenWidget();
 
     _configScreens = new BMS_SystemConfigWidget();
+    connect(this,&MainWindow::updateGpioState,_configScreens,&BMS_SystemConfigWidget::updateDigitalInputs);
+    connect(_configScreens,&BMS_SystemConfigWidget::setDigitalOutput,this,&MainWindow::handleOutputToggle);
+    connect(this,&MainWindow::updateAdcValue,_configScreens,&BMS_SystemConfigWidget::updateNTC);
 
     _tabWidget = new QTabWidget();
 
@@ -404,15 +408,35 @@ void MainWindow::about()
 
 void MainWindow::initSettings()
 {
+
+    // on-board peripheral handler
+    GPIOHandler *h = new GPIOHandler(501,INPUT);
+    h->setIndex(0);
+    connect(h,&GPIOHandler::gpioChanged,this,&MainWindow::updateGpioState);
+    _inputHandlers.append(h);
+    h = new GPIOHandler(502,INPUT);
+    h->setIndex(1);
+    connect(h,&GPIOHandler::gpioChanged,this,&MainWindow::updateGpioState);
+    _inputHandlers.append(h);
+    h = new GPIOHandler(176,OUTPUT);
+    h->setIndex(0x8000);
+    connect(h,&GPIOHandler::gpioChanged,this,&MainWindow::updateGpioState);
+    _outputHandlers.append(h);
+    h = new GPIOHandler(500,OUTPUT);
+    h->setIndex(0x8001);
+    connect(h,&GPIOHandler::gpioChanged,this,&MainWindow::updateGpioState);
+    _outputHandlers.append(h);
+
+    NTCHandler *a = new NTCHandler("iio:device0",0);
+    connect(a,&NTCHandler::updateValue,this,&MainWindow::updateAdcValue);
+    _ntcHandlers.append(a);
+    a = new NTCHandler("iio:device0",1);
+    connect(a,&NTCHandler::updateValue,this,&MainWindow::updateAdcValue);
+    _ntcHandlers.append(a);
 }
 
 void MainWindow::setFunction(int func)
 {
-//    qDebug()<<Q_FUNC_INFO<<" Func="<<func;
-//    while(_tabWidget->count() > 0){
-//        _tabWidget->removeTab(0);
-//    }
-//    _tabWidget->addTab(_configScreens,"CONFIG");
     Login::instance()->resetTimer();
     if(Login::instance()->isValid()){
         _stackWidget->setCurrentIndex(1);
@@ -420,6 +444,8 @@ void MainWindow::setFunction(int func)
     }
     else
     {
+        Login::instance()->setModal(true);
+        Login::instance()->showFullScreen();
         if(Login::instance()->exec() == QDialog::Accepted){
             if(Login::instance()->isValid()){
                 _stackWidget->setCurrentIndex(1);
@@ -447,9 +473,34 @@ void MainWindow::exitSuperUser()
     setActiveNode(nullptr);
 }
 
+void MainWindow::handleOutputToggle(int id, bool state)
+{
+    if(id < _outputHandlers.size()){
+        _outputHandlers[id]->writeValue((state == 0)?0:1);
+    }
+}
+
 void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
 {
     qDebug()<<Q_FUNC_INFO;
     ev->accept();
     Login::instance()->resetTimer();
 }
+
+void MainWindow::handleGpioValue(int id, int value)
+{
+    GPIOHandler *h = static_cast<GPIOHandler*>(sender());
+
+    if(_inputHandlers[id] == h){
+
+    }
+    else if(_outputHandlers[id] == h){
+
+    }
+}
+
+void MainWindow::handleAdcValue(int id, int value)
+{
+
+}
+

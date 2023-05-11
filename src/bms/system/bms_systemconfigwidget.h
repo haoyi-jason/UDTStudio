@@ -11,7 +11,8 @@
 #include "bms_ui/focusededitor.h"
 #include "screen/bms_eventviewer.h"
 #include "system/bms_eventmodel.h"
-
+#include "bms_ui/qledindicator.h"
+#include "system/peripheralinterface.h"
 class QLedIndicator;
 
 class BMS_SystemConfigWidget : public QStackedWidget
@@ -45,9 +46,9 @@ public slots:
     void recordSettingChanged();
     void balanceSettingChanged();
     void modbusSettingChanged();
-    void updateDigitalInputs(int id, bool state);
-    void updateDigitalOutputs(int id, bool state);
-    void updateNTC(int id, QString msg);
+    void updateDigitalInputs(int id, int value);
+    void updateDigitalOutputs(int id, int value);
+    void updateNTC(int id, QString value);
     void handleDigitalOutput();
 
 private:

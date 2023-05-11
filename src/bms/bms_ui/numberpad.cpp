@@ -2,6 +2,7 @@
 #include <QGridLayout>
 #include <QLineEdit>
 #include <QSize>
+#include <QDebug>
 
 Button::Button(const QString &text, QWidget *parent)
     :QToolButton(parent)
@@ -25,6 +26,8 @@ QSize Button::sizeHint() const
 NumberPad::NumberPad(QWidget *parent)
     :QDialog(parent)
 {
+     resize(1200,720);
+//    showFullScreen();
     _checkInput = false;
     _passChar = false;
     _isNumber = true;
@@ -43,6 +46,7 @@ NumberPad::NumberPad(QWidget *parent)
 
     for(int i=0;i<10;i++){
         Button *btn =new Button(QString::number(i));
+
         connect(btn,&Button::clicked,this,&NumberPad::padClicked);
         _buttons.append(btn);
     }
@@ -62,7 +66,7 @@ NumberPad::NumberPad(QWidget *parent)
     _hintText = new QLabel("MIN:0, MAX:9999");
 
     QGridLayout *ml = new QGridLayout;
-    ml->setSizeConstraint(QLayout::SetFixedSize);
+    //ml->setSizeConstraint(QLayout::SetFixedSize);
     ml->addWidget(_inBox,0,0,1,3);
     ml->addWidget(_hintText,1,0,1,3);
     ml->addWidget(bck,2,0);
@@ -80,6 +84,10 @@ NumberPad::NumberPad(QWidget *parent)
 
     setLayout(ml);
     setWindowTitle("Input");
+
+//    _timer = new QTimer();
+//    connect(_timer,&QTimer::timeout,this,&NumberPad::timeout);
+//    _timer->start(1000);
 
     //move(x() + (width() - parent->width())/2,y() + (height() - parent->height())/2);
 }
@@ -145,6 +153,7 @@ void NumberPad::padClicked()
         break;
     case 13:
         str = str.left(str.size()-1);
+        _inBox->setText(str);
         break;
     case 14:
         if(str.left(1)=="-"){
@@ -167,6 +176,14 @@ void NumberPad::padClicked()
 //    else{
 //        _inBox->setText(str);
 //    }
+}
+
+void NumberPad::timeout()
+{
+    //qDebug()<<Q_FUNC_INFO;
+        //if(!this->isActiveWindow()){
+           // this->show();
+       // }
 }
 
 void NumberPad::setText(QString &content)

@@ -74,7 +74,7 @@ void Login::validate()
 {
     //qDebug()<<_edPassword1->text();
     _logIn = true;
-    _timer->start(10*1000);
+    _timer->start(600*1000);
     //_timer->singleShot(600*1000,this,&Login::timeout);
     accept();
 }
@@ -101,6 +101,7 @@ void Login::timeout()
 {
 //    qDebug()<<Q_FUNC_INFO;
     _logIn = false;
+    _timer->stop();
     emit expired();
 }
 
@@ -113,4 +114,16 @@ void Login::showEvent(QShowEvent *e)
     //move(100,100);
     //showFullScreen();
     //showEvent(e);
+}
+
+bool Login::eventFilter(QObject *pObject, QEvent *e)
+{
+    //qDebug()<<Q_FUNC_INFO<<e->type();
+    if(e->type() == QEvent::MouseButtonPress ||
+       e->type() == QEvent::MouseButtonRelease ||
+       e->type() == QEvent::MouseMove){
+        e->ignore();
+    }
+
+    return true;
 }

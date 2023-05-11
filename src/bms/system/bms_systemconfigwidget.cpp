@@ -11,7 +11,6 @@
 #include <QScrollArea>
 #include <QFormLayout>
 
-#include "../../hymcw/HYMCW/source/widgets/qledindicator.h"
 
 BMS_SystemConfigWidget::BMS_SystemConfigWidget(QWidget *parent) : QStackedWidget(parent)
 {
@@ -110,7 +109,8 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
 //    hlayout->setContentsMargins(0,0,0,0);
     _chkEthernet = new QCheckBox(tr("Static IP"));
     _chkEthernet->setChecked(false);
-    _grpEthernet = new QGroupBox("IP Config");
+    _grpEthernet = new QGroupBox();
+    _grpEthernet->setEnabled(false);
     connect(_chkEthernet,&QCheckBox::clicked,_grpEthernet,&QGroupBox::setEnabled);
 //    hlayout->addWidget(_chkEthernet);
 //    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Minimum));
@@ -224,24 +224,35 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     _digitalIns.append(li);
     fl->addWidget(li,0,3);
 
-    fl->addWidget(new QLabel("Out #1"),1,0);
+    fl->addWidget(new QLabel("Out #1"),0,4);
     li = new QLedIndicator();
     li->setProperty("ID",0);
     connect(li,&QLedIndicator::clicked,this,&BMS_SystemConfigWidget::handleDigitalOutput);
     _digitalOuts.append(li);
-    fl->addWidget(li,1,1);
+    fl->addWidget(li,0,5);
 
-    fl->addWidget(new QLabel("Out #2"),1,2);
+    fl->addWidget(new QLabel("Out #2"),0,6);
     li = new QLedIndicator();
     li->setProperty("ID",1);
     connect(li,&QLedIndicator::clicked,this,&BMS_SystemConfigWidget::handleDigitalOutput);
     _digitalOuts.append(li);
-    fl->addWidget(li,1,3);
+    fl->addWidget(li,0,7);
     gb->setLayout(fl);
     layout->addWidget(gb);
 
     layout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::Expanding));
-    widget->setLayout(layout);
+
+    QWidget *w = new QWidget();
+    w->setLayout(layout);
+
+    QScrollArea *scroll = new QScrollArea();
+    scroll->setWidgetResizable(true);
+    scroll->setWidget(w);
+
+    QHBoxLayout *hh = new QHBoxLayout();
+    hh->addWidget(scroll);
+    widget->setLayout(hh);
+
     return widget;
 }
 
@@ -818,29 +829,42 @@ void BMS_SystemConfigWidget::saveSettings(QString section, QString key, QString 
 }
 
 
-void BMS_SystemConfigWidget::updateDigitalInputs(int id,bool state)
+void BMS_SystemConfigWidget::updateDigitalInputs(int id, int value)
 {
-    if(id < _digitalIns.size()){
-        _digitalIns[id]->setChecked(state);
+    //GPIOHandler *h = static_cast<GPIOHandler*>(sender());
+    //qDebug()<<Q_FUNC_INFO<<id<<value<<h->direction()<<h->index();
+    int index = id & 0xf;
+    bool isInput = ((id & 0x8000)==0);
+    if( isInput){
+        if(index < _digitalIns.size()){
+            _digitalIns[index]->setChecked(value==0);
+        }
+    }
+    else {
+        if(index < _digitalOuts.size()){
+            _digitalOuts[index]->setChecked(value!=0);
+        }
     }
 }
 
-void BMS_SystemConfigWidget::updateDigitalOutputs(int id, bool state)
+void BMS_SystemConfigWidget::updateDigitalOutputs(int id, int value)
 {
     if(id < _digitalOuts.size()){
-        _digitalOuts[id]->setChecked(state);
+        _digitalOuts[id]->setChecked(value != 0);
     }
 }
 
-void BMS_SystemConfigWidget::updateNTC(int id, QString msg)
+void BMS_SystemConfigWidget::updateNTC(int id, QString value)
 {
+    //qDebug()<<Q_FUNC_INFO;
     if(id < _ntcLabels.size()){
-        _ntcLabels[id]->setText(msg);
+        _ntcLabels[id]->setText(value);
     }
 }
 
 void BMS_SystemConfigWidget::handleDigitalOutput()
 {
+    qDebug()<<Q_FUNC_INFO;
     QLedIndicator *li = static_cast<QLedIndicator*>(sender());
 
     int id = li->property("ID").toInt();

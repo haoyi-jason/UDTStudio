@@ -8,6 +8,8 @@
 #include <QString>
 #include <QTextStream>
 #include <QTimer>
+#include <QDebug>
+#include <QtMath>
 
 PeripheralInterface::PeripheralInterface()
 {
@@ -145,25 +147,29 @@ int IIODevice::readChannel(int channel)
 /*  gpio handler */
 
 GPIOHandler::GPIOHandler(QObject *parent)
-    :GPIOHandler(parent,1,INPUT)
+    :GPIOHandler(1,INPUT,parent)
 {
 
 }
 
-GPIOHandler::GPIOHandler(QObject *parent, int gpioId, GPIODIR dir)
+GPIOHandler::GPIOHandler(int gpioId, GPIODIR dir,QObject *parent)
     :QObject(parent)
     ,_gpio(gpioId)
     ,_dir(dir)
 {
-    QString cmdStr = QString("echo %1 > /sys/class/gpio/export").arg(_gpio);
-    system(cmdStr.toUtf8().constData());
-
+    QString cmdStr;
     _fd = -1;
     _file = nullptr;
     _timer = new QTimer();
     _lastValue = -1;
+    _index = -1;
     connect(_timer,&QTimer::timeout,this,&GPIOHandler::handleTimeout);
     QString path = QString("/sys/class/gpio/gpio%1/").arg(_gpio);
+    if(!QFile(path).exists()){
+        cmdStr = QString("echo %1 > /sys/class/gpio/export").arg(_gpio);
+        system(cmdStr.toUtf8().constData());
+    }
+
     if(QFile(path).exists()){
         // set direction
         cmdStr = QString("echo %1 >/sys/class/gpio/gpio%2/direction").arg((dir == INPUT)?"in":"out").arg(_gpio);
@@ -172,8 +178,6 @@ GPIOHandler::GPIOHandler(QObject *parent, int gpioId, GPIODIR dir)
         openDevice();
         // read initial value
         readValue();
-
-
     }
 }
 
@@ -206,10 +210,28 @@ int GPIOHandler::readValue()
         _file->close();
         if(_lastValue != value){
             _lastValue = value;
-            emit gpioChanged(_gpio,_lastValue);
+            emit gpioChanged(_index,_lastValue);
         }
     }
     return value;
+}
+
+void GPIOHandler::writeValue(int v)
+{
+    if(v == _lastValue) return;
+
+    int value = -1;
+    if(_file != nullptr){
+        _file->open(QFile::ReadWrite);
+        QTextStream ts(_file);
+        ts << ((v == 0)?0:1);
+        value = ts.readLine().toInt();
+        _file->close();
+        if(v == value){
+            _lastValue = value;
+            emit gpioChanged(_gpio,_lastValue);
+        }
+    }
 }
 
 void GPIOHandler::handleActivate(int socket)
@@ -222,6 +244,21 @@ void GPIOHandler::handleTimeout()
     readValue();
 }
 
+GPIODIR GPIOHandler::direction() const
+{
+    return _dir;
+}
+
+int GPIOHandler::index() const
+{
+    return _index;
+}
+
+void GPIOHandler::setIndex(int index)
+{
+    qDebug()<<Q_FUNC_INFO<<index;
+    _index = index;
+}
 
 /* adc handler */
 
@@ -244,10 +281,11 @@ ADCHandler::ADCHandler(QString devName,int channel, QObject *parent)
 
 void ADCHandler::openDevice()
 {
+    //qDebug()<<Q_FUNC_INFO;
     QString cmdStr = QString("/sys/bus/iio/devices/%1/in_voltage%2_raw").arg(_devName).arg(_ch);
     _file = new QFile(cmdStr);
     if(_file->exists()){
-        _timer->start(100);
+        _timer->start(1000);
     }
     else{
         delete _file;
@@ -266,11 +304,15 @@ void ADCHandler::setOffset(int offset)
     _offset = offset;
 }
 
-
+//void ADCHandler::processInternal()
+//{
+//    qDebug()<<Q_FUNC_INFO;
+//    emit updateValue(_ch,QString::number(readValue()));
+//}
 
 void ADCHandler::handleTimeout()
 {
-    readValue();
+    processInternal();
 }
 
 int ADCHandler::readValue()
@@ -283,11 +325,54 @@ int ADCHandler::readValue()
         _file->close();
 //        value -= _offset;
 //        _scaledValue = value * _scale;
-        emit updateValue(_ch,value);
+//        emit updateValue(_ch,value);
     }
+    return value;
 }
 
 float ADCHandler::scaledValue()
 {
     return _scaledValue;
+}
+
+
+/**** NTC handler *****/
+NTCHandler::NTCHandler(QString devName, int channel, QObject *parent)
+    :ADCHandler(devName,channel,parent)
+{
+    _shunt_res = 10000;
+    _ntc_resistance = 10000;
+    _ntc_beta = 3435;
+    _ntc_beta_temp = 25;
+    _ntc_drive_v = 4.0;
+}
+
+void NTCHandler::setParam(float ntc_res,float res_shunt, float beta, float beta_temp, float v_drive)
+{
+    _ntc_resistance = ntc_res;
+    _shunt_res = res_shunt;
+    _ntc_beta = beta;
+    _ntc_beta_temp = beta_temp;
+    _ntc_drive_v = v_drive;
+}
+
+void NTCHandler::processInternal()
+{
+    //qDebug()<<Q_FUNC_INFO;
+    float meas_volt = 0.;
+    int ad_raw = readValue();
+    meas_volt = 4.096 * ad_raw /32768;
+    float r_act = (_ntc_drive_v - meas_volt)*_shunt_res/meas_volt;
+
+    float temp = r_act / _ntc_resistance;
+    temp = ::log(temp);
+    temp /= _ntc_beta;
+    temp += 1/(273.15 + _ntc_beta_temp);
+    temp = 1.0/temp;
+    temp -= 273.15;
+
+    if(temp < -40) temp = -40;
+    if(temp > 85) temp = 85;
+    emit updateValue(_ch,QString::number(temp,'f',1));
+
 }

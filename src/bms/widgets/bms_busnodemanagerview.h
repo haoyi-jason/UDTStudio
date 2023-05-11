@@ -15,7 +15,6 @@
 #include <QActionGroup>
 #include <QThread>>
 #include "system/bms_logger.h"
-#include "system/peripheralinterface.h"
 
 class BMS_Poller;
 
@@ -48,6 +47,7 @@ signals:
     void nodeSelected(Node *currentNode);
     void functionSelected(int function); // switch node window or setting window
     void bcuSelected(BCU* bcu);
+
 protected slots:
     void addBus(quint8 busId);
     void addBcu(CanOpenBus *bus, quint8 id);
@@ -71,6 +71,7 @@ public slots:
     void bcuStateChanged();
     void setNode(Node *node);
     void nodeNameChanged(QString name);
+
 
 protected:
     void createWidgets();
@@ -100,6 +101,7 @@ private:
     QActionGroup *_groupControl;
     QMap<Node*,BCU*> _bcusMap;
     BMS_Logger *_logger;
+
 };
 
 class BMS_Poller:public QThread

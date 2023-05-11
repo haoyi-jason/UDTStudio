@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QEvent>
 #include "focusededitor.h"
+#include <QTimer>
 
 static QMap<QString,int> key_map{
     {"0",0},
@@ -59,6 +60,7 @@ public slots:
 
 private slots:
     void padClicked();
+    void timeout();
 
 private:
     bool _checkInput;
@@ -72,6 +74,7 @@ private:
     QLabel *_hintText;
     QString _validString;
     QString _resultString;
+    QTimer *_timer;
 };
 
 #endif // NUMBERPAD_H

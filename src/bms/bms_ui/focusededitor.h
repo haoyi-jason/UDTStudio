@@ -31,6 +31,8 @@ protected:
     virtual void textEdited() ;
     //virtual void focusInEvent(QFocusEvent *e);
     //virtual void focusOutEvent(QFocusEvent *e);
+    void mousePressEvent(QMouseEvent *e);
+    void mouseReleaseEvent(QMouseEvent *e);
 
 
 private:
