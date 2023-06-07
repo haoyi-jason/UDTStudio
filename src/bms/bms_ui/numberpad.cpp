@@ -153,6 +153,9 @@ void NumberPad::padClicked()
         break;
     case 13:
         str = str.left(str.size()-1);
+        if(str.size() == 0){
+            str = "0";
+        }
         _inBox->setText(str);
         break;
     case 14:

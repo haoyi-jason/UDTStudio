@@ -36,12 +36,41 @@ public:
     explicit SetResetPair(double set, double reset, Comparator compare);
     void validate(double value, WAState *state, WAState::Type type);
     void setDuration(int secs);
+    SetResetPair::Comparator type() const;
+    double set();
+    double reset();
+    int duration();
 
 private:
     double _set;
     double _reset;
     Comparator _comparator;
     int _duration;
+};
+
+class Criteria{
+public:
+    explicit Criteria();
+    QString name() const;
+    bool enabled() const;
+    int time() const;
+    QString label() const;
+    SetResetPair *high() const;
+    SetResetPair *low() const;
+
+    void setName(QString name);
+    void setEnable(bool set);
+    void setTime(int time);
+    void setLabel(QString label);
+    void setHigh(float set, float reset, SetResetPair::Comparator cmp);
+    void setLow(float set, float reset,SetResetPair::Comparator cmp);
+private:
+    SetResetPair *_highLmt;
+    SetResetPair *_lowLmt;
+    QString _name;
+    bool _enabled;
+    QString _label;
+    int _time;
 };
 
 class AlarmManager : public QObject
@@ -56,7 +85,10 @@ public:
         CT_WARNING,
         CT_ALARM,
         SOC_WARNING,
-        SOC_ALARM
+        SOC_ALARM,
+        PV_WARNING,
+        PV_ALARM,
+        NOF_ALARM
     };
     enum CriteriaType{
         CELL_VOLTAGE,
@@ -84,9 +116,9 @@ public:
 
     void resetState();
 
-    void set_cell_voltage_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
-    void set_cell_temperature_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
-    void set_soc_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
+    //void set_cell_voltage_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
+    //void set_cell_temperature_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
+    //void set_soc_criteria(QList<SetResetPair*> warning, QList<SetResetPair*> alarm);
 
     int maxCvPos() const;
     int minCvPos() const;
@@ -104,12 +136,14 @@ signals:
 public slots:
 
 private:
-    QList<SetResetPair*> _cv_alarm;
-    QList<SetResetPair*> _ct_alarm;
-    QList<SetResetPair*> _cv_warning;
-    QList<SetResetPair*> _ct_warning;
-    QList<SetResetPair*> _soc_alarm;
-    QList<SetResetPair*> _soc_warning;
+//    QList<SetResetPair*> _cv_alarm;
+//    QList<SetResetPair*> _ct_alarm;
+//    QList<SetResetPair*> _cv_warning;
+//    QList<SetResetPair*> _ct_warning;
+//    QList<SetResetPair*> _soc_alarm;
+//    QList<SetResetPair*> _soc_warning;
+
+    Criteria *_criterias[NOF_ALARM];
 
     bool _cvAlarm;
     bool _cvWarning;

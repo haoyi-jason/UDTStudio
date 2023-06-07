@@ -41,11 +41,17 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowState(Qt::WindowFullScreen);
     showFullScreen();
 #endif
-    setWindowTitle(tr("BMS-GE"));
+    GSettings::Info("Load Config File");
+    GSettings::instance().LoadConfig("./config.ini");
+
+    setWindowTitle(tr("BMS"));
     statusBar()->setVisible(true);
 
     createDocks();
     createWidgets();
+    readSettings();
+    _logger = new BMS_Logger();
+    _busNodesManagerView->setLogger(_logger);
 //    createMenus();
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::bcuSelected,_nodeScreens,&BcuScreenWidget::bcuSelected);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,_nodeScreens,&BcuScreenWidget::setActiveNode);
@@ -59,6 +65,8 @@ MainWindow::MainWindow(QWidget *parent) :
     path  += "/config.ini";
 #endif
     //qDebug()<<"INI PATH:"<<path;
+    GSettings::instance().Info("Read BUS configuration");
+
     QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
     progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
@@ -69,79 +77,43 @@ MainWindow::MainWindow(QWidget *parent) :
    //     CanOpen::addBus(b);
 
 
-    int sz = progSetting->beginReadArray("INTERFACE");
+    //int sz = progSetting->beginReadArray("INTERFACE");
+    int sz = GSettings::instance().canconfigSize();
     //qDebug()<<"Interface:"<<sz;
     if(sz > 0){
         for(int i=0;i<sz;i++){
-            progSetting->setArrayIndex(i);
-            QStringList sl = progSetting->value("BUS").toString().split(",");
+            SerialPortConfig *cfg = GSettings::instance().canConfig(i);
+//            progSetting->setArrayIndex(i);
+//            QStringList sl = progSetting->value("BUS").toString().split(",");
             //qDebug()<<Q_FUNC_INFO<<sl;
             b = nullptr;
-            if(sl.size() > 2){
+//            if(sl.size() > 2){
 #ifdef Q_OS_WIN
-                if(sl[0] == "VCI"){
-                    b = new CanOpenBus(new CanBusVCI(sl[1]));
-                    b->setBusName(sl[0]);
-
-                    //busList.append(b);
+                if(cfg->mode.contains("VCI")){
+                    b = new CanOpenBus(new CanBusVCI(cfg->connection));
+                    b->setBusName(cfg->mode);
                 }
 #endif
 #ifdef Q_OS_UNIX
-                if(sl[0].compare("SOCKETCAN") == 0){
-                    b = new CanOpenBus(new CanBusSocketCAN(sl[1]));
-                    b->setBusName(sl[0]);
+                if(cfg->mode.contains("SOCKETCAN")){
+                    b = new CanOpenBus(new CanBusSocketCAN(cfg->connection));
+                    b->setBusName(cfg->mode);
                 }
 #endif
                 if(b != nullptr){
                     CanOpen::addBus(b);
                 }
-            }
-        }
-        progSetting->endArray();
-    }
-    else{
-        progSetting->beginWriteArray("INTERFACE");
-        progSetting->setArrayIndex(0);
-        progSetting->setValue("BUS","COM10,500000,2");
-        progSetting->endArray();
-        progSetting->sync();
-    }
-
-
-
-    CanOpenBus *bus = nullptr;
-#ifdef Q_OS_UNIX
-
-#endif
-//    int id = 1;
-//    for(const QString &edsFile:qAsConst(OdDb::edsFiles())){
-//        //Node *node = new Node(id,QFileInfo(edsFile).completeBaseName(),edsFile);
-//        if(edsFile.contains("BCU")){
-//            //if(progSetting->contains("BCUS")){
-//            int sz = progSetting->beginReadArray("BCUS");
-//            if(sz > 0){
-//                for(int i=0;i<sz;i++){
-//                    progSetting->setArrayIndex(i);
-//                    int bid = progSetting->value("BUS_ID").toInt();
-//                    int nid = progSetting->value("NODE_ID").toInt();
-//                    quint8 mode = progSetting->value("START_MODE").toInt();
-//                    BCU *node = new BCU(nid,QFileInfo(edsFile).completeBaseName(),edsFile);
-//                    node->setStartMode(mode);
-//                    if(bid < CanOpen::buses().count()){
-//                        //busList[bus_id]->addNode(node);
-//                        CanOpen::bus(bid)->addNode(node);
-//                    }
-//                }
-//                progSetting->endArray();
 //            }
-//        }
-//        id++;
-//    }
+        }
+//        progSetting->endArray();
+    }
+    scanBus();
 
+//    CanOpenBus *bus = nullptr;
     //resize(QApplication::screens().at(0)->size()*3/4);
 
-    readSettings();
 
+    //AlarmManager *alm = new AlarmManager(2,8,2);
 
 //    foreach (CanOpenBus *b, CanOpen::buses()) {
 //        foreach (Node *n, b->nodes()) {
@@ -323,70 +295,71 @@ void MainWindow::readSettings()
 
     // read alarm/warning settings
 
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
-    QString keySearch;
+//    QString path = QCoreApplication::applicationDirPath();
+//    path  += "//config.ini";
+//    QString keySearch;
 
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
+//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    int sz = progSetting->beginReadArray("ALARM_SETTINGS");
-    QStringList sl;
-    SetResetPair *sr;
-    if(sz == 6){
-        progSetting->setArrayIndex(0);
-        sl = progSetting->value("HIGH").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-        _cvwarning.append(sr);
-        sl = progSetting->value("LOW").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-        _cvwarning.append(sr);
+//    int sz = progSetting->beginReadArray("ALARM_SETTINGS");
+//    QStringList sl;
+//    SetResetPair *sr;
+//    if(sz == 6){
+//        progSetting->setArrayIndex(0);
+//        sl = progSetting->value("HIGH").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
+//        _cvwarning.append(sr);
+//        sl = progSetting->value("LOW").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
+//        _cvwarning.append(sr);
 
-        progSetting->setArrayIndex(1);
-        sl = progSetting->value("HIGH").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-        _cvalarm.append(sr);
-        sl = progSetting->value("LOW").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-        _cvalarm.append(sr);
+//        progSetting->setArrayIndex(1);
+//        sl = progSetting->value("HIGH").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
+//        _cvalarm.append(sr);
+//        sl = progSetting->value("LOW").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
+//        _cvalarm.append(sr);
 
-        progSetting->setArrayIndex(2);
-        sl = progSetting->value("HIGH").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-        _ctwarning.append(sr);
-        sl = progSetting->value("LOW").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-        _ctwarning.append(sr);
+//        progSetting->setArrayIndex(2);
+//        sl = progSetting->value("HIGH").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
+//        _ctwarning.append(sr);
+//        sl = progSetting->value("LOW").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
+//        _ctwarning.append(sr);
 
-        progSetting->setArrayIndex(3);
-        sl = progSetting->value("HIGH").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-        _ctalarm.append(sr);
-        sl = progSetting->value("LOW").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-        _ctalarm.append(sr);
+//        progSetting->setArrayIndex(3);
+//        sl = progSetting->value("HIGH").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
+//        _ctalarm.append(sr);
+//        sl = progSetting->value("LOW").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
+//        _ctalarm.append(sr);
 
-        progSetting->setArrayIndex(4);
-        sl = progSetting->value("HIGH").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-        _socwarning.append(sr);
-        sl = progSetting->value("LOW").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-        _socwarning.append(sr);
+//        progSetting->setArrayIndex(4);
+//        sl = progSetting->value("HIGH").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
+//        _socwarning.append(sr);
+//        sl = progSetting->value("LOW").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
+//        _socwarning.append(sr);
 
-        progSetting->setArrayIndex(5);
-        sl = progSetting->value("HIGH").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-        _socalarm.append(sr);
-        sl = progSetting->value("LOW").toString().split(",");
-        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-        _socalarm.append(sr);
-
-
-    }
+//        progSetting->setArrayIndex(5);
+//        sl = progSetting->value("HIGH").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
+//        _socalarm.append(sr);
+//        sl = progSetting->value("LOW").toString().split(",");
+//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
+//        _socalarm.append(sr);
 
 
-    progSetting->endArray();
+//    }
+
+
+//    progSetting->endArray();
+
 }
 
 bool MainWindow::event(QEvent *event)
@@ -408,7 +381,7 @@ void MainWindow::about()
 
 void MainWindow::initSettings()
 {
-
+#ifdef Q_OS_UNIX
     // on-board peripheral handler
     GPIOHandler *h = new GPIOHandler(501,INPUT);
     h->setIndex(0);
@@ -433,27 +406,39 @@ void MainWindow::initSettings()
     a = new NTCHandler("iio:device0",1);
     connect(a,&NTCHandler::updateValue,this,&MainWindow::updateAdcValue);
     _ntcHandlers.append(a);
+#endif
 }
 
 void MainWindow::setFunction(int func)
 {
-    Login::instance()->resetTimer();
-    if(Login::instance()->isValid()){
-        _stackWidget->setCurrentIndex(1);
-        _configScreens->setActivePage(func);
+    if(func == 5){
+        if(_logger->isRunning()){
+            _logger->stopLog();
+        }
+        else{
+            _logger->startLog(10);
+        }
     }
-    else
-    {
-        Login::instance()->setModal(true);
-        Login::instance()->showFullScreen();
-        if(Login::instance()->exec() == QDialog::Accepted){
-            if(Login::instance()->isValid()){
-                _stackWidget->setCurrentIndex(1);
-                _configScreens->setActivePage(func);
-            }
-            else{
+    else{
+        Login::instance()->resetTimer();
+        if(Login::instance()->isValid()){
+            _stackWidget->setCurrentIndex(1);
+            _configScreens->setActivePage(func);
+        }
+        else
+        {
+            Login::instance()->setModal(true);
+            Login::instance()->showFullScreen();
+            if(Login::instance()->exec() == QDialog::Accepted){
+                if(Login::instance()->isValid()){
+                    _stackWidget->setCurrentIndex(1);
+                    _configScreens->setActivePage(func);
+                }
+                else{
 
+                }
             }
+
         }
 
     }
@@ -475,9 +460,11 @@ void MainWindow::exitSuperUser()
 
 void MainWindow::handleOutputToggle(int id, bool state)
 {
+#ifdef Q_OS_UNIX
     if(id < _outputHandlers.size()){
         _outputHandlers[id]->writeValue((state == 0)?0:1);
     }
+#endif
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
@@ -489,6 +476,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
 
 void MainWindow::handleGpioValue(int id, int value)
 {
+#ifdef Q_OS_UNIX
     GPIOHandler *h = static_cast<GPIOHandler*>(sender());
 
     if(_inputHandlers[id] == h){
@@ -497,10 +485,18 @@ void MainWindow::handleGpioValue(int id, int value)
     else if(_outputHandlers[id] == h){
 
     }
+#endif
 }
 
 void MainWindow::handleAdcValue(int id, int value)
 {
 
+}
+
+void MainWindow::scanBus()
+{
+    foreach (CanOpenBus *b, CanOpen::buses()) {
+        b->exploreBus();
+    }
 }
 

@@ -29,8 +29,8 @@ BMS_BusNodesManagerView::BMS_BusNodesManagerView(CanOpen *canOpen, QWidget *pare
 
     _poller = nullptr;
     //connect(_pollTimer,&QTimer::timeout,this,&BMS_BusNodesManagerView::pollProc);
-    _logger = new BMS_Logger();
-    _logger->startLog(10);
+    //_logger = new BMS_Logger();
+    //_logger->startLog(10);
 
 
 }
@@ -58,6 +58,19 @@ void BMS_BusNodesManagerView::setCanOpen(CanOpen *canOpen)
 //        }
     }
 
+}
+
+void BMS_BusNodesManagerView::setLogger(BMS_Logger *logger)
+{
+    _logger = logger;
+    if(_logger != nullptr){
+
+    }
+}
+
+BMS_Logger *BMS_BusNodesManagerView::logger() const
+{
+    return _logger;
 }
 
 void BMS_BusNodesManagerView::addBus(quint8 busId)
@@ -90,7 +103,9 @@ void BMS_BusNodesManagerView::addBcu(CanOpenBus *bus, quint8 id)
     connect(bcu,&BCU::stateChanged,this,&BMS_BusNodesManagerView::bcuStateChanged);
     connect(node,&Node::nameChanged,this,&BMS_BusNodesManagerView::nodeNameChanged);
 
-    _logger->addBCU(bcu);
+    if(_logger != nullptr){
+        _logger->addBCU(bcu);
+    }
 
     //    QVBoxLayout *bcuLayout = (QVBoxLayout*)_bcuGroup->layout();
 //    QString title = QString("BCU ID: %1").arg(node->nodeId());
@@ -99,7 +114,7 @@ void BMS_BusNodesManagerView::addBcu(CanOpenBus *bus, quint8 id)
 
 void BMS_BusNodesManagerView::nodeNameChanged(QString name)
 {
-    qDebug()<<Q_FUNC_INFO;
+    //qDebug()<<Q_FUNC_INFO;
     //UNUSED(name);
     Node *node = static_cast<Node*>(sender());
     QMap<Node*, BCU*>::const_iterator it = _bcusMap.constFind(node);
@@ -114,7 +129,9 @@ void BMS_BusNodesManagerView::removeBcu(CanOpenBus *bus, quint8 id)
     QMap<Node*,BCU*>::ConstIterator it = _bcusMap.constBegin();
     foreach(Node *n, _bcusMap.keys()){
         if(n->nodeId() == id && n->bus() == bus){
-            _logger->removeBCU(_bcusMap.value(n));
+            if(_logger != nullptr){
+                _logger->removeBCU(_bcusMap.value(n));
+            }
             _bcusMap.value(n)->deleteLater();
             _bcusMap.remove(n);
         }

@@ -36,8 +36,6 @@ BCU::BCU(Node *node, bool autoStart, QObject *parent)
     _voltage = 0;
     _current = 0;
 
-    _alarmManager = new AlarmManager(_nofPacks,_cellsPerPack,_ntcsPerPack);
-
     _configReady = 0x0;
     _nofPacks = 0;
     _cellsPerPack = 0;

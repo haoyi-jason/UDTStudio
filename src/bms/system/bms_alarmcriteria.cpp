@@ -1,5 +1,6 @@
 #include "bms_alarmcriteria.h"
 #include <QDateTime>
+#include "gsettings.h"
 
 WAState::WAState()
 {
@@ -23,6 +24,26 @@ SetResetPair::SetResetPair(double set, double reset, Comparator compare)
 void SetResetPair::setDuration(int secs)
 {
     _duration = secs;
+}
+
+SetResetPair::Comparator SetResetPair::type() const
+{
+    return _comparator;
+}
+
+double SetResetPair::set()
+{
+    return _set;
+}
+
+double SetResetPair::reset()
+{
+    return _reset;
+}
+
+int SetResetPair::duration()
+{
+    return _duration;
 }
 
 void SetResetPair::validate(double value, WAState *state, WAState::Type type)
@@ -106,6 +127,64 @@ void SetResetPair::validate(double value, WAState *state, WAState::Type type)
     }
 }
 
+/* Criteria */
+Criteria::Criteria()
+{
+    //_highLmt = new SetResetPair();
+    //_lowLmt = new SetResetPair();
+}
+
+QString Criteria::name() const{
+    return _name;
+}
+
+bool Criteria::enabled() const{
+    return _enabled;
+}
+
+int Criteria::time() const{
+    return _time;
+}
+
+QString Criteria::label() const{
+    return _label;
+}
+
+SetResetPair *Criteria::high() const{
+    return _highLmt;
+}
+
+SetResetPair *Criteria::low() const{
+    return _lowLmt;
+}
+
+void Criteria::setName(QString name)
+{
+    _name = name;
+}
+void Criteria::setEnable(bool set)
+{
+    _enabled = set;
+}
+
+void Criteria::setTime(int time)
+{
+    _time = time;
+}
+void Criteria::setLabel(QString label)
+{
+    _label = label;
+}
+void Criteria::setHigh(float set, float reset, SetResetPair::Comparator cmp)
+{
+    _highLmt = new SetResetPair(set,reset,cmp);
+}
+
+void Criteria::setLow(float set, float reset, SetResetPair::Comparator cmp)
+{
+    _lowLmt = new SetResetPair(set,reset,cmp);
+}
+
 /*** alarm criteria ***/
 
 AlarmManager::AlarmManager(QObject *parent)
@@ -138,6 +217,17 @@ AlarmManager::AlarmManager(int packs, int cells, int ntcs, QObject *parent)
 //    _ct_warning.append(srPair);
 //    srPair = new SetResetPair(-10,-5,SetResetPair::Comparator::CMP_LT);
 //    _ct_alarm.append(srPair);
+
+    //_cv_warning = GSettings::instance().criteria(0);
+    //_cv_alarm = GSettings::instance().criteria(1);
+    //_ct_warning = GSettings::instance().criteria(2);
+    //_ct_alarm = GSettings::instance().criteria(3);
+    //_soc_warning = GSettings::instance().criteria(4);
+    //_soc_alarm = GSettings::instance().criteria(5);
+
+    for(int i=0;i<NOF_ALARM;i++){
+        _criterias[i] = GSettings::instance().criteria(i);
+    }
 
     for(int i=0;i<_packs * _cells_per_pack;i++){
         _cvStates.append(new WAState());
@@ -172,12 +262,18 @@ void AlarmManager::set_cell_voltage(int id,double value)
 
     if(id < _cvStates.count()){
         _isCvEvent = false;
-        foreach (SetResetPair *s, _cv_alarm) {
-            s->validate(value,_cvStates[id], WAState::TYPE_ALARM);
-        }
-        foreach (SetResetPair *s, _cv_warning) {
-            s->validate(value,_cvStates[id], WAState::TYPE_WARNING);
-        }
+//        foreach (SetResetPair *s, _cv_alarm) {
+//            s->validate(value,_cvStates[id], WAState::TYPE_ALARM);
+//        }
+//        foreach (SetResetPair *s, _cv_warning) {
+//            s->validate(value,_cvStates[id], WAState::TYPE_WARNING);
+//        }
+
+        // new criteria class
+        _criterias[CV_ALARM]->high()->validate(value,_cvStates[CV_ALARM],WAState::TYPE_ALARM);
+        _criterias[CV_WARNING]->high()->validate(value,_cvStates[CV_WARNING],WAState::TYPE_WARNING);
+        _criterias[CV_ALARM]->low()->validate(value,_cvStates[CV_ALARM],WAState::TYPE_ALARM);
+        _criterias[CV_WARNING]->low()->validate(value,_cvStates[CV_WARNING],WAState::TYPE_WARNING);
     }
 }
 
@@ -197,35 +293,32 @@ void AlarmManager::set_cell_temperature(int id, double value)
         _minCtPos = id;
     }
 
-    foreach (SetResetPair *s, _ct_alarm) {
-        s->validate(value,_ctStates[id],WAState::TYPE_ALARM);
-//        foreach (WAState *w, _ctStates) {
-//            s->validate(value,w);
-//        }
-    }
-    foreach (SetResetPair *s, _ct_warning) {
-        s->validate(value,_ctStates[id],WAState::TYPE_WARNING);
-//        foreach (WAState *w, _ctStates) {
-//            s->validate(value,w);
-//        }
-    }
+//    foreach (SetResetPair *s, _ct_alarm) {
+//        s->validate(value,_ctStates[id],WAState::TYPE_ALARM);
+//    }
+//    foreach (SetResetPair *s, _ct_warning) {
+//        s->validate(value,_ctStates[id],WAState::TYPE_WARNING);
+//    }
+
+    // new criteria
+    _criterias[CT_ALARM]->high()->validate(value,_ctStates[CT_ALARM],WAState::TYPE_ALARM);
+    _criterias[CT_WARNING]->high()->validate(value,_ctStates[CT_WARNING],WAState::TYPE_WARNING);
+    _criterias[CT_ALARM]->low()->validate(value,_ctStates[CT_ALARM],WAState::TYPE_ALARM);
+    _criterias[CT_WARNING]->low()->validate(value,_ctStates[CT_WARNING],WAState::TYPE_WARNING);
 }
 
 void AlarmManager::set_soc(double value)
 {
-    foreach (SetResetPair *s, _soc_alarm) {
-        s->validate(value,_socStates,WAState::TYPE_ALARM);
-//        foreach (WAState *w, _socStates) {
-//            s->validate(value,w);
-//        }
-    }
-    foreach (SetResetPair *s, _soc_warning) {
-        s->validate(value,_socStates,WAState::TYPE_WARNING);
-//        foreach (WAState *w, _socStates) {
-//            s->validate(value,w);
-//        }
-    }
-
+//    foreach (SetResetPair *s, _soc_alarm) {
+//        s->validate(value,_socStates,WAState::TYPE_ALARM);
+//    }
+//    foreach (SetResetPair *s, _soc_warning) {
+//        s->validate(value,_socStates,WAState::TYPE_WARNING);
+//    }
+    _criterias[SOC_ALARM]->high()->validate(value,_socStates,WAState::TYPE_ALARM);
+    _criterias[SOC_WARNING]->high()->validate(value,_socStates,WAState::TYPE_WARNING);
+    _criterias[SOC_ALARM]->low()->validate(value,_socStates,WAState::TYPE_ALARM);
+    _criterias[SOC_WARNING]->low()->validate(value,_socStates,WAState::TYPE_WARNING);
 }
 
 void AlarmManager::resetState()
@@ -279,23 +372,23 @@ bool AlarmManager::isAlarm()
     return(_cvAlarm || _ctAlarm || _socAlarm);
 }
 
-void AlarmManager::set_cell_voltage_criteria(QList<SetResetPair *> warning, QList<SetResetPair *> alarm)
-{
-    _cv_warning = warning;
-    _cv_alarm = alarm;
-}
+//void AlarmManager::set_cell_voltage_criteria(QList<SetResetPair *> warning, QList<SetResetPair *> alarm)
+//{
+//    //_cv_warning = warning;
+//    //_cv_alarm = alarm;
+//}
 
-void AlarmManager::set_cell_temperature_criteria(QList<SetResetPair *> warning, QList<SetResetPair *> alarm)
-{
-    _ct_warning = warning;
-    _ct_alarm = alarm;
-}
+//void AlarmManager::set_cell_temperature_criteria(QList<SetResetPair *> warning, QList<SetResetPair *> alarm)
+//{
+//    //_ct_warning = warning;
+//    //_ct_alarm = alarm;
+//}
 
-void AlarmManager::set_soc_criteria(QList<SetResetPair *> warning, QList<SetResetPair *> alarm)
-{
-    _soc_warning = warning;
-    _soc_alarm = alarm;
-}
+//void AlarmManager::set_soc_criteria(QList<SetResetPair *> warning, QList<SetResetPair *> alarm)
+//{
+//    //_soc_warning = warning;
+//    //_soc_alarm = alarm;
+//}
 
 
 int AlarmManager::maxCvPos() const

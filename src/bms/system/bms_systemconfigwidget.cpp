@@ -10,7 +10,9 @@
 #include <QHeaderView>
 #include <QScrollArea>
 #include <QFormLayout>
-
+#include <QComboBox>
+#include "gsettings.h"
+#include <QSpacerItem>
 
 BMS_SystemConfigWidget::BMS_SystemConfigWidget(QWidget *parent) : QStackedWidget(parent)
 {
@@ -20,7 +22,7 @@ BMS_SystemConfigWidget::BMS_SystemConfigWidget(QWidget *parent) : QStackedWidget
     f.setPointSize(16);
     setFont(f);
 
-    loadSettings();
+    //loadSettings();
 }
 
 void BMS_SystemConfigWidget::createWidgets()
@@ -71,32 +73,29 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     layout->addWidget(l);
     _cboPort = new QComboBox();
     _cboBaudrate = new QComboBox();
-//    connect(_cboPort,&QComboBox::currentIndexChanged,this,&BMS_SystemConfigWidget::serialPortConfigChanged);
-//    connect(_cboBaudrate,QOverload<int>::of(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::serialPortConfigChanged);
-//    connect(_cboBaudrate,qOverload<int>(&QComboBox::currentIndexChanged),this,[=](int index){serialPortConfigChanged(index);});
-    QObject::connect(_cboBaudrate,qOverload<int>(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::serialPortConfigChanged);
-    QPushButton *btn;
-    _cboPort->addItem("COM1","/dev/ttymxc0");
-    _cboPort->addItem("COM2","/dev/ttymxc1");
-    _cboPort->addItem("COM3","/dev/ttymxc3");
-    _cboPort->addItem("COM4","/dev/ttymxc4");
-    _cboPort->setMinimumWidth(200);
-    hlayout->addWidget(new QLabel("Port #"));
-    hlayout->addWidget(_cboPort);
-
-    _cboBaudrate = new QComboBox();
     _cboBaudrate->addItem("9600");
     _cboBaudrate->addItem("19200");
     _cboBaudrate->addItem("38400");
     _cboBaudrate->addItem("57600");
     _cboBaudrate->addItem("115200");
+    connect(_cboPort,qOverload<int>(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::serialPortConfigChanged);
+    connect(_cboBaudrate,qOverload<int>(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::serialPortConfigChanged);
+    QPushButton *btn;
+    for(int i=0;i<GSettings::instance().serialConfigSize();i++){
+        SerialPortConfig *cfg = GSettings::instance().serialConfig(i);
+        _cboPort->addItem(cfg->name,cfg->connection);
+    }
+    _cboPort->setMinimumWidth(200);
+    hlayout->addWidget(new QLabel("Port #"));
+    hlayout->addWidget(_cboPort);
+
     _cboBaudrate->setMinimumWidth(200);
     hlayout->addWidget(new QLabel("Baudrate "));
     hlayout->addWidget(_cboBaudrate);
-    btn = new QPushButton(tr("Set"));
-    btn->setMinimumWidth(160);
-    connect(btn,&QPushButton::clicked,this,&BMS_SystemConfigWidget::saveSerialPortSetting);
-    hlayout->addWidget(btn);
+//    btn = new QPushButton(tr("Set"));
+//    btn->setMinimumWidth(160);
+//    connect(btn,&QPushButton::clicked,this,&BMS_SystemConfigWidget::saveSerialPortSetting);
+//    hlayout->addWidget(btn);
     hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Fixed));
     QGroupBox *gb = new QGroupBox("Serial Ports");
     gb->setLayout(hlayout);
@@ -107,11 +106,20 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     glayout->setContentsMargins(2,2,2,2);
 //    hlayout = new QHBoxLayout();
 //    hlayout->setContentsMargins(0,0,0,0);
-    _chkEthernet = new QCheckBox(tr("Static IP"));
-    _chkEthernet->setChecked(false);
+    _chkEthernet = new QCheckBox(tr("Static"));
+    connect(_chkEthernet,&QCheckBox::released,this,&BMS_SystemConfigWidget::checkBoxChanged);
+    EthernetConfig *lancfg = GSettings::instance().lanConfig(0);
+
     _grpEthernet = new QGroupBox();
-    _grpEthernet->setEnabled(false);
     connect(_chkEthernet,&QCheckBox::clicked,_grpEthernet,&QGroupBox::setEnabled);
+    if(lancfg != nullptr){
+        _chkEthernet->setChecked(!lancfg->UseDHCP);
+//        _grpEthernet->setEnabled(!lancfg->UseDHCP);
+    }
+    else{
+        _chkEthernet->setChecked(false);
+//        _grpEthernet->setEnabled(false);
+    }
 //    hlayout->addWidget(_chkEthernet);
 //    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding, QSizePolicy::Minimum));
 //    layout->addItem(hlayout);
@@ -124,12 +132,20 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     glayout->addWidget(new QLabel("IP:"),1,0);
     for(int i=0;i<4;i++){
         editor = new FocusedEditor();
+        connect(editor,&FocusedEditor::edited,this,&BMS_SystemConfigWidget::saveLanSetting);
+        if(lancfg != nullptr){
+            editor->setText(QString::number(lancfg->ip[i]));
+        }
         _ip.append(editor);
         glayout->addWidget(editor,1,i+1);
     }
     glayout->addWidget(new QLabel("Gateway:"),2,0);
     for(int i=0;i<4;i++){
         editor = new FocusedEditor();
+        connect(editor,&FocusedEditor::edited,this,&BMS_SystemConfigWidget::saveLanSetting);
+        if(lancfg != nullptr){
+            editor->setText(QString::number(lancfg->gw[i]));
+        }
         _gw.append(editor);
         glayout->addWidget(editor,2,i+1);
     }
@@ -137,6 +153,10 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     glayout->addWidget(new QLabel("Net Mask:"),3,0);
     for(int i=0;i<4;i++){
         editor = new FocusedEditor();
+        connect(editor,&FocusedEditor::edited,this,&BMS_SystemConfigWidget::saveLanSetting);
+        if(lancfg != nullptr){
+            editor->setText(QString::number(lancfg->mask[i]));
+        }
         _mask.append(editor);
         glayout->addWidget(editor,3,i+1);
     }
@@ -164,23 +184,38 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     gb->setLayout(vl);
     layout->addWidget(gb);
 
+
+    BCUSection *bcu = GSettings::instance().bcuSection();
     _chkModbusTcp = new QCheckBox("MODBUS TCP");
     _chkModbusRtu = new QCheckBox("MODBUS RTU");
     _cboRtuPort = new QComboBox();
     for(int i=0;i<_cboPort->count();i++){
         _cboRtuPort->addItem(_cboPort->itemText(i));
     }
+
     _rtuSlaveId = new FocusedEditor();
     _tcpPort = new FocusedEditor();
     connect(_chkModbusTcp,&QCheckBox::toggled,_tcpPort,&FocusedEditor::setEnabled);
     connect(_chkModbusRtu,&QCheckBox::toggled,_rtuSlaveId,&FocusedEditor::setEnabled);
     connect(_chkModbusRtu,&QCheckBox::toggled,_cboRtuPort,&QComboBox::setEnabled);
 
-    connect(_chkModbusTcp,&QCheckBox::released,this,&BMS_SystemConfigWidget::modbusSettingChanged);
-    connect(_chkModbusRtu,&QCheckBox::released,this,&BMS_SystemConfigWidget::modbusSettingChanged);
+    connect(_chkModbusTcp,&QCheckBox::released,this,&BMS_SystemConfigWidget::checkBoxChanged);
+    connect(_chkModbusRtu,&QCheckBox::released,this,&BMS_SystemConfigWidget::checkBoxChanged);
     //connect(_cboRtuPort,&QComboBox::currentIndexChanged,this,[=](int index){modbusSettingChanged();});
-    connect(_rtuSlaveId,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::modbusSettingChanged);
-    connect(_tcpPort,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::modbusSettingChanged);
+    connect(_rtuSlaveId,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::checkBoxChanged);
+    connect(_tcpPort,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::checkBoxChanged);
+
+    _chkModbusTcp->setChecked(bcu->mb_tcp_enabled());
+    _chkModbusRtu->setChecked(bcu->mb_rtu_enabled());
+    QStringList sl = bcu->mb_rtu_connection().split(",");
+    if(sl.size() > 0){
+        int index = _cboRtuPort->findText(sl[0]);
+        if(index != -1){
+            _cboRtuPort->setCurrentIndex(index);
+        }
+    }
+    _rtuSlaveId->setText(QString::number(bcu->mb_rtu_id()));
+    _tcpPort->setText(QString::number(bcu->mb_tcp_port()));
 
     QGridLayout *fl = new QGridLayout();
     //gl->setContentsMargins(5,5,5,5);
@@ -209,6 +244,7 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     _ntcLabels.append(l);
     l = new QLabel("0.0");
     fl->addWidget(l,0,3);
+    fl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),0,4);
     _ntcLabels.append(l);
     gb->setLayout(fl);
     layout->addWidget(gb);
@@ -237,6 +273,7 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     connect(li,&QLedIndicator::clicked,this,&BMS_SystemConfigWidget::handleDigitalOutput);
     _digitalOuts.append(li);
     fl->addWidget(li,0,7);
+    fl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),0,8);
     gb->setLayout(fl);
     layout->addWidget(gb);
 
@@ -269,12 +306,18 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     l->setFont(f);
     layout->addWidget(l);
 
+
+    BCUSection *bcu = GSettings::instance().bcuSection();
     _grpRecords = new QGroupBox(tr("系統記錄"));
     _storedDays = new FocusedEditor();
     _eventRecordInterval = new FocusedEditor();
     _eventRecordCount = new FocusedEditor();
     connect(_storedDays,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::recordSettingChanged);
     connect(_eventRecordInterval,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::recordSettingChanged);
+    _eventRecordInterval->setText(QString::number(bcu->log_interval()));
+    //_eventRecordCount->setText(bcu->log_keep_days());
+    _storedDays->setText(QString::number(bcu->log_keep_days()));
+
     QHBoxLayout *hlayout = new QHBoxLayout();
 
     hlayout->setContentsMargins(5,5,5,5);
@@ -283,6 +326,7 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     hlayout->addWidget(_storedDays);
     hlayout->addWidget(new QLabel(tr("記錄間隔(秒)")));
     hlayout->addWidget(_eventRecordInterval);
+    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed));
     _grpRecords->setLayout(hlayout);
     layout->addWidget(_grpRecords);
 
@@ -293,6 +337,13 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     _balancingVoltageMin = new FocusedEditor();
     _balancingVoltageMax = new FocusedEditor();
     _balancingVoltageFaultDiff = new FocusedEditor();
+
+    _balancingVoltage->setText(QString::number(bcu->balancing_voltage()));
+    _balancingTime->setText(QString::number(bcu->balancing_time()));
+    _balancingHystersis->setText(QString::number(bcu->balancing_gap()));
+    _balancingVoltageMin->setText(QString::number(bcu->balancing_min()));
+    _balancingVoltageMax->setText(QString::number(bcu->balancing_max()));
+    _balancingVoltageFaultDiff->setText(QString::number(bcu->balancing_fault()));
 
     connect(_balancingVoltage,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
     connect(_balancingTime,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::balanceSettingChanged);
@@ -306,15 +357,19 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
     gl->setSpacing(20);
     gl->addWidget(new QLabel(tr("最低均衡電壓(V)")),0,0);
     gl->addWidget(_balancingVoltageMin,0,1);
+    gl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),0,2);
     gl->addWidget(new QLabel(tr("最高均衡電壓(V)")),1,0);
     gl->addWidget(_balancingVoltageMax,1,1);
+    gl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),1,2);
     gl->addWidget(new QLabel(tr("停止均衡壓差(V)")),2,0);
     gl->addWidget(_balancingVoltageFaultDiff,2,1);
+    gl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),2,2);
 
 //    hlayout->addWidget(new QLabel(tr("均衡時間(秒)")));
 //    hlayout->addWidget(_balancingTime);
     gl->addWidget(new QLabel(tr("允許誤差(V)")),3,0);
     gl->addWidget(_balancingHystersis,3,1);
+    gl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),3,2);
 
     _grpBalancing->setLayout(gl);
 
@@ -388,15 +443,21 @@ QWidget *BMS_SystemConfigWidget::createAlarmWidget()
     connect(_cboAlarmType,qOverload<int>(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::changeAlarmItem);
     glayout->addWidget(_cboAlarmType,0,0);
     glayout->addWidget(new QLabel("作動"),0,1);
-    glayout->addWidget(new QLabel("復歸"),0,2);
+    glayout->addWidget(new QLabel("復歸"),0,3);
 
     for(int i=0;i<5;i++){
         FocusedEditor *editor = new FocusedEditor();
         _alarmEdits.append(editor);
-        QLabel *label = new QLabel("label");
+        QLabel *label = new QLabel("");
         _alarmLabels.append(label);
         connect(editor,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::alarmSettingChanged);
     }
+    int sz = GSettings::instance().criteriaSize();
+    for(int i=0;i<sz;i++){
+        Criteria *cfg = GSettings::instance().criteria(i);
+        _cboAlarmType->addItem(cfg->name());
+    }
+
     glayout->addWidget(_alarmLabels[0],1,0);
     glayout->addWidget(_alarmEdits[0],1,1);
     glayout->addWidget(_alarmLabels[1],1,2);
@@ -423,7 +484,11 @@ QWidget *BMS_SystemConfigWidget::createAlarmWidget()
 
 void BMS_SystemConfigWidget::saveSerialPortSetting()
 {
-    serialPortConfigChanged(0);
+    SerialPortConfig *cfg = GSettings::instance().serialConfig(_cboPort->currentIndex());
+    if(cfg != nullptr){
+        cfg->baudrate = _cboBaudrate->currentText().toInt();
+        GSettings::instance().setModified();
+    }
 
 }
 
@@ -439,8 +504,25 @@ void BMS_SystemConfigWidget::saveCanSetting()
 
 void BMS_SystemConfigWidget::serialPortConfigChanged(int index)
 {
-    qDebug()<<Q_FUNC_INFO;
-    saveSettings("SERIAL",_cboPort->currentText(),_cboBaudrate->currentText());
+    //qDebug()<<Q_FUNC_INFO;
+    QComboBox *cb = static_cast<QComboBox*> (sender());
+    if(cb == _cboPort){
+        SerialPortConfig *cfg = GSettings::instance().serialConfig(index);
+        if(cfg != nullptr){
+            int index = _cboBaudrate->findText(QString::number(cfg->baudrate));
+            if(index != -1){
+                _cboBaudrate->setCurrentIndex(index);
+            }
+        }
+    }
+    else if(cb == _cboBaudrate){
+        SerialPortConfig *cfg = GSettings::instance().serialConfig(_cboPort->currentIndex());
+        if(cfg != nullptr){
+            cfg->baudrate = _cboBaudrate->currentText().toInt();
+            GSettings::instance().setModified();
+        }
+    }
+    //saveSettings("SERIAL",_cboPort->currentText(),_cboBaudrate->currentText());
 }
 
 void BMS_SystemConfigWidget::loadSettings()
@@ -689,143 +771,164 @@ void BMS_SystemConfigWidget::loadSettings()
 
 void BMS_SystemConfigWidget::changeAlarmItem(int index)
 {
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
-    QString keySearch;
+    Criteria *cfg = GSettings::instance().criteria(index);
+    SetResetPair *sr;
+    if(cfg == nullptr) return;
 
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+//    QString path = QCoreApplication::applicationDirPath();
+//    path  += "//config.ini";
+//    QString keySearch;
 
-    int sz = progSetting->beginReadArray("ALARM_SETTINGS");
-    if(index < sz){
-        progSetting->setArrayIndex(index);
-        QStringList sl = progSetting->value("LABEL").toString().split(",");
+//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
+//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+
+//    int sz = progSetting->beginReadArray("ALARM_SETTINGS");
+//    if(index < sz){
+//        progSetting->setArrayIndex(index);
+        QStringList sl = cfg->label().split(",");
         for(int i=0;i<sl.count();i++){
             if(_alarmLabels[i] != nullptr){
-                _alarmLabels[i]->setText(sl[i]);
+                if((i%2) == 0){
+                    _alarmLabels[i]->setText(sl[i]);
+                }
             }
         }
+        sr = cfg->high();
+        _alarmEdits[0]->setText(QString::number(sr->set()));
+        _alarmEdits[1]->setText(QString::number(sr->reset()));
+        sr = cfg->low();
+        _alarmEdits[2]->setText(QString::number(sr->set()));
+        _alarmEdits[3]->setText(QString::number(sr->reset()));
+        _alarmEdits[4]->setText(QString::number(sr->duration()));
+//    }
 
-        sl = progSetting->value("HIGH").toString().split(",");
-        if(sl.count() == 2){
-            _alarmEdits[0]->setText(sl[0]);
-            _alarmEdits[1]->setText(sl[1]);
-        }
-        sl = progSetting->value("LOW").toString().split(",");
-        if(sl.count() == 2){
-            _alarmEdits[2]->setText(sl[0]);
-            _alarmEdits[3]->setText(sl[1]);
-        }
-        _alarmEdits[4]->setText(progSetting->value("TIME").toString());
-    }
-
-    progSetting->endArray();
+//    progSetting->endArray();
 }
 
 void BMS_SystemConfigWidget::alarmSettingChanged()
 {
     int id = _cboAlarmType->currentIndex();
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
+    Criteria *cfg = GSettings::instance().criteria(id);
+    if(cfg == nullptr) return;
+    SetResetPair *sr = cfg->high();
+    cfg->setHigh(_alarmEdits[0]->text().toDouble(),_alarmEdits[1]->text().toDouble(),sr->type());
+    sr = cfg->low();
+    cfg->setLow(_alarmEdits[2]->text().toDouble(),_alarmEdits[3]->text().toDouble(),sr->type());
+    cfg->setTime(_alarmEdits[4]->text().toInt());
+    GSettings::instance().setModified();
+//    QString path = QCoreApplication::applicationDirPath();
+//    path  += "//config.ini";
 
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
+//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    int sz = progSetting->beginReadArray("ALARM_SETTINGS");
-    if(id < sz){
-        progSetting->setArrayIndex(id);
-        QStringList sl ;
-        sl.clear();
-        for(int i=0;i<2;i++){
-            sl<<_alarmEdits[i]->text();
-        }
-        progSetting->setValue("HIGH",sl.join(","));
+//    int sz = progSetting->beginReadArray("ALARM_SETTINGS");
+//    if(id < sz){
+//        progSetting->setArrayIndex(id);
+//        QStringList sl ;
+//        sl.clear();
+//        for(int i=0;i<2;i++){
+//            sl<<_alarmEdits[i]->text();
+//        }
+//        progSetting->setValue("HIGH",sl.join(","));
 
-        sl.clear();
-        for(int i=0;i<2;i++){
-            sl<<_alarmEdits[i+2]->text();
-        }
-        progSetting->setValue("LOW",sl.join(","));
+//        sl.clear();
+//        for(int i=0;i<2;i++){
+//            sl<<_alarmEdits[i+2]->text();
+//        }
+//        progSetting->setValue("LOW",sl.join(","));
 
-        progSetting->setValue("TIME",_alarmEdits[4]->text());
-    }
+//        progSetting->setValue("TIME",_alarmEdits[4]->text());
+//    }
 
-    progSetting->endArray();
+//    progSetting->endArray();
 
 }
 
 void BMS_SystemConfigWidget::recordSettingChanged()
 {
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
+//    QString path = QCoreApplication::applicationDirPath();
+//    path  += "//config.ini";
 
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
+//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    progSetting->beginGroup("LOG");
-    progSetting->setValue("VALUE",_storedDays->text());
-    progSetting->setValue("INTERVAL",_eventRecordInterval->text());
+//    progSetting->beginGroup("LOG");
+//    progSetting->setValue("VALUE",_storedDays->text());
+//    progSetting->setValue("INTERVAL",_eventRecordInterval->text());
 
-    progSetting->endGroup();
-
+//    progSetting->endGroup();
+    BCUSection *bcu = GSettings::instance().bcuSection();
+    bcu->set_log_keep_days(_storedDays->text().toInt());
+    bcu->set_log_interval(_eventRecordInterval->text().toInt());
+    GSettings::instance().setModified();
 }
 
 void BMS_SystemConfigWidget::balanceSettingChanged()
 {
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
+//    QString path = QCoreApplication::applicationDirPath();
+//    path  += "//config.ini";
 
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
+//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    progSetting->beginGroup("CELL_BALANCE");
-    progSetting->setValue("VOLTAGE",_balancingVoltage->text());
-    progSetting->setValue("HYSTERSIS",_balancingHystersis->text());
-    progSetting->setValue("TIME",_balancingTime->text());
-    progSetting->endGroup();
+//    progSetting->beginGroup("CELL_BALANCE");
+//    progSetting->setValue("VOLTAGE",_balancingVoltage->text());
+//    progSetting->setValue("HYSTERSIS",_balancingHystersis->text());
+//    progSetting->setValue("TIME",_balancingTime->text());
+//    progSetting->endGroup();
+    BCUSection *bcu = GSettings::instance().bcuSection();
+    bcu->set_balancing_voltage(_balancingVoltage->text().toDouble());
+    bcu->set_balancing_gap(_balancingHystersis->text().toDouble());
+    bcu->set_balancing_min(_balancingVoltageMin->text().toDouble());
+    bcu->set_balancing_max(_balancingVoltageMax->text().toDouble());
+    bcu->set_balancing_time(_balancingTime->text().toDouble());
+    bcu->set_balancing_fault(_balancingVoltageFaultDiff->text().toDouble());
+    GSettings::instance().setModified();
 }
 
-void BMS_SystemConfigWidget::modbusSettingChanged()
+void BMS_SystemConfigWidget::checkBoxChanged()
 {
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
-
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
-
-    progSetting->beginGroup("MODBUS");
-
-    progSetting->setValue("TCP_ENABLE",_chkModbusTcp->isChecked()?"TRUE":"FALSE");
-    progSetting->setValue("RTU_ENABLE",_chkModbusRtu->isChecked()?"TRUE":"FALSE");
-    progSetting->setValue("RTU_PORT",_cboRtuPort->currentText());
-    progSetting->setValue("TCP_PORT",_tcpPort->text());
-    progSetting->setValue("ID",_rtuSlaveId->text());
-
-    progSetting->endGroup();
+    QCheckBox *cb = static_cast<QCheckBox*>(sender());
+    if(cb == _chkModbusRtu || cb == _chkModbusTcp){
+        BCUSection *bcu = GSettings::instance().bcuSection();
+        bcu->set_mb_rtu_enable(_chkModbusRtu->isChecked());
+        bcu->set_mb_tcp_enable(_chkModbusTcp->isChecked());
+        bcu->set_mb_rtu_connection(_cboRtuPort->currentText());
+        bcu->set_mb_tcp_port(_tcpPort->text().toInt());
+        bcu->set_mb_rtu_id(_rtuSlaveId->text().toInt());
+    }
+    else if(cb == _chkEthernet){
+        EthernetConfig *cfg = GSettings::instance().lanConfig(0);
+        if(cfg != nullptr){
+            cfg->UseDHCP = cb->isChecked()?"YES":"NO";
+        }
+    }
+    GSettings::instance().setModified();
 }
 
 void BMS_SystemConfigWidget::saveSettings(QString section, QString key, QString value)
 {
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
+//    QString path = QCoreApplication::applicationDirPath();
+//    path  += "//config.ini";
 
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
+//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
+//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
-    if(section == "SERIAL"){
-        int sz = progSetting->beginReadArray(section);
-        for(int i=0;i<sz;i++){
-            progSetting->setArrayIndex(i);
-            QStringList sl = progSetting->value("PORT").toString().split(",");
-            if(sl[0] == key){
-                sl[1] = value;
-            }
-            QString v = sl.join(",");
-            progSetting->setValue("PORT",v);
-        }
-        progSetting->endArray();
+//    if(section == "SERIAL"){
+//        int sz = progSetting->beginReadArray(section);
+//        for(int i=0;i<sz;i++){
+//            progSetting->setArrayIndex(i);
+//            QStringList sl = progSetting->value("PORT").toString().split(",");
+//            if(sl[0] == key){
+//                sl[1] = value;
+//            }
+//            QString v = sl.join(",");
+//            progSetting->setValue("PORT",v);
+//        }
+//        progSetting->endArray();
 
-    }
+//    }
 }
 
 

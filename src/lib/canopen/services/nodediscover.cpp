@@ -198,7 +198,7 @@ void NodeDiscover::exploreNodeNext()
         // load object eds
         if (!file.isEmpty())
         {
-            node->nodeOd()->loadEds(file);
+            node->loadEds(file);
             node->reset();
             NodeProfileFactory::profileFactory(node);
 

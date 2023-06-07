@@ -13,7 +13,7 @@
 #include "bcu/bms_bcumanagerwidget.h"
 #include "system/bms_systemmanagerwidget.h"
 #include <QActionGroup>
-#include <QThread>>
+#include <QThread>
 #include "system/bms_logger.h"
 
 class BMS_Poller;
@@ -40,6 +40,7 @@ public:
     void restoreState(QSettings &settings);
     void reloadEds(int id);
 
+    void setLogger(BMS_Logger *logger);
     BMS_Logger *logger() const;
 
 signals:

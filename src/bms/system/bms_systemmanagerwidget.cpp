@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 #include <QSpacerItem>
 #include <QSizePolicy>
+#include <QGroupBox>
 
 BMS_SystemManagerWidget::BMS_SystemManagerWidget(QWidget *parent) : QWidget(parent)
 {
@@ -12,6 +13,7 @@ BMS_SystemManagerWidget::BMS_SystemManagerWidget(QWidget *parent) : QWidget(pare
 
 void BMS_SystemManagerWidget::createWidgets()
 {
+    QGroupBox *gb = new QGroupBox("Configuration");
     QVBoxLayout *layout = new QVBoxLayout();
     //layout->setContentsMargins(0,0,0,0);
 
@@ -41,10 +43,19 @@ void BMS_SystemManagerWidget::createWidgets()
     connect(button,&QPushButton::clicked,this,&BMS_SystemManagerWidget::buttonClicked);
     layout->addWidget(button);
 
+    button = new QPushButton("Log");
+    button->setProperty("ID", 5);
+    connect(button,&QPushButton::clicked,this,&BMS_SystemManagerWidget::buttonClicked);
+    layout->addWidget(button);
+
     //layout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Maximum));
 
-    setLayout(layout);
+    gb->setLayout(layout);
+    //setLayout(layout);
 
+    QHBoxLayout *hl = new QHBoxLayout();
+    hl->addWidget(gb);
+    setLayout(hl);
 }
 
 

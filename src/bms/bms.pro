@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core widgets network charts
+QT       += core widgets network charts serialbus serialport
 
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -37,6 +37,7 @@ SOURCES += \
         bcu/bms_nodemanagerwidget.cpp \
         bms_ui/indexfocuseditor.cpp \
         bms_ui/qledindicator.cpp \
+        system/bms_modbusslave.cpp \
         system/gsettings.cpp \
         system/login.cpp \
         widgets/bms_busmanagerwidget.cpp \
@@ -73,6 +74,7 @@ HEADERS += \
         bcu/bms_nodemanagerwidget.h \
         bms_ui/indexfocuseditor.h \
         bms_ui/qledindicator.h \
+        system/bms_modbusslave.h \
         system/gsettings.h \
         system/login.h \
         widgets/bms_busmanagerwidget.h \

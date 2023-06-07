@@ -45,11 +45,12 @@ public slots:
     void alarmSettingChanged();
     void recordSettingChanged();
     void balanceSettingChanged();
-    void modbusSettingChanged();
+    void checkBoxChanged();
     void updateDigitalInputs(int id, int value);
     void updateDigitalOutputs(int id, int value);
     void updateNTC(int id, QString value);
     void handleDigitalOutput();
+
 
 private:
     QComboBox *_cboPort;

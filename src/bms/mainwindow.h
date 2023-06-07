@@ -80,6 +80,9 @@ public:
     void readSettings();
     void initSettings();
 
+public slots:
+    void scanBus();
+
 signals:
     void windowIdle();
     void updateGpioState(int,int);
@@ -100,10 +103,12 @@ private:
 
     BMS_Logger *_logger;
 
+
+#ifdef Q_OS_UNIX
     QList<GPIOHandler*> _inputHandlers;
     QList<GPIOHandler*> _outputHandlers;
     QList<ADCHandler*> _ntcHandlers;
-
+#endif
 };
 
 #endif // MAINWINDOW_H

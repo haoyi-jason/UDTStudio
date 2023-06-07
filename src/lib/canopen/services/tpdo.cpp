@@ -241,9 +241,12 @@ QVariant TPDO::convertQByteArrayToQVariant(QByteArray data, QMetaType::Type type
 
         case QMetaType::Float:
         {
-            float l;
-            dataStream >> l;
-            return QVariant(l);
+//            float l;
+//            dataStream >> l;
+//            return QVariant(l);
+            float f;
+            f = *(const float *)(data.constData());
+            return QVariant(f);
         }
 
         case QMetaType::SChar:
