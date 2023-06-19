@@ -292,74 +292,6 @@ void MainWindow::readSettings()
     settings.beginGroup("BusNodeManager");
     _busNodesManagerView->restoreState(settings);
     settings.endGroup();
-
-    // read alarm/warning settings
-
-//    QString path = QCoreApplication::applicationDirPath();
-//    path  += "//config.ini";
-//    QString keySearch;
-
-//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
-
-//    int sz = progSetting->beginReadArray("ALARM_SETTINGS");
-//    QStringList sl;
-//    SetResetPair *sr;
-//    if(sz == 6){
-//        progSetting->setArrayIndex(0);
-//        sl = progSetting->value("HIGH").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-//        _cvwarning.append(sr);
-//        sl = progSetting->value("LOW").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-//        _cvwarning.append(sr);
-
-//        progSetting->setArrayIndex(1);
-//        sl = progSetting->value("HIGH").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-//        _cvalarm.append(sr);
-//        sl = progSetting->value("LOW").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-//        _cvalarm.append(sr);
-
-//        progSetting->setArrayIndex(2);
-//        sl = progSetting->value("HIGH").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-//        _ctwarning.append(sr);
-//        sl = progSetting->value("LOW").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-//        _ctwarning.append(sr);
-
-//        progSetting->setArrayIndex(3);
-//        sl = progSetting->value("HIGH").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-//        _ctalarm.append(sr);
-//        sl = progSetting->value("LOW").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-//        _ctalarm.append(sr);
-
-//        progSetting->setArrayIndex(4);
-//        sl = progSetting->value("HIGH").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-//        _socwarning.append(sr);
-//        sl = progSetting->value("LOW").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-//        _socwarning.append(sr);
-
-//        progSetting->setArrayIndex(5);
-//        sl = progSetting->value("HIGH").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_GT);
-//        _socalarm.append(sr);
-//        sl = progSetting->value("LOW").toString().split(",");
-//        sr = new SetResetPair(sl[0].toDouble(), sl[1].toDouble(),SetResetPair::Comparator::CMP_LT);
-//        _socalarm.append(sr);
-
-
-//    }
-
-
-//    progSetting->endArray();
-
 }
 
 bool MainWindow::event(QEvent *event)
@@ -416,7 +348,7 @@ void MainWindow::setFunction(int func)
             _logger->stopLog();
         }
         else{
-            _logger->startLog(10);
+            _logger->startLog(GSettings::instance().bcuSection()->log_interval());
         }
     }
     else{

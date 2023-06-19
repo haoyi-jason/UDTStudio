@@ -21,27 +21,14 @@ BMS_SystemConfigWidget::BMS_SystemConfigWidget(QWidget *parent) : QStackedWidget
     QFont f = font();
     f.setPointSize(16);
     setFont(f);
-
-    //loadSettings();
 }
 
 void BMS_SystemConfigWidget::createWidgets()
 {
-//    QVBoxLayout *layout = new QVBoxLayout();
-
-//    layout->setContentsMargins(0,0,0,0);
-//    layout->setSpacing(2);
-
-//    layout->addWidget(createHardwareWidget());
-
-
-    //setLayout(layout);
     addWidget(createHardwareWidget());
     addWidget(createBCUWidget());
     addWidget(createAlarmWidget());
     addWidget(createEventViewWidget());
-
-    //qDebug()<<Q_FUNC_INFO<<" Widgets:"<<count();
 }
 
 void BMS_SystemConfigWidget::setActivePage(int id)
@@ -49,7 +36,6 @@ void BMS_SystemConfigWidget::setActivePage(int id)
     //qDebug()<<Q_FUNC_INFO<<" ID="<<id;
     int page = id-1;
     if(page >= 0 && page < count()){
-       //qDebug()<<"Set to Page:"<<page;
         setCurrentIndex(page);
     }
 }
@@ -244,7 +230,7 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     _ntcLabels.append(l);
     l = new QLabel("0.0");
     fl->addWidget(l,0,3);
-    fl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),0,4);
+    //fl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),0,4);
     _ntcLabels.append(l);
     gb->setLayout(fl);
     layout->addWidget(gb);
@@ -273,7 +259,7 @@ QWidget *BMS_SystemConfigWidget::createHardwareWidget()
     connect(li,&QLedIndicator::clicked,this,&BMS_SystemConfigWidget::handleDigitalOutput);
     _digitalOuts.append(li);
     fl->addWidget(li,0,7);
-    fl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),0,8);
+    //fl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed),0,8);
     gb->setLayout(fl);
     layout->addWidget(gb);
 
@@ -522,251 +508,6 @@ void BMS_SystemConfigWidget::serialPortConfigChanged(int index)
             GSettings::instance().setModified();
         }
     }
-    //saveSettings("SERIAL",_cboPort->currentText(),_cboBaudrate->currentText());
-}
-
-void BMS_SystemConfigWidget::loadSettings()
-{
-    QString path = QCoreApplication::applicationDirPath();
-    path  += "//config.ini";
-    QString keySearch;
-
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
-
-    QStringList keys = progSetting->allKeys();
-
-    /* 0/PORT=COMx,9600,n,8,1,n */
-    _cboPort->clear();
-    //if(progSetting->contains("SERIAL")){
-    int sz = progSetting->beginReadArray("SERIAL");
-    if(sz >0){
-        for(int i=0;i<sz;i++){
-            progSetting->setArrayIndex(i);
-            QStringList sl = progSetting->value("PORT").toString().split(",");
-            _cboPort->addItem(sl[0]);
-        }
-        progSetting->endArray();
-    }
-    else{
-        progSetting->beginWriteArray("SERIAL");
-        for(int i=0;i<4;i++){
-            QString arg = QString("COM%1,9600,n,8,1,n").arg(i+1);
-            progSetting->setArrayIndex(i);
-            progSetting->setValue("PORT",arg);
-            _cboPort->addItem(QString("COM%1").arg(i+1));
-        }
-        progSetting->endArray();
-        progSetting->sync();
-    }
-
-    progSetting->beginGroup("ETHERNET");
-    QString ip = "192.168.1.240";
-    QString gw = "192.168.1.1";
-    QString mask = "255.255.255.0";
-    if(progSetting->contains("DHCP")){
-        if(progSetting->value("DHCP") == "YES"){
-            _chkEthernet->setChecked(true);
-        }
-        else{
-            _chkEthernet->setChecked(false);
-        }
-    }
-    else{
-        progSetting->setValue("DHCP","NO");
-        _chkEthernet->setChecked(false);
-    }
-    QStringList sl;
-    if(progSetting->contains("IP")){
-        sl = progSetting->value("IP").toString().split(".");
-        if(sl.size() != 4){
-            progSetting->setValue("IP",ip);
-            sl = ip.split(".");
-        }
-    }
-    else{
-        progSetting->setValue("IP",ip);
-        sl = ip.split(".");
-    }
-    for(int i=0;i<4;i++){
-        _ip[i]->setText(sl[i]);
-    }
-
-    if(progSetting->contains("GATEWAY")){
-        sl = progSetting->value("GATEWAY").toString().split(".");
-        if(sl.size() != 4){
-            progSetting->setValue("GATEWAY",gw);
-            sl = gw.split(".");
-        }
-    }
-    else{
-        progSetting->setValue("GATEWAY",gw);
-        sl = gw.split(".");
-    }
-    for(int i=0;i<4;i++){
-        _gw[i]->setText(sl[i]);
-    }
-
-    if(progSetting->contains("MASK")){
-        sl = progSetting->value("MASK").toString().split(".");
-        if(sl.size() != 4){
-            progSetting->setValue("MASK",mask);
-            sl = mask.split(".");
-        }
-    }
-    else{
-        progSetting->setValue("MASK",mask);
-        sl = mask.split(".");
-    }
-    for(int i=0;i<4;i++){
-        _mask[i]->setText(sl[i]);
-    }
-    progSetting->endGroup();
-    progSetting->sync();
-
-
-    progSetting->beginGroup("MODBUS");
-    if(progSetting->contains("TCP_ENABLE")){
-        if(progSetting->value("TCP_ENABLE").toString().contains("TRUE")){
-            _chkModbusTcp->setChecked(true);
-        }
-        else{
-            _chkModbusTcp->setChecked(false);
-        }
-    }
-    else{
-        progSetting->setValue("TCP_ENABLE","FALSE");
-        _chkModbusTcp->setChecked(false);
-    }
-    if(progSetting->contains("RTU_ENABLE")){
-        if(progSetting->value("RTU_ENABLE").toString().contains("TRUE")){
-            _chkModbusRtu->setChecked(true);
-        }
-        else{
-            _chkModbusRtu->setChecked(false);
-        }
-    }
-    else{
-        progSetting->setValue("RTU_ENABLE","FALSE");
-        _chkModbusRtu->setChecked(false);
-    }
-
-    if(progSetting->contains("RTU_PORT")){
-        for(int i=0;i<_cboRtuPort->count();i++){
-            if(_cboRtuPort->itemText(i) == progSetting->value("RTU_PORT").toString()){
-                _cboRtuPort->setCurrentIndex(i);
-                break;
-            }
-        }
-    }
-    else{
-        _cboRtuPort->setCurrentIndex(0);
-        progSetting->setValue("RTU_PORT",_cboRtuPort->currentText());
-    }
-
-    if(progSetting->contains("ID")){
-        _rtuSlaveId->setText(progSetting->value("ID").toString());
-    }
-    else{
-        _rtuSlaveId->setText("1");
-        progSetting->setValue("ID","1");
-    }
-
-    if(progSetting->contains("TCP_PORT")){
-        _tcpPort->setText(progSetting->value("TCP_PORT").toString());
-    }
-    else{
-        _tcpPort->setText("502");
-        progSetting->setValue("TCP_PORT","502");
-    }
-
-    progSetting->endGroup();
-
-
-    // log
-    progSetting->beginGroup("LOG");
-
-//    if(progSetting->contains("TYPE")){
-//        //if(progSetting->value("TYPE").toString() == "DAY")
-//    }
-//    else{
-//    }
-
-    if(progSetting->contains("VALUE")){
-        _storedDays->setText(progSetting->value("VALUE").toString());
-    }
-    else{
-        _storedDays->setText("180");
-        progSetting->setValue("VALUE","180");
-    }
-
-    if(progSetting->contains("INTERVAL")){
-        _eventRecordInterval->setText(progSetting->value("INTERVAL").toString());
-    }
-    else{
-        _eventRecordInterval->setText("60");
-        progSetting->setValue("INTERVAL","60");
-    }
-
-    progSetting->endGroup();
-
-    // cell balance
-    progSetting->beginGroup("CELL_BALANCE");
-    if(progSetting->contains("VOLTAGE")){
-        _balancingVoltage->setText(progSetting->value("VOLTAGE").toString());
-    }
-    else{
-        _balancingVoltage->setText("5.0");
-        progSetting->setValue("VOLTAGE","5.0");
-    }
-
-    if(progSetting->contains("HYSTERSIS")){
-        _balancingHystersis->setText(progSetting->value("HYSTERSIS").toString());
-    }
-    else{
-        _balancingHystersis->setText("8");
-        progSetting->setValue("HYSTERSIS","8");
-    }
-
-    if(progSetting->contains("MINIMUM")){
-        _balancingVoltageMin->setText(progSetting->value("MINIMUM").toString());
-    }
-    else{
-        _balancingVoltageMin->setText("3.4");
-        progSetting->setValue("MINIMUM","3.4");
-    }
-
-    if(progSetting->contains("MAXIMUM")){
-        _balancingVoltageMax->setText(progSetting->value("MAXIMUM").toString());
-    }
-    else{
-        _balancingVoltageMax->setText("4.2");
-        progSetting->setValue("MAXIMUM","4.2");
-    }
-
-    if(progSetting->contains("FAULT_DIFF")){
-        _balancingVoltageFaultDiff->setText(progSetting->value("FAULT_DIFF").toString());
-    }
-    else{
-        _balancingVoltageFaultDiff->setText("0.5");
-        progSetting->setValue("FAULT_DIFF","0.5");
-    }
-
-    progSetting->endGroup();
-
-    // alarm settings
-    sz = progSetting->beginReadArray("ALARM_SETTINGS");
-    if(sz > 0){
-        _cboAlarmType->clear();
-        for(int i=0;i<sz;i++){
-            progSetting->setArrayIndex(i);
-            if(progSetting->contains("NAME")){
-                _cboAlarmType->addItem(progSetting->value("NAME").toString());
-            }
-        }
-    }
-    progSetting->endArray();
-
 }
 
 void BMS_SystemConfigWidget::changeAlarmItem(int index)
@@ -905,30 +646,6 @@ void BMS_SystemConfigWidget::checkBoxChanged()
         }
     }
     GSettings::instance().setModified();
-}
-
-void BMS_SystemConfigWidget::saveSettings(QString section, QString key, QString value)
-{
-//    QString path = QCoreApplication::applicationDirPath();
-//    path  += "//config.ini";
-
-//    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-//    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
-
-//    if(section == "SERIAL"){
-//        int sz = progSetting->beginReadArray(section);
-//        for(int i=0;i<sz;i++){
-//            progSetting->setArrayIndex(i);
-//            QStringList sl = progSetting->value("PORT").toString().split(",");
-//            if(sl[0] == key){
-//                sl[1] = value;
-//            }
-//            QString v = sl.join(",");
-//            progSetting->setValue("PORT",v);
-//        }
-//        progSetting->endArray();
-
-//    }
 }
 
 

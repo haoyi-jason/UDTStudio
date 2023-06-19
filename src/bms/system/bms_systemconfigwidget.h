@@ -29,10 +29,6 @@ private:
     QWidget *createAlarmWidget();
     QWidget *createEventViewWidget();
 
-    void loadSettings();
-    void saveSettings(QString section, QString key , QString value);
-
-
 signals:
     void resetSystem();
     void setDigitalOutput(int id,bool state);

@@ -292,7 +292,7 @@ void BMS_BusNodesManagerView::pollProc()
 
 void BMS_BusNodesManagerView::startPoll(int interval)
 {
-    qDebug()<<Q_FUNC_INFO<<" Interval = "<<interval;
+    //qDebug()<<Q_FUNC_INFO<<" Interval = "<<interval;
     foreach (BCU *b, _bcusMap.values()) {
         b->startPoll(interval);
     }

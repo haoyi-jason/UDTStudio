@@ -78,25 +78,12 @@ void BMS_Logger::stopLog()
 
 void BMS_Logger::log()
 {
-//    QString fileName = _logPath + "/" + QDateTime::currentDateTime().toString("yyyyMMdd.log");
-//    QFile f(fileName);
-//    f.open(QIODevice::ReadWrite);
-//    QTextStream ds(&f);
-
-//    if(f.size() == 0){ // new file
-
-//    }
-//    // generate log data
-//    QString dt = QDateTime::currentDateTime().toString("yyyy/MM/dd,hh:mm:ss");
-
     QMutexLocker locker(&_mutex);
     foreach(BCU *b, _bcuList){
         if(b->node()->status() == Node::Status::STARTED && b->isConfigReady()){
             generateRecord(b);
         }
     }
-
-    //f.close();
 }
 
 void BMS_Logger::writeRecord(QString record)

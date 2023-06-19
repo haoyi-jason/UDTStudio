@@ -204,6 +204,7 @@ void NodeDiscover::exploreNodeNext()
 
             QString name = QString("%1[#%2]").arg(node->nodeOd()->value(0x1008,0).toString()).arg(node->nodeId());
             node->setName(name);
+
         }
 
         if (_nodeIdToExplore.isEmpty())
