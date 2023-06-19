@@ -37,12 +37,23 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
     resize(1280,800);
+    QString path = QCoreApplication::applicationDirPath();
+#ifdef Q_OS_WIN
+    path  += "//config.ini";
+#else
+    path  += "/config.ini";
+#endif
+
 #ifdef Q_OS_UNIX
     setWindowState(Qt::WindowFullScreen);
     showFullScreen();
 #endif
-    GSettings::Info("Load Config File");
-    GSettings::instance().LoadConfig("./config.ini");
+    GSettings::Info(QString("Load Config File from %1").arg(path));
+#ifdef Q_OS_UNIX
+    GSettings::instance().LoadConfig(path);
+#else
+    GSettings::instance().LoadConfig(path);
+#endif
 
     setWindowTitle(tr("BMS"));
     statusBar()->setVisible(true);
@@ -57,18 +68,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,_nodeScreens,&BcuScreenWidget::setActiveNode);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,this,&MainWindow::setActiveNode);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::functionSelected,this,&MainWindow::setFunction);
-
-    QString path = QCoreApplication::applicationDirPath();
-#ifdef Q_OS_WIN
-    path  += "//config.ini";
-#else
-    path  += "/config.ini";
-#endif
-    //qDebug()<<"INI PATH:"<<path;
-    GSettings::instance().Info("Read BUS configuration");
-
-    QSettings *progSetting = new QSettings(path, QSettings::IniFormat);
-    progSetting->setIniCodec(QTextCodec::codecForName("UTF-8"));
 
     QString sl_conn ;
     //QList<CanOpenBus*> busList;
