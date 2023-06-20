@@ -121,6 +121,9 @@ void BMS_BusNodesManagerView::nodeNameChanged(QString name)
     if(it != _bcusMap.constEnd()){
         it.value()->readConfig();
         it.value()->node()->sendStart();
+        foreach (PDO *p, it.key()->tpdos()) {
+            p->setEnabled(true);
+        }
     }
 }
 
