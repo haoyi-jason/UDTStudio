@@ -27,7 +27,8 @@ BMS_BusNodesManagerView::BMS_BusNodesManagerView(CanOpen *canOpen, QWidget *pare
 
     //connect(_bcuManagerWidget,&BMS_BCUManagerwidget::nodeSelected,this,&BMS_BusNodesManagerView::nodeSelected);
 
-    _poller = nullptr;
+    //_poller = nullptr;
+    //_logger = nullptr;
     //connect(_pollTimer,&QTimer::timeout,this,&BMS_BusNodesManagerView::pollProc);
     //_logger = new BMS_Logger();
     //_logger->startLog(10);
@@ -60,17 +61,30 @@ void BMS_BusNodesManagerView::setCanOpen(CanOpen *canOpen)
 
 }
 
-void BMS_BusNodesManagerView::setLogger(BMS_Logger *logger)
-{
-    _logger = logger;
-    if(_logger != nullptr){
+//void BMS_BusNodesManagerView::setLogger(BMS_Logger *logger)
+//{
+//    _logger = logger;
+//    if(_logger != nullptr){
 
+//    }
+//}
+
+//BMS_Logger *BMS_BusNodesManagerView::logger() const
+//{
+//    return _logger;
+//}
+
+void BMS_BusNodesManagerView::setStackManager(BMS_StackManager *manager)
+{
+    _stackManager = manager;
+    if(_stackManager != nullptr){
+        connect(_stackManager,&BMS_StackManager::activeBcuChannged,this,&BMS_BusNodesManagerView::activeBcuChanged);
     }
 }
 
-BMS_Logger *BMS_BusNodesManagerView::logger() const
+BMS_StackManager *BMS_BusNodesManagerView::stackManager() const
 {
-    return _logger;
+    return _stackManager;
 }
 
 void BMS_BusNodesManagerView::addBus(quint8 busId)
@@ -80,12 +94,13 @@ void BMS_BusNodesManagerView::addBus(quint8 busId)
     if(bus == nullptr){
         return;
     }
-    connect(bus,&CanOpenBus::nodeAdded,this,[=](int nodeId){addBcu(bus,nodeId);});
-    connect(bus,&CanOpenBus::nodeAboutToBeRemoved,this,[=](int nodeId){removeBcu(bus,nodeId);});
+    //connect(bus,&CanOpenBus::nodeAdded,this,[=](int nodeId){addBcu(bus,nodeId);});
+    //connect(bus,&CanOpenBus::nodeAboutToBeRemoved,this,[=](int nodeId){removeBcu(bus,nodeId);});
 }
 
 void BMS_BusNodesManagerView::addBcu(CanOpenBus *bus, quint8 id)
 {
+    qDebug()<<Q_FUNC_INFO;
     Node *node = bus->node(id);
 
     if(node == nullptr){
@@ -103,9 +118,9 @@ void BMS_BusNodesManagerView::addBcu(CanOpenBus *bus, quint8 id)
     connect(bcu,&BCU::stateChanged,this,&BMS_BusNodesManagerView::bcuStateChanged);
     connect(node,&Node::nameChanged,this,&BMS_BusNodesManagerView::nodeNameChanged);
 
-    if(_logger != nullptr){
-        _logger->addBCU(bcu);
-    }
+//    if(_logger != nullptr){
+//        _logger->addBCU(bcu);
+//    }
 
     //    QVBoxLayout *bcuLayout = (QVBoxLayout*)_bcuGroup->layout();
 //    QString title = QString("BCU ID: %1").arg(node->nodeId());
@@ -120,10 +135,24 @@ void BMS_BusNodesManagerView::nodeNameChanged(QString name)
     QMap<Node*, BCU*>::const_iterator it = _bcusMap.constFind(node);
     if(it != _bcusMap.constEnd()){
         it.value()->readConfig();
-        it.value()->node()->sendStart();
-        foreach (PDO *p, it.key()->tpdos()) {
-            p->setEnabled(true);
-        }
+        // move to bcu call
+//        it.value()->node()->sendStart();
+//        foreach (PDO *p, it.key()->tpdos()) {
+//            p->setEnabled(true);
+//        }
+    }
+}
+
+void BMS_BusNodesManagerView::activeBcuChanged(BCU *bcu)
+{
+    qDebug()<<Q_FUNC_INFO;
+    if(bcu != nullptr && bcu->node() != nullptr){
+        emit nodeSelected(bcu->node());
+        emit bcuSelected(bcu);
+    }
+    else{
+        emit nodeSelected(nullptr);
+        emit bcuSelected(nullptr);
     }
 }
 
@@ -132,9 +161,9 @@ void BMS_BusNodesManagerView::removeBcu(CanOpenBus *bus, quint8 id)
     QMap<Node*,BCU*>::ConstIterator it = _bcusMap.constBegin();
     foreach(Node *n, _bcusMap.keys()){
         if(n->nodeId() == id && n->bus() == bus){
-            if(_logger != nullptr){
-                _logger->removeBCU(_bcusMap.value(n));
-            }
+//            if(_logger != nullptr){
+//                _logger->removeBCU(_bcusMap.value(n));
+//            }
             _bcusMap.value(n)->deleteLater();
             _bcusMap.remove(n);
         }
@@ -326,10 +355,10 @@ void BMS_BusNodesManagerView::stopPoll()
 
 void BMS_BusNodesManagerView::handlePollerDone()
 {
-    if(_poller != nullptr){
-        _poller->deleteLater();
-        _poller = nullptr;
-    }
+//    if(_poller != nullptr){
+//        _poller->deleteLater();
+//        _poller = nullptr;
+//    }
 }
 
 void BMS_BusNodesManagerView::startBcu(int id)
@@ -420,14 +449,17 @@ void BMS_BusNodesManagerView::bcuStateChanged()
 
 void BMS_BusNodesManagerView::setNode(Node *node)
 {
-    QMap<Node*, BCU*>::const_iterator it = _bcusMap.constFind(node);
-    if(it == _bcusMap.constEnd()) {
-        emit nodeSelected(nullptr);
-        emit bcuSelected(nullptr);
-        return;
-    }
-    emit nodeSelected(it.key());
-    emit bcuSelected(it.value());
+    qDebug()<<Q_FUNC_INFO;
+    if(_stackManager == nullptr) return;
+    _stackManager->setCurrent(node);
+//    if(_stackManager->setCurrent(node)) {
+//        emit nodeSelected(it.key());
+//        emit bcuSelected(it.value());
+//    }
+//    else{
+//        emit nodeSelected(nullptr);
+//        emit bcuSelected(nullptr);
+//    }
 }
 
 

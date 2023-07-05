@@ -64,30 +64,30 @@ void NodeDiscover::parseFrame(const QCanBusFrame &frame)
             Node *node = new Node(nodeId);
             node->setStatus(Node::Status::INIT);
 
-//            if (frame.payload().size() == 1)
-//            {
-//                switch (frame.payload().at(0) & 0x7F)
-//                {
-//                    case 0:  // Bootup
-//                        node->setStatus(Node::Status::INIT);
-//                        break;
+            if (frame.payload().size() == 1)
+            {
+                switch (frame.payload().at(0) & 0x7F)
+                {
+                    case 0:  // Bootup
+                        node->setStatus(Node::Status::INIT);
+                        break;
 
-//                    case 4:  // Stopped
-//                        node->setStatus(Node::Status::STOPPED);
-//                        break;
+                    case 4:  // Stopped
+                        node->setStatus(Node::Status::STOPPED);
+                        break;
 
-//                    case 5:  // Operational
-//                        node->setStatus(Node::Status::STARTED);
-//                        break;
+                    case 5:  // Operational
+                        node->setStatus(Node::Status::STARTED);
+                        break;
 
-//                    case 127:  // Pre-operational
-//                        node->setStatus(Node::Status::PREOP);
-//                        break;
+                    case 127:  // Pre-operational
+                        node->setStatus(Node::Status::PREOP);
+                        break;
 
-//                    default:
-//                        break;
-//                }
-//            }
+                    default:
+                        break;
+                }
+            }
             bus()->addNode(node);
 
             exploreNode(nodeId);

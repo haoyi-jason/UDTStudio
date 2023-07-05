@@ -41,8 +41,8 @@ public:
     //Status status();
     QString statusStr();
     QString chargeStr();
-    QString cvStr();
-    QString ctStr();
+//    QString cvStr();
+//    QString ctStr();
 
     // BCU specified functions
     void accessVoltage(quint8 pack, quint8 cell);
@@ -52,25 +52,32 @@ public:
     quint8 nofNtcsPerPack() const;
 
     BCU_CHARGE_STATE state() const;
-    double maxCell() const;
-    double minCell() const;
-    double maxTemperature() const;
-    double minTemperature() const;
-    quint8 maxCellPos() const;
-    quint8 minCellPos() const;
-    quint8 maxTempPos() const;
-    quint8 minTempPos() const;
-    qint16 cellDifference() const;
+//    double maxCell() const;
+//    double minCell() const;
+//    double maxTemperature() const;
+//    double minTemperature() const;
+//    quint8 maxCellPos() const;
+//    quint8 minCellPos() const;
+//    quint8 maxTempPos() const;
+//    quint8 minTempPos() const;
+//    qint16 cellDifference() const;
 
+    void setAlarmManager(AlarmManager *alarm);
     AlarmManager *alarmManager() const;
     quint8 startMode() const;
     void setStartMode(quint8 mode);
     bool isConfigReady() ;
+    bool isConfigFail() const;
     void reConfig();
     bool canPoll();
     bool isPolling();
     void reset();
     void identify();
+
+    void setSimulate(bool state);
+    bool isSimulate() const;
+    int pollRetry() const;
+    QDateTime lastSeen() const;
 
 public slots:
     void startPollThread(int interval=50);
@@ -81,6 +88,8 @@ public slots:
     void startPoll(int interval = 200);
     void stopPoll();
     void setNode(Node *node);
+    void nodeNameChanged(QString name);
+    void accessConfig();
 
 signals:
     void threadActive(bool);
@@ -90,6 +99,9 @@ signals:
     void identified();
     void stateChanged();
     void configFail();
+    void dataAccessed();
+    void modeChanged(bool); // simulation or not
+    void deviceLost();
 protected:
     void odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags) override;
 
@@ -124,6 +136,7 @@ private:
     AlarmManager *_alarmManager;
     quint16 _configReady;
     quint16 _identifyReady;
+    bool _configFail;
 
     quint8 _startMode;
 
@@ -143,6 +156,10 @@ private:
     uint8_t _errorClass;
     QByteArray _errorDest;
     bool _autoStart;
+    bool _simulate;
+    QDateTime _lastSeen;
+    int _pollTimes;
+    bool _nameDefined;
 };
 
 

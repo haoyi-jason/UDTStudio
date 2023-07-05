@@ -9,8 +9,10 @@
 #include "../../lib/udtgui/screen/nodescreenumcmotor.h"
 
 
+
 #include "screen/nodescreenbcu.h"
 #include "screen/nodescreenpack.h"
+#include "screen/nodescreensimulator.h"
 
 #include <QApplication>
 #include <QHBoxLayout>
@@ -21,7 +23,7 @@ BcuScreenWidget::BcuScreenWidget(QWidget *parent)
     :NodeScreensWidget(parent)
 {
     _activeNode = nullptr;
-    _activeBcu = nullptr;
+    _bcu = nullptr;
 
     //createWidgets();
 
@@ -33,8 +35,18 @@ Node *BcuScreenWidget::activeNode() const
     return _activeNode;
 }
 
+void BcuScreenWidget::setActiveBcu(BCU *bcu)
+{
+    if(bcu != nullptr){
+        _bcu = bcu;
+        setActiveNode(_bcu->node());
+        emit bcuSelected(bcu);
+    }
+}
+
 void BcuScreenWidget::setActiveNode(Node *node)
 {
+    qDebug()<<Q_FUNC_INFO<< ((node == nullptr)?"NULL":node->name());
     int currentIndex = _tabWidget->currentIndex();
 
     // remove all screens from QTabWidget
@@ -72,9 +84,9 @@ void BcuScreenWidget::setActiveNode(Node *node)
 
 void BcuScreenWidget::setOneShot()
 {
-    if(_activeBcu == nullptr) return;
+    if(_bcu == nullptr) return;
 
-    _activeBcu->accessVoltage(0,0);
+    _bcu->accessVoltage(0,0);
 }
 
 void BcuScreenWidget::setActiveTab(int id)
@@ -110,14 +122,16 @@ void BcuScreenWidget::addNode(Node *node)
 
     NodeScreen *screen;
 
-    screen = new NodeScreenBCU();
-    connect(this,&BcuScreenWidget::bcuSelected,static_cast<NodeScreenBCU*>(screen),&NodeScreenBCU::setBCU);
-    screen->setNode(node);
-    screen->setScreenWidget(this);
-    nodeScreens.screens.append(screen);
+//    screen = new NodeScreenBCU();
+//    // this signal not used
+//    //connect(this,&BcuScreenWidget::bcuSelected,static_cast<NodeScreenBCU*>(screen),&NodeScreenBCU::setBCU);
+//    screen->setNode(node);
+//    screen->setScreenWidget(this);
+//    nodeScreens.screens.append(screen);
 
     QApplication::processEvents();
     screen = new NodeScreenPack();
+    connect(this,&BcuScreenWidget::bcuSelected,static_cast<NodeScreenPack*>(screen),&NodeScreenPack::setBcu);
     screen->setNode(node);
     screen->setScreenWidget(this);
     nodeScreens.screens.append(screen);
@@ -141,49 +155,12 @@ void BcuScreenWidget::addNode(Node *node)
     nodeScreens.screens.append(screen);
 
     // add specific screens node
-//    switch (node->profileNumber())
-//    {
-//        case 401:  // UIO, P401
-//        {
-//            QApplication::processEvents();
-//            screen = new NodeScreenUio();
-//            screen->setNode(node);
-//            screen->setScreenWidget(this);
-//            nodeScreens.screens.append(screen);
-//            break;
-//        }
-//        case 402:  // UMC, P402
-//        {
-//            for (int i = 0; i < node->profilesCount(); i++)
-//            {
-//                QApplication::processEvents();
-//                screen = new NodeScreenUmcMotor();
-//                screen->setNode(node, i);
-//                screen->setScreenWidget(this);
-//                nodeScreens.screens.append(screen);
-//            }
-//            if (node->profilesCount() > 1)
-//            {
-//                QApplication::processEvents();
-//                screen = new NodeScreenSynchro();
-//                screen->setNode(node, 12);
-//                screen->setScreenWidget(this);
-//                nodeScreens.screens.append(screen);
-//            }
-//            break;
-//        }
-//        case 428:  // UIOled, P428
-//        {
-//            QApplication::processEvents();
-//            screen = new NodeScreenUIOLed();
-//            screen->setNode(node);
-//            screen->setScreenWidget(this);
-//            nodeScreens.screens.append(screen);
-//            break;
-//        }
-//    }
+    QApplication::processEvents();
+    screen = new NodeScreenSimulator();
+    screen->setNode(node);
+    screen->setScreenWidget(this);
+    nodeScreens.screens.append(screen);
 
-    // add NodeScreensStruct to nodeIt
     _nodesMap.insert(node, nodeScreens);
 
 }

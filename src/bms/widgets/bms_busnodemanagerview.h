@@ -15,6 +15,7 @@
 #include <QActionGroup>
 #include <QThread>
 #include "system/bms_logger.h"
+#include "system/bms_stackmanager.h"
 
 class BMS_Poller;
 
@@ -40,8 +41,11 @@ public:
     void restoreState(QSettings &settings);
     void reloadEds(int id);
 
-    void setLogger(BMS_Logger *logger);
-    BMS_Logger *logger() const;
+//    void setLogger(BMS_Logger *logger);
+//    BMS_Logger *logger() const;
+
+    void setStackManager(BMS_StackManager *manager);
+    BMS_StackManager *stackManager() const;
 
 signals:
     void busSelected(CanOpenBus *currentBus);
@@ -73,6 +77,7 @@ public slots:
     void setNode(Node *node);
     void nodeNameChanged(QString name);
 
+    void activeBcuChanged(BCU *bcu);
 
 protected:
     void createWidgets();
@@ -101,8 +106,8 @@ private:
     BMS_Poller *_poller;
     QActionGroup *_groupControl;
     QMap<Node*,BCU*> _bcusMap;
-    BMS_Logger *_logger;
-
+    //BMS_Logger *_logger;
+    BMS_StackManager *_stackManager;
 };
 
 class BMS_Poller:public QThread

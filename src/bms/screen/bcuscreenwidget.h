@@ -19,6 +19,7 @@ public:
     Node *activeNode() const;
 
 public slots:
+    void setActiveBcu(BCU *bcu);
     void setActiveNode(Node *node);
     void setActiveTab(int id);
     void setActiveTab(const QString &name);
@@ -30,7 +31,7 @@ signals:
     void bcuSelected(BCU *bcu);
 
 protected:
-    BCU *_activeBcu;
+    BCU *_bcu;
     //Node *_activeNode;
 
     void addNode(Node *node);

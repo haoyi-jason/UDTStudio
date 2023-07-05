@@ -17,12 +17,14 @@ public:
     void setLogPath(QString path);
     QString logPath() const;
 
+
 signals:
 
 public slots:
     void startLog(int interval);
     void stopLog();
     void logEvent(QString event);
+    void dataAccessed();
 
 private slots:
     void log();

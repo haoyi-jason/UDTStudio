@@ -208,6 +208,8 @@ AlarmManager::AlarmManager(int packs, int cells, int ntcs, QObject *parent)
         _ctStates.append(new WAState());
     }
     _socStates = new WAState();
+    _pvStates = new WAState();
+    _paStates = new WAState();
 
 }
 
@@ -272,6 +274,24 @@ void AlarmManager::set_soc(double value)
     _criterias[SOC_WARNING]->low()->validate(value,_socStates,WAState::TYPE_WARNING);
 }
 
+void AlarmManager::set_pack_voltage(double value)
+{
+    _packVoltage = value;
+    _criterias[PV_ALARM]->high()->validate(value,_pvStates,WAState::TYPE_ALARM);
+    _criterias[PV_WARNING]->high()->validate(value,_pvStates,WAState::TYPE_WARNING);
+    _criterias[PV_ALARM]->low()->validate(value,_pvStates,WAState::TYPE_ALARM);
+    _criterias[PV_WARNING]->low()->validate(value,_pvStates,WAState::TYPE_WARNING);
+}
+
+void AlarmManager::set_pack_current(double value)
+{
+    _packCurrent = value;
+    _criterias[PA_ALARM]->high()->validate(value,_paStates,WAState::TYPE_ALARM);
+    _criterias[PA_WARNING]->high()->validate(value,_paStates,WAState::TYPE_WARNING);
+    _criterias[PA_ALARM]->low()->validate(value,_paStates,WAState::TYPE_ALARM);
+    _criterias[PA_WARNING]->low()->validate(value,_paStates,WAState::TYPE_WARNING);
+}
+
 void AlarmManager::resetState()
 {
     _cvAlarm = false;
@@ -280,7 +300,10 @@ void AlarmManager::resetState()
     _ctWarning = false;
     _socAlarm = false;
     _socWarning = false;
-
+    _pvAlarm = false;
+    _pvWarning = false;
+    _paAlarm = false;
+    _paWarning = false;
 }
 
 bool AlarmManager::isCvWarning() const
@@ -311,6 +334,26 @@ bool AlarmManager::isSocWarning() const
 bool AlarmManager::isSocAlarm() const
 {
     return _socAlarm;
+}
+
+bool AlarmManager::isPvWarning() const
+{
+    return _pvWarning;
+}
+
+bool AlarmManager::isPvAlarm() const
+{
+    return _pvAlarm;
+}
+
+bool AlarmManager::isPaWarning() const
+{
+    return _paWarning;
+}
+
+bool AlarmManager::isPaAlarm() const
+{
+    return _paAlarm;
 }
 
 bool AlarmManager::isWarning()
@@ -359,6 +402,14 @@ double AlarmManager::maxCt() const
 double AlarmManager::minCt() const
 {
     return _minCt;
+}
+double AlarmManager::voltage() const
+{
+    return _packVoltage;
+}
+double AlarmManager::current() const
+{
+    return _packCurrent;
 }
 
 bool AlarmManager::isEvent()

@@ -43,15 +43,23 @@ BCU::BCU(Node *node, bool autoStart, QObject *parent)
     _startMode = 0;
     _currentGap = 2; // operation current between -_currentGap to _currentGap is idle
     _identifyReady = 0x0;
+    _simulate = false;
+    _alarmManager = nullptr;
 
     _pollTimer = new QTimer();
     connect(_pollTimer,&QTimer::timeout,this,&BCU::accessData);
-
-
+    _lastSeen = QDateTime::currentDateTime();
+    _pollTimes = 0;
+    _configFail = false;
+    _nameDefined = false;
 }
 
 BCU::~BCU()
 {
+    if(_node != nullptr){
+        disconnect(_node,&Node::nameChanged,this,&BCU::nodeNameChanged);
+        //_node->sendPreop();
+    }
 }
 
 Node *BCU::node() const
@@ -64,6 +72,7 @@ void BCU::setNode(Node *node)
     if(node == nullptr) return;
 
     _node = node;
+    connect(_node,&Node::nameChanged,this,&BCU::nodeNameChanged);
 
     if(_autoStart){
         _node->sendStart();
@@ -73,6 +82,9 @@ void BCU::setNode(Node *node)
     registerObjId(NodeObjectId(0x2001,0x01));
     registerObjId(NodeObjectId(0x2001,0x02));
     registerObjId(NodeObjectId(0x2001,0x03));
+    registerObjId(NodeObjectId(0x2011,0x01));
+    registerObjId(NodeObjectId(0x2012,0x01));
+    registerObjId(NodeObjectId(0x2013,0x01));
 
 }
 
@@ -99,6 +111,27 @@ void BCU::identify()
 //    qDebug()<<Q_FUNC_INFO<<frameEmcy.payload().count();
 //    qDebug()<<bus()->writeFrame(frameEmcy);
 
+}
+
+void BCU::setSimulate(bool state)
+{
+    _simulate = state;
+    emit modeChanged(_simulate);
+}
+
+bool BCU::isSimulate() const
+{
+    return _simulate;
+}
+
+int BCU::pollRetry() const
+{
+    return _pollTimes;
+}
+
+QDateTime BCU::lastSeen() const
+{
+    return _lastSeen;
 }
 
 double BCU::voltage() const{
@@ -132,10 +165,10 @@ QString BCU::chargeStr()
 
 //    }
 
-    if(current() >= _currentGap){
+    if(alarmManager()->current() >= _currentGap){
         msg = "充電中";
     }
-    else if(current() < -_currentGap){
+    else if(alarmManager()->current() < -_currentGap){
         msg = "放電中";
     }
     else{
@@ -144,30 +177,30 @@ QString BCU::chargeStr()
     return msg;
 }
 
-QString BCU::cvStr()
-{
-    return QString("電芯電壓: 最高[%1][%2] %3 mv 最低[%4][%5] %6 mv 壓差:%7 mv")
-            .arg(maxCellPos()/nofCellsPerPack()+1)
-            .arg(maxCellPos()%nofCellsPerPack()+1)
-            .arg(maxCell())
-            .arg(minCellPos()/nofCellsPerPack()+1)
-            .arg(minCellPos()%nofCellsPerPack()+1)
-            .arg(minCell())
-            .arg(cellDifference());
+//QString BCU::cvStr()
+//{
+//    return QString("電芯電壓: 最高[%1][%2] %3 mv 最低[%4][%5] %6 mv 壓差:%7 mv")
+//            .arg(maxCellPos()/nofCellsPerPack()+1)
+//            .arg(maxCellPos()%nofCellsPerPack()+1)
+//            .arg(maxCell())
+//            .arg(minCellPos()/nofCellsPerPack()+1)
+//            .arg(minCellPos()%nofCellsPerPack()+1)
+//            .arg(minCell())
+//            .arg(cellDifference());
 
-}
+//}
 
-QString BCU::ctStr()
-{
-    return QString("電芯溫度: 最高[%1][%2] %3 %7 最低[%4][%5] %6 %7")
-            .arg(maxTempPos()/nofNtcsPerPack()+1)
-            .arg(maxTempPos()%nofNtcsPerPack()+1)
-            .arg(maxTemperature())
-            .arg(minTempPos()/nofNtcsPerPack()+1)
-            .arg(minTempPos()%nofNtcsPerPack()+1)
-            .arg(minTemperature())
-            .arg(QChar(0x2103));
-}
+//QString BCU::ctStr()
+//{
+//    return QString("電芯溫度: 最高[%1][%2] %3 %7 最低[%4][%5] %6 %7")
+//            .arg(maxTempPos()/nofNtcsPerPack()+1)
+//            .arg(maxTempPos()%nofNtcsPerPack()+1)
+//            .arg(maxTemperature())
+//            .arg(minTempPos()/nofNtcsPerPack()+1)
+//            .arg(minTempPos()%nofNtcsPerPack()+1)
+//            .arg(minTemperature())
+//            .arg(QChar(0x2103));
+//}
 
 //Node::Status BCU::status()
 //{
@@ -218,50 +251,77 @@ BCU::BCU_CHARGE_STATE BCU::state() const
     return _state;
 }
 
-double BCU::maxCell() const
-{
-    return _alarmManager->maxCv();
-}
+//double BCU::maxCell() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->maxCv();
+//    }
+//    return 0;
+//}
 
-double BCU::minCell() const
-{
-    return _alarmManager->minCv();
-}
+//double BCU::minCell() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->minCv();
+//    }
+//    return 0;
+//}
 
-qint16 BCU::cellDifference() const
-{
-    return (qint16)((_alarmManager->maxCv() - _alarmManager->minCv()));
-}
+//qint16 BCU::cellDifference() const
+//{
+//    if(_alarmManager != nullptr){
+//        return (qint16)((_alarmManager->maxCv() - _alarmManager->minCv()));
+//    }
+//    return 0;
+//}
 
-quint8 BCU::maxCellPos() const
-{
-    return _alarmManager->maxCvPos();
-}
+//quint8 BCU::maxCellPos() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->maxCvPos();
+//    }
+//    return 0;
+//}
 
-quint8 BCU::minCellPos() const
-{
-    return _alarmManager->minCvPos();
-}
+//quint8 BCU::minCellPos() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->minCvPos();
+//    }
+//    return 0;
+//}
 
-double BCU::maxTemperature() const
-{
-    return _alarmManager->maxCt();
-}
+//double BCU::maxTemperature() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->maxCt();
+//    }
+//    return 0;
+//}
 
-double BCU::minTemperature() const
-{
-    return _alarmManager->minCt();
-}
+//double BCU::minTemperature() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->minCt();
+//    }
+//    return 0;
+//}
 
-quint8 BCU::maxTempPos() const
-{
-    return _alarmManager->maxCtPos();
-}
+//quint8 BCU::maxTempPos() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->maxCtPos();
+//    }
+//    return 0;
+//}
 
-quint8 BCU::minTempPos() const
-{
-    return _alarmManager->minCtPos();
-}
+//quint8 BCU::minTempPos() const
+//{
+//    if(_alarmManager != nullptr){
+//        return _alarmManager->minCtPos();
+//    }
+//    return 0;
+//}
 
 bool BCU::validate()
 {
@@ -279,50 +339,51 @@ bool BCU::validate()
     _voltage = _node->nodeOd()->value(0x2002,0x03).toDouble()/10.;
     _current = _node->nodeOd()->value(0x2002,0x04).toDouble()/10.;
 
+    // move to stackManager
 
-    if(_alarmManager == nullptr){
-        valid = false;
-    }
+//    if(_alarmManager == nullptr){
+//        valid = false;
+//    }
 
-    else{
-        for(int i=0;i<_nofPacks;i++){
-            for(int j=0;j<_cellsPerPack;j++){
-                _alarmManager->set_cell_voltage(i * _cellsPerPack + j,_node->nodeOd()->value(0x2100 + i,j + 0x0a).toDouble());
-            }
-        }
+//    else{
+//        for(int i=0;i<_nofPacks;i++){
+//            for(int j=0;j<_cellsPerPack;j++){
+//                _alarmManager->set_cell_voltage(i * _cellsPerPack + j,_node->nodeOd()->value(0x2100 + i,j + 0x0a).toDouble());
+//            }
+//        }
 
-        for(int i=0;i<_nofPacks;i++){
-            for(int j=0;j<_ntcsPerPack;j++){
-                _alarmManager->set_cell_temperature(i*_ntcsPerPack + j,_node->nodeOd()->value(0x2100 + i,j + 0x18).toDouble()/10.);
-            }
-        }
+//        for(int i=0;i<_nofPacks;i++){
+//            for(int j=0;j<_ntcsPerPack;j++){
+//                _alarmManager->set_cell_temperature(i*_ntcsPerPack + j,_node->nodeOd()->value(0x2100 + i,j + 0x18).toDouble()/10.);
+//            }
+//        }
 
-        _alarmManager->set_soc(_node->nodeOd()->value(0x2102,0x01).toDouble());
+//        _alarmManager->set_soc(_node->nodeOd()->value(0x2102,0x01).toDouble());
 
-        // todo : add alarm output function to fire output
-        quint32 org = _node->nodeOd()->value(0x6300,0x01).toInt();
-        quint32 out = 0x0;
-        if(_alarmManager->isAlarm()){
-            out = 0x02;
-        }
-        else if(_alarmManager->isWarning()){
-            out = 0x01;
-        }
+//        // todo : add alarm output function to fire output
+//        quint32 org = _node->nodeOd()->value(0x6300,0x01).toInt();
+//        quint32 out = 0x0;
+//        if(_alarmManager->isAlarm()){
+//            out = 0x02;
+//        }
+//        else if(_alarmManager->isWarning()){
+//            out = 0x01;
+//        }
 
-        if(out != org){
-            QVariant valueToWrite;
-            valueToWrite.setValue(out);
-            qDebug()<< Q_FUNC_INFO << " :Issue digital output";
-            writeObject(0x6300,0x01, valueToWrite);
-        }
+//        if(out != org){
+//            QVariant valueToWrite;
+//            valueToWrite.setValue(out);
+//            qDebug()<< Q_FUNC_INFO << " :Issue digital output";
+//            writeObject(0x6300,0x01, valueToWrite);
+//        }
 
-        emit updateState();
-    }
+//        emit updateState();
+//    }
 
-    if(alarmManager()->isEvent()){
-        qDebug()<<Q_FUNC_INFO<<alarmManager()->eventString();
-        emit sendEvent(alarmManager()->eventString());
-    }
+//    if(alarmManager()->isEvent()){
+//        qDebug()<<Q_FUNC_INFO<<alarmManager()->eventString();
+//        emit sendEvent(alarmManager()->eventString());
+//    }
 
     return valid;
 }
@@ -384,6 +445,16 @@ void BCU::configReceived(quint16 index, quint8 subindex)
 //    }
 }
 
+void BCU::nodeNameChanged(QString name)
+{
+    qDebug()<<Q_FUNC_INFO;
+    (void)name;
+
+    _nameDefined = true;
+    _configReady = 0x00;
+    //readConfig();
+}
+
 void BCU::readConfig()
 {
     _pollConfig = true;
@@ -419,7 +490,7 @@ void BCU::startPoll(int interval)
         if(_pollTimer->isActive()){
             stopPoll();
         }
-        else{
+        else { // start poll node if not in simulate mode
             _accessIdIterator = _accessIds.begin();
             ++_accessIdIterator;
             if(interval == 0){
@@ -442,45 +513,67 @@ void BCU::stopPoll()
     _pollTimer->stop();
 }
 
-void BCU::accessData()
+void BCU::accessConfig()
 {
     if(_pollConfig){
-        if(_configReady == 0x00){
+        quint16 mask = (~_configReady)&0x7;
+        if(mask & 0x01){
             _node->readObject(0x2001,0x01);
-            _pollRetry++;
         }
-        else if(_configReady == 0x01){
+        else if(mask & 0x02){
             _node->readObject(0x2001,0x02);
-            _pollRetry++;
         }
-        else if(_configReady == 0x03){
+        else if(mask & 0x04){
             _node->readObject(0x2001,0x03);
-            _pollRetry++;
         }
-        else if(_configReady == 0x07){
-            _node->readObject(0x1018,0x04);
-            _pollRetry++;
-            stopPoll();
-        }
-        if(_pollRetry > 10){
-            stopPoll();
-            emit configFail();
-        }
+    }
+    _pollRetry++;
+    if(_pollRetry > 100){
+        _configFail = true;
+        emit configFail();
+    }
+}
 
-    }
-    else{
-        if(_node->nodeOd()->errorObject(*_accessIdIterator) == 0){
-            readObject(*_accessIdIterator);
-        }
-        ++_accessIdIterator;
-        if(_accessIdIterator == _accessIds.end()){
-            if(_accessOnece){
-                _pollTimer->stop();
-            }
-            _accessIdIterator = _accessIds.begin();
-            validate();
-        }
-    }
+void BCU::accessData()
+{
+//    if(_pollConfig){
+//        if(_configReady == 0x00){
+//            _node->readObject(0x2001,0x01);
+//            _pollRetry++;
+//        }
+//        else if(_configReady == 0x01){
+//            _node->readObject(0x2001,0x02);
+//            _pollRetry++;
+//        }
+//        else if(_configReady == 0x03){
+//            _node->readObject(0x2001,0x03);
+//            _pollRetry++;
+//        }
+//        else if(_configReady == 0x07){
+//            _node->readObject(0x1018,0x04);
+//            _pollRetry++;
+//            stopPoll();
+//        }
+//        if(_pollRetry > 10){
+//            stopPoll();
+//            emit configFail();
+//        }
+
+//    }
+//    else if(!_simulate){
+//        if(_node->nodeOd()->errorObject(*_accessIdIterator) == 0){
+//            readObject(*_accessIdIterator);
+//        }
+//        ++_accessIdIterator;
+//        if(_accessIdIterator == _accessIds.end()){
+//            if(_accessOnece){
+//                _pollTimer->stop();
+//            }
+//            _accessIdIterator = _accessIds.begin();
+//            //validate();
+//            emit dataAccessed();
+//        }
+//    }
 }
 
 quint8 BCU::startMode() const
@@ -498,10 +591,14 @@ bool BCU::isConfigReady()
     return (_configReady == 0x07);
 }
 
+bool BCU::isConfigFail() const
+{
+    return _configFail;
+}
 void BCU::reConfig()
 {
     _configReady = 0x0;
-    readConfig();
+    //readConfig();
 }
 
 bool BCU::canPoll()
@@ -521,50 +618,53 @@ void BCU::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
         //_odError = true;
         return;
     }
-
+    _lastSeen = QDateTime::currentDateTime();
     quint16 index = objId.index();
     quint8 subindex = objId.subIndex();
     //qDebug()<<Q_FUNC_INFO<<QString("%1").arg(_configReady,16);
-    if(index == 0x2001){
+    if(index == 0x2001 && _nameDefined){
         switch(subindex){
         case 1:
             _configReady |= (1 << (subindex -1));
-            _nofPacks = static_cast<quint8>(_node->nodeOd()->value(0x2001,1).toInt()) - 1;
             _pollRetry = 0;
             break;
         case 2:
             _configReady |= (1 << (subindex -1));
-            _cellsPerPack = static_cast<quint8>(_node->nodeOd()->value(0x2001,2).toInt());
+            _pollRetry = 0;
             //readObject(0x2001,3);
             break;
         case 3:
             _configReady |= (1 << (subindex -1));
-            _ntcsPerPack = static_cast<quint8>(_node->nodeOd()->value(0x2001,3).toInt());
+            _pollRetry = 0;
             break;
         default:break;
         }
 
         if(_configReady == 0x07){
-            stopPoll();
+            _nofPacks = static_cast<quint8>(_node->nodeOd()->value(0x2001,1).toInt()) - 1;
+            _cellsPerPack = static_cast<quint8>(_node->nodeOd()->value(0x2001,2).toInt());
+            _ntcsPerPack = static_cast<quint8>(_node->nodeOd()->value(0x2001,3).toInt());
+            qDebug()<<Q_FUNC_INFO<<"config ready" << _nofPacks << _cellsPerPack << _ntcsPerPack;
+            //stopPoll();
             // initial access list
-            foreach(NodeObjectId o , this->_accessIds){
-                this->_accessIds.removeOne(o);
-            }
-            for(int i=0;i<_nofPacks;i++){
-                for(int j=0;j<0x09;j++){
-                    _accessIds.append(NodeObjectId(0x2100+i,j+0x01));
-                }
-                for(int j=0;j<_cellsPerPack;j++){
-                    _accessIds.append(NodeObjectId(0x2100+i,j+CV_START_ADDR));
-                }
-                for(int j=0;j<_ntcsPerPack;j++){
-                    _accessIds.append(NodeObjectId(0x2100+i,j+CT_START_ADDR));
-                }
-            }
-            _accessIds.append(NodeObjectId(0x1001,0x0));
-            for(int i=1;i<5;i++){
-                _accessIds.append(NodeObjectId(0x2002,i));
-            }
+//            foreach(NodeObjectId o , this->_accessIds){
+//                this->_accessIds.removeOne(o);
+//            }
+//            for(int i=0;i<_nofPacks;i++){
+//                for(int j=0;j<0x09;j++){
+//                    _accessIds.append(NodeObjectId(0x2100+i,j+0x01));
+//                }
+//                for(int j=0;j<_cellsPerPack;j++){
+//                    _accessIds.append(NodeObjectId(0x2100+i,j+CV_START_ADDR));
+//                }
+//                for(int j=0;j<_ntcsPerPack;j++){
+//                    _accessIds.append(NodeObjectId(0x2100+i,j+CT_START_ADDR));
+//                }
+//            }
+//            _accessIds.append(NodeObjectId(0x1001,0x0));
+//            for(int i=1;i<5;i++){
+//                _accessIds.append(NodeObjectId(0x2002,i));
+//            }
 
             emit configReady();
         }
@@ -575,6 +675,48 @@ void BCU::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
 //            emit identified();
 //        }
     }
+    else if(index == 0x2011 && isConfigReady()){
+        // save data to od
+        quint8 pack = static_cast<quint8>(_node->nodeOd()->value(index,0x01).toInt());
+        quint8 cell = static_cast<quint8>(_node->nodeOd()->value(index,0x02).toInt());
+        if((cell == 0xff)){
+            emit dataAccessed();
+        }
+        else if(pack < _nofPacks){
+            for(int i=0;i<3;i++,cell++){
+                if(cell < _cellsPerPack){
+                    quint16 value = static_cast<quint16>(_node->nodeOd()->value(index,0x03 + i).toInt());
+                    node()->nodeOd()->subIndex(0x2100+pack,cell + 0x0a )->setValue(value);
+                }
+            }
+        }
+    }
+    else if(index == 0x2012 && isConfigReady()){
+        quint8 pack = static_cast<quint8>(_node->nodeOd()->value(index,0x01).toInt());
+        quint8 ntc = static_cast<quint8>(_node->nodeOd()->value(index,0x02).toInt());
+        if(pack < _nofPacks){
+            for(int i=0;i<3;i++,ntc++){
+                if(ntc < _ntcsPerPack){
+                    quint16 value = static_cast<quint16>(_node->nodeOd()->value(index,0x03 + i).toInt());
+                    node()->nodeOd()->subIndex(0x2100+pack,ntc + 0x1a )->setValue(value);
+                }
+            }
+        }
+
+    }
+    else if(index == 0x2013 && isConfigReady()){
+        quint8 pack = static_cast<quint8>(_node->nodeOd()->value(index,0x01).toInt());
+        quint8 id = static_cast<quint8>(_node->nodeOd()->value(index,0x02).toInt());
+        quint16 v1 = static_cast<quint16>(_node->nodeOd()->value(index,0x03).toInt());
+        quint16 v2 = static_cast<quint16>(_node->nodeOd()->value(index,0x04).toInt());
+        quint16 v3 = static_cast<quint16>(_node->nodeOd()->value(index,0x05).toInt());
+        if(pack == 0xf0){ // 0xf0 == state report
+
+        }
+        else if(pack < _nofPacks){
+            node()->nodeOd()->subIndex(0x2100+pack,id)->setValue(v1);
+        }
+    }
 }
 /****
  *
@@ -582,6 +724,11 @@ void BCU::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
  *
  *
  */
+
+void BCU::setAlarmManager(AlarmManager *alarm)
+{
+    _alarmManager = alarm;
+}
 
 AlarmManager *BCU::alarmManager() const
 {

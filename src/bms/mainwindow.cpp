@@ -61,16 +61,23 @@ MainWindow::MainWindow(QWidget *parent) :
     createDocks();
     createWidgets();
     readSettings();
-    _logger = new BMS_Logger();
-    _busNodesManagerView->setLogger(_logger);
+//    _logger = new BMS_Logger();
+//    _busNodesManagerView->setLogger(_logger);
 //    createMenus();
-    connect(_busNodesManagerView,&BMS_BusNodesManagerView::bcuSelected,_nodeScreens,&BcuScreenWidget::bcuSelected);
+   // connect(_busNodesManagerView,&BMS_BusNodesManagerView::bcuSelected,_nodeScreens,&BcuScreenWidget::bcuSelected);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,_nodeScreens,&BcuScreenWidget::setActiveNode);
+    connect(_busNodesManagerView,&BMS_BusNodesManagerView::bcuSelected,_nodeScreens,&BcuScreenWidget::setActiveBcu);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::nodeSelected,this,&MainWindow::setActiveNode);
     connect(_busNodesManagerView,&BMS_BusNodesManagerView::functionSelected,this,&MainWindow::setFunction);
 
     QString sl_conn ;
     //QList<CanOpenBus*> busList;
+    _stackManager = new BMS_StackManager();
+    _stackManager->setCanOpen(CanOpen::instance());
+    _stackview->setStackManager(_stackManager);
+    connect(_stackManager,&BMS_StackManager::activeBcuChannged,_nodeScreens,&BcuScreenWidget::setActiveBcu);
+    _busNodesManagerView->setStackManager(_stackManager);
+
     CanOpenBus *b = nullptr;
     //    b = new CanOpenBus(new CanBusVCI("COM10"));
    //     CanOpen::addBus(b);
@@ -106,7 +113,18 @@ MainWindow::MainWindow(QWidget *parent) :
         }
 //        progSetting->endArray();
     }
-    scanBus();
+    _stackManager->scanBus();
+
+//    for (const QString &edsFile : qAsConst(OdDb::edsFiles()))
+//    {
+//        Node *node;
+//        if(edsFile.contains("BCU")){
+//            node = new Node(0x1, QFileInfo(edsFile).completeBaseName(), edsFile);
+//            _nodeScreens->setActiveNode(node);
+//            b->addNode(node);
+//            break;
+//        }
+//    }
 
 //    CanOpenBus *bus = nullptr;
     //resize(QApplication::screens().at(0)->size()*3/4);
@@ -173,16 +191,17 @@ void MainWindow::createDocks()
     setCorner(Qt::BottomLeftCorner,Qt::LeftDockWidgetArea);
     setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::North);
 
-    _busNodesManagerDock = new QDockWidget(tr("Bus nodes"),this);
+    _busNodesManagerDock = new QDockWidget(tr("裝置資訊"),this);
     _busNodesManagerDock->setObjectName("busNodesManagerDock");
     _busNodesManagerView = new BMS_BusNodesManagerView(CanOpen::instance());
     _busNodesManagerDock->setWidget(_busNodesManagerView);
     addDockWidget(Qt::LeftDockWidgetArea,_busNodesManagerDock);
 
-    _canFrameListDock = new QDockWidget(tr("Can frames"),this);
+    _canFrameListDock = new QDockWidget(tr("系統資訊"),this);
     _canFrameListDock->setObjectName("canFrameListDock");
     _canFrameListView = new BMS_CanFrameListView();
-    _canFrameListDock->setWidget(_canFrameListView);
+    _stackview = new BMSStackView();
+    _canFrameListDock->setWidget(_stackview);
     addDockWidget(Qt::LeftDockWidgetArea,_canFrameListDock);
     tabifyDockWidget(_busNodesManagerDock,_canFrameListDock);
 
@@ -426,8 +445,5 @@ void MainWindow::handleAdcValue(int id, int value)
 
 void MainWindow::scanBus()
 {
-    foreach (CanOpenBus *b, CanOpen::buses()) {
-        b->exploreBus();
-    }
 }
 

@@ -88,6 +88,8 @@ public:
         SOC_ALARM,
         PV_WARNING,
         PV_ALARM,
+        PA_WARNING,
+        PA_ALARM,
         NOF_ALARM
     };
     enum CriteriaType{
@@ -100,6 +102,8 @@ public:
     void set_cell_voltage(int id, double value);
     void set_cell_temperature(int id, double value);
     void set_soc(double value);
+    void set_pack_voltage(double value);
+    void set_pack_current(double value);
 
     void addCriteria(SetResetPair *criteria, CriteriaType type);
 
@@ -109,6 +113,10 @@ public:
     bool isCtWarning() const;
     bool isSocAlarm() const;
     bool isSocWarning() const;
+    bool isPvWarning() const;
+    bool isPvAlarm() const;
+    bool isPaWarning() const;
+    bool isPaAlarm() const;
 
     bool isWarning();
     bool isAlarm();
@@ -128,6 +136,8 @@ public:
     double minCv() const;
     double maxCt() const;
     double minCt() const;
+    double voltage() const;
+    double current() const;
 
     QString eventString();
 
@@ -151,6 +161,10 @@ private:
     bool _ctWarning;
     bool _socAlarm;
     bool _socWarning;
+    bool _pvAlarm;
+    bool _pvWarning;
+    bool _paAlarm;
+    bool _paWarning;
 
     int _packs;
     int _cells_per_pack;
@@ -159,6 +173,8 @@ private:
     QList<WAState *> _cvStates;
     QList<WAState *> _ctStates;
     WAState *_socStates;
+    WAState *_pvStates;
+    WAState *_paStates;
 
     int _maxCvPos,_minCvPos;
     int _maxCtPos,_minCtPos;
@@ -170,6 +186,8 @@ private:
     bool _isSocEvent;
 
     QString _eventString;
+
+    double _packVoltage,_packCurrent;
 
 };
 

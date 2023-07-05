@@ -23,6 +23,8 @@
 #include "system/bms_logger.h"
 
 #include "system/peripheralinterface.h"
+#include "../../src/bms/widgets/bmsstackview.h"
+#include "system/bms_stackmanager.h"
 
 
 namespace Ui {
@@ -102,7 +104,8 @@ private:
     QList<SetResetPair*> _socalarm;
 
     BMS_Logger *_logger;
-
+    BMSStackView *_stackview;
+    BMS_StackManager *_stackManager;
 
 #ifdef Q_OS_UNIX
     QList<GPIOHandler*> _inputHandlers;

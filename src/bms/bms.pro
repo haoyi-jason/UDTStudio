@@ -37,7 +37,9 @@ SOURCES += \
         bcu/bms_nodemanagerwidget.cpp \
         bms_ui/indexfocuseditor.cpp \
         bms_ui/qledindicator.cpp \
+        screen/nodescreensimulator.cpp \
         system/bms_modbusslave.cpp \
+        system/bms_stackmanager.cpp \
         system/gsettings.cpp \
         system/login.cpp \
         widgets/bms_busmanagerwidget.cpp \
@@ -47,7 +49,7 @@ SOURCES += \
         bms_ui/numberpad.cpp \
         system/bmsstack.cpp \
         system/bmsstackmodel.cpp \
-        bmsstackview.cpp \
+        widgets/bmsstackview.cpp \
         canFrameListView/bms_canframelistview.cpp \
         canFrameListView/bms_canframemodel.cpp \
         main.cpp \
@@ -74,7 +76,9 @@ HEADERS += \
         bcu/bms_nodemanagerwidget.h \
         bms_ui/indexfocuseditor.h \
         bms_ui/qledindicator.h \
+        screen/nodescreensimulator.h \
         system/bms_modbusslave.h \
+        system/bms_stackmanager.h \
         system/gsettings.h \
         system/login.h \
         widgets/bms_busmanagerwidget.h \
@@ -84,7 +88,7 @@ HEADERS += \
         bms_ui/numberpad.h \
         system/bmsstack.h \
         system/bmsstackmodel.h \
-        bmsstackview.h \
+        widgets/bmsstackview.h \
         canFrameListView/bms_canframelistview.h \
         canFrameListView/bms_canframemodel.h \
         mainwindow.h \

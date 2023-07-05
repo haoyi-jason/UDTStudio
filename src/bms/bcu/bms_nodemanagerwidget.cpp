@@ -49,7 +49,7 @@ void BMS_NodeManagerWidget::setNode(Node *node)
     if(node != _node){
         if(_node != nullptr)
         {
-            disconnect(_node,&Node::statusChanged,this,&BMS_NodeManagerWidget::updateData);
+            //disconnect(_node,&Node::statusChanged,this,&BMS_NodeManagerWidget::updateData);
             //disconnect(_node,&Node::stateChanged);
         }
     }
