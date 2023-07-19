@@ -72,12 +72,12 @@ public slots:
     void BCUConfigReady();
     void updateBCUInfo();
     void setBcu(BCU *bcu);
+    void updateCellData();
 
 public:
     QString title() const;
     void setNodeInternal(Node *node, uint8_t axis);
 private:
-    void updateCellData();
     QString colorText(QString text, QString color);
     QString cellText(QString text, QString style="style = 'color:black'");
     int _bmuIndex;

@@ -157,7 +157,11 @@ public:
         GRP_CTWARN,
         GRP_CTALM,
         GRP_SOCWARN,
-        GRP_SOCALM
+        GRP_SOCALM,
+        GRP_SVWARN,
+        GRP_SVALM,
+        GRP_SAWARN,
+        GRP_SAALM
     };
     explicit AlarmCriteriaSection(QString sectionName="LAN");
     Criteria *data(int index) const;

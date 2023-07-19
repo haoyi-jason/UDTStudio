@@ -452,7 +452,7 @@ void BCU::nodeNameChanged(QString name)
 
     _nameDefined = true;
     _configReady = 0x00;
-    //readConfig();
+    readConfig();
 }
 
 void BCU::readConfig()

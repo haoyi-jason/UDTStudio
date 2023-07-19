@@ -26,7 +26,7 @@ QSize Button::sizeHint() const
 NumberPad::NumberPad(QWidget *parent)
     :QDialog(parent)
 {
-     resize(1200,720);
+//     resize(1200,720);
 //    showFullScreen();
     _checkInput = false;
     _passChar = false;

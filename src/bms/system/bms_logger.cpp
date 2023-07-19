@@ -4,6 +4,7 @@
 #include <QTextStream>
 #include <QDateTime>
 #include <QDebug>
+#include "gsettings.h"
 
 BMS_Logger::BMS_Logger(QObject *parent) : QThread(parent)
 {
@@ -11,8 +12,8 @@ BMS_Logger::BMS_Logger(QObject *parent) : QThread(parent)
     _logTimer = new QTimer();
     connect(_logTimer,&QTimer::timeout,this,&BMS_Logger::log);
 
-    _logPath = _appPath + "log";
-    _recordPath = _appPath + "records";
+    _logPath = _appPath + GSettings::instance().bcuSection()->rec_path();
+    _recordPath = _appPath + GSettings::instance().bcuSection()->rec_path();
 }
 
 void BMS_Logger::addBCU(BCU *bcu)

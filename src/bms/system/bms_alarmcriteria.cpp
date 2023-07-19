@@ -225,13 +225,15 @@ void AlarmManager::set_cell_voltage(int id,double value)
         _maxCv = value;
         _minCv = value;
     }
-    else if(value > _maxCv){
-        _maxCv = value;
-        _maxCvPos = id;
-    }
-    else if(value < _minCv){
-        _minCv = value;
-        _minCvPos = id;
+    else{
+        if(value > _maxCv){
+            _maxCv = value;
+            _maxCvPos = id;
+        }
+        if(value < _minCv){
+            _minCv = value;
+            _minCvPos = id;
+        }
     }
 
     if(id < _cvStates.count()){
@@ -251,13 +253,15 @@ void AlarmManager::set_cell_temperature(int id, double value)
         _maxCt = value;
         _minCt = value;
     }
-    else if(value > _maxCt){
-        _maxCt = value;
-        _maxCtPos = id;
-    }
-    else if(value < _minCt){
-        _minCt = value;
-        _minCtPos = id;
+    else{
+        if(value > _maxCt){
+            _maxCt = value;
+            _maxCtPos = id;
+        }
+        if(value < _minCt){
+            _minCt = value;
+            _minCtPos = id;
+        }
     }
     // new criteria
     _criterias[CT_ALARM]->high()->validate(value,_ctStates[CT_ALARM],WAState::TYPE_ALARM);

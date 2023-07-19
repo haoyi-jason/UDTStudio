@@ -337,6 +337,10 @@ void BMSStackView::handleBcuChanged(BCU *bcu)
                 _btnStartsStop->setChecked(true);
                 _btnStartsStop->setText("停止");
             }
+            else{
+                _btnStartsStop->setChecked(false);
+                _btnStartsStop->setText("啟動");
+            }
 
 
         }

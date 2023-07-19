@@ -11,8 +11,8 @@ QScopedPointer<GSettings> GSettings::_instance;
 GSettings::GSettings(QObject *parent):QObject(parent)
 {
     _pathes = new SystemPath();
-    _pathes->LogFolder = QString("%1/Log").arg(QCoreApplication::applicationDirPath());
-    _pathes->TraceFolder = QString("%1/Trace").arg(QCoreApplication::applicationDirPath());
+    _pathes->LogFolder = QString("%1/../data/Log").arg(QCoreApplication::applicationDirPath());
+    _pathes->TraceFolder = QString("%1/../data/Trace").arg(QCoreApplication::applicationDirPath());
 
     if(!QDir(_pathes->LogFolder).exists()){
         QDir().mkpath(_pathes->LogFolder);

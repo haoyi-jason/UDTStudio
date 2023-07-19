@@ -42,7 +42,9 @@ void NodeScreenPack::setBcu(BCU *bcu)
     if(bcu == nullptr) return;
     _bcu = bcu;
     connect(_bcu,&BCU::configReady,this,&NodeScreenPack::BCUConfigReady);
-    setNodeInternal(_bcu->node(),0);
+    connect(_bcu,&BCU::dataAccessed,this,&NodeScreenPack::updateCellData);
+    updateCellData();
+    //setNodeInternal(_bcu->node(),0);
 }
 
 void NodeScreenPack::createWidgets()
@@ -160,7 +162,7 @@ void NodeScreenPack::setNodeInternal(Node *node, uint8_t axis)
         registerObjId(objId);
 
         registerObjId(NodeObjectId(0x2011,0x01));
-        refreshContent();
+        //refreshContent();
         //connect(_bcu,&BCU::updateState,this, &NodeScreenPack::updateBCUInfo);
     }
 }
@@ -294,6 +296,7 @@ void NodeScreenPack::toggleOneShot()
 void NodeScreenPack::updateCellData()
 {
     if(_bcu == nullptr) return;
+    if(!_bcu->isConfigReady()) return;
 
     QString text = _header;
     quint16 v;
@@ -339,6 +342,10 @@ void NodeScreenPack::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest fl
         _odError = true;
         return;
     }
+    if(_node->status() == Node::UNKNOWN) return;
+    if(_node->status() == Node::PREOP) return;
+    if(_node->status() == Node::INIT) return;
+
     int pack = objId.index() - 0x2100;
     if(objId.index() == 0x2001){
         //qDebug()<<Q_FUNC_INFO;
