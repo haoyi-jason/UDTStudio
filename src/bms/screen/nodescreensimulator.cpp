@@ -70,7 +70,9 @@ void NodeScreenSimulator::handleSetSimulation(bool set)
 {
     // use od to set node into simulation mode
     // bmsstack class should check this od to know self mode
-
+    if(_bcu!= nullptr){
+        _bcu->setSimulate(set);
+    }
 }
 
 void NodeScreenSimulator::setValue()
@@ -123,7 +125,10 @@ void NodeScreenSimulator::addNode(Node *node)
 
 }
 
-void NodeScreenSimulator::setBCU(BCU *bcu)
+void NodeScreenSimulator::setBcu(BCU *bcu)
 {
-
+    if(bcu == nullptr) return;
+    if(_bcu != bcu){
+        _bcu = bcu;
+    }
 }

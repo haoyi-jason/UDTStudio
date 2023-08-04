@@ -25,12 +25,17 @@ public slots:
     void stopLog();
     void logEvent(QString event);
     void dataAccessed();
+    void movdLogFiles(QString destPath);
 
 private slots:
     void log();
     void writeRecord(QString record);
     void generateRecord(BCU *bcu);
     QString generateHeader(BCU *bcu);
+
+private:
+    void cleanFiles();
+    void moveFiles(QString srcPath,QString destPath, int reserved=10);
 
 private:
     QList<BCU *> _bcuList;

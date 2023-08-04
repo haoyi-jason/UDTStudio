@@ -5,6 +5,7 @@
 #include "bmsstack.h"
 #include "system/bms_logger.h"
 #include "system/bms_alarmcriteria.h"
+#include "system/bms_modbusslave.h"
 #include "canopen.h"
 #include <QTimer>
 
@@ -15,6 +16,7 @@ class BMS_StackManager:public QObject
     Q_OBJECT
 public:
     BMS_StackManager();
+    ~BMS_StackManager();
     void setCanOpen(CanOpen *canoopen);
 
     BCU *bcu() ;
@@ -24,6 +26,7 @@ public:
     int totalBcus() ;
     void validateState(BCU *b);
     void clearAlarm();
+    BMS_Logger *logger() const;
 
     double maxCV() const;
     double minCV() const;
@@ -42,6 +45,7 @@ public:
     double packCurrent() const;
     bool setCurrent(Node *node);
 
+    QAction *actionScanBus() const;
 public slots:
     void scanBus();
     void startActivity();
@@ -50,17 +54,21 @@ public slots:
     void removeBcu(quint8 nodeId);
 
     void bcuConfigReady();
-    void nodeNameChanged(QString name);
+    //void nodeNameChanged(QString name);
     void bcuDataAccessed();
 
 private:
+    void updateStackStatus();
 
 private slots:
     void pollState();
+    void scanDone();
+    void dailyTimeout();
 
 signals:
     void activeBcuChannged(BCU *bcu);
     void statusUpdated();
+    void updateStatusText(QString, int);
 
 private:
     //QList<BCU*> _bcus;
@@ -77,6 +85,13 @@ private:
     int _maxCVPID,_minCVPID,_maxCTPID,_minCTPID;
     double _totalCurrent,_packVoltage;
     QTimer *_tmr_statemachine;
+    QTimer *_tmr_scanbus;
+
+    BMS_ModbusSlave *_mbSlave;
+
+    QMutex _mtx_poll;
+    QAction *_actScanBus;
+    int _pollCounter;
 };
 
 #endif // BMS_STACKMANAGER_H

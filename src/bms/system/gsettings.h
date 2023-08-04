@@ -16,6 +16,7 @@ class LanSection;
 class AlarmCriteriaSection;
 class EthernetConfig;
 class BCUSection;
+class SystemSection;
 
 class GSettings:public QObject
 {
@@ -43,6 +44,7 @@ public:
 
     SerialSection *serialSection() const;
     BCUSection *bcuSection() const;
+    SystemSection *systemSection() const;
 
     void setModified();
 protected:
@@ -65,6 +67,7 @@ private:
     AlarmCriteriaSection *_criteriaConfig;
     QString _settingPath;
     BCUSection *_bcusection;
+    SystemSection *_systemSection;
 
     bool _modified;
     int _autoSaveInterval;
@@ -212,6 +215,11 @@ public:
     QString evt_path() const;
     void set_sys_path(QString value);
     QString sys_path() const;
+    void set_log_root(QString path);
+    QString log_root_path() const;
+    void set_move_to_path(QString path);
+    QString move_to_path() const;
+
 
     void set_balancing_min(double value);
     double balancing_min() const;
@@ -243,6 +251,8 @@ private:
     QString _recPath;
     QString _evtPath;
     QString _sysPath;
+    QString _logRoot;
+    QString _logMoveTo;
     // balancing
     double _min_bal_volt;
     double _max_bal_volt;
@@ -253,5 +263,20 @@ private:
     // alarm i/o control
     QList<OutputControl*> _outputControl;
 };
+
+class SystemSection:public AbstractSection
+{
+public:
+    explicit SystemSection(QString sectionName="SYSTEM");
+    void readSection(QSettings *s) override;
+    void writeSection(QSettings *s) override;
+
+    int backlightTime() const;
+
+private:
+    int _backlight_off_time_sec;
+
+};
+
 
 #endif // GSETTINGS_H

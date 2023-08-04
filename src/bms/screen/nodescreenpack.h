@@ -36,10 +36,14 @@ const QString css2 = " \
                     } \
                     </style> \
                      ";
-const QString css_normal = "style='padding:5px;width:60px;font-size:16px;font-style:bold;color:black;background:#888888'";
-const QString css_warning = "style='padding:5px;font-size:16px;font-style:bold;color:yellow;background:blue'";
-const QString css_alarm = "style='padding:5px;font-size:16px;font-style:bold;color:red;background:green'";
-const QString css_header = "style='padding:5px;font-size:16px;font-style:bold;color:red;background:blue'";
+const QString css_normal =  "style='text-align:right; padding:5px;width:60px;font-size:16px;font-weight:bold;color:#ffffff;background:#888888'";
+const QString css_warning = "style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:yellow;background:blue'";
+const QString css_alarm =   "style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:#ffffff;background:red'";
+const QString css_header =  "style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:#222222;background:#BBBBBB'";
+const QString css_hwarning ="style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:#222222;background:yellow'";
+const QString css_halarm =  "style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:#ffffff;background:red'";
+const QString css_lwarning ="style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:yellow;background:green'";
+const QString css_lalarm =  "style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:#ffffff;background:blue'";
 
 class NodeScreenPack : public NodeScreen,public NodeOdSubscriber
 {
@@ -80,6 +84,7 @@ public:
 private:
     QString colorText(QString text, QString color);
     QString cellText(QString text, QString style="style = 'color:black'");
+    void UpdateHeader(BCU *bcu);
     int _bmuIndex;
     //QList<BmuCellInputWidgets*> _bmuCellInputWidgets;
     BcuStateWidget *_stateWidget;

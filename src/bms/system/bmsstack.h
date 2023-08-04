@@ -37,6 +37,8 @@ public:
 
     double voltage() const;
     double current() const;
+    double soc() const;
+    double soh() const;
 
     //Status status();
     QString statusStr();
@@ -45,11 +47,13 @@ public:
 //    QString ctStr();
 
     // BCU specified functions
-    void accessVoltage(quint8 pack, quint8 cell);
+    //void accessVoltage(quint8 pack, quint8 cell);
 
     quint8 nofPacks() const;
     quint8 nofCellsPerPack() const;
     quint8 nofNtcsPerPack() const;
+    quint8 bmuType() const;
+    quint8 cmdState() const;
 
     BCU_CHARGE_STATE state() const;
 //    double maxCell() const;
@@ -70,19 +74,20 @@ public:
     bool isConfigFail() const;
     void reConfig();
     bool canPoll();
-    bool isPolling();
+    bool dataReady() const;
+    //bool isPolling();
     void reset();
-    void identify();
+    //void identify();
 
     void setSimulate(bool state);
     bool isSimulate() const;
     int pollRetry() const;
     QDateTime lastSeen() const;
-
+    void notifyUpdate();
 public slots:
-    void startPollThread(int interval=50);
+    //void startPollThread(int interval=50);
     bool validate();
-    void configReceived(quint16 index, quint8 subindex);
+    //void configReceived(quint16 index, quint8 subindex);
     void readConfig();
     void resetError();
     void startPoll(int interval = 200);
@@ -102,6 +107,7 @@ signals:
     void dataAccessed();
     void modeChanged(bool); // simulation or not
     void deviceLost();
+    void statusReported();
 protected:
     void odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags) override;
 
@@ -111,13 +117,16 @@ private slots:
 private:
     double _voltage;
     double _current;
+    double _soc;
+    double _soh;
     quint8 _nofPacks;
     quint8 _cellsPerPack;
     quint8 _ntcsPerPack;
 
+
     QMutex _mutex;
     friend class BCUPollThread;
-    BCUPollThread *_pollThread;
+    //BCUPollThread *_pollThread;
 
     quint8 _currentPollId;
     quint8 _maxPollId;
@@ -160,52 +169,12 @@ private:
     QDateTime _lastSeen;
     int _pollTimes;
     bool _nameDefined;
+    bool _configDone;
+    quint8 _bmuType;
+    quint8 _cmdState;
+    bool _dataReady;
+    QDateTime _firstPollTime;
 };
 
-
-class BatteryPack:public QObject
-{
-    Q_OBJECT
-public:
-    explicit BatteryPack(QObject *parent = nullptr);
-    QString name() const;
-    double voltage() const;
-
-    QString status();
-    QVariant cellVoltage(int cell) const;
-    QVariant temperature(int ntc) const;
-
-private:
-    void updateState();
-
-signals:
-
-private:
-    QString _name;
-    double _voltage;
-    QList<uint16_t> _cellVoltage;
-    QList<float> _ntcTemperature;
-
-};
-
-
-class BCUPollThread:public QThread
-{
-    Q_OBJECT
-public:
-    BCUPollThread(BCU *bcu);
-    void stop();
-    void setInterval(int value);
-
-protected:
-    void run() override;
-    BCU *_bcu;
-
-signals:
-
-private:
-    bool _stop;
-    int _interval;
-};
 
 #endif // BMSSTACK_H

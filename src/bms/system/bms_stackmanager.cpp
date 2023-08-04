@@ -1,9 +1,13 @@
 #include "bms_stackmanager.h"
+#include "gsettings.h"
 #include <QDebug>
+#include <QAction>
+#include <QStorageInfo>
 
 BMS_StackManager::BMS_StackManager()
 {
     _logger = new BMS_Logger();
+    // test file move
     _currentBcuId = -1;
     _maxCV =0;
     _minCV = 0;
@@ -21,11 +25,50 @@ BMS_StackManager::BMS_StackManager()
     _maxCTPID = 0;
     _minCTPID = 0;
 
+    _pollCounter = 0;
     _tmr_statemachine = new QTimer();
     connect(_tmr_statemachine,&QTimer::timeout,this,&BMS_StackManager::pollState);
     _tmr_statemachine->start(50);
 
+    _tmr_scanbus = new QTimer();
+    connect(_tmr_scanbus,&QTimer::timeout,this,&BMS_StackManager::scanDone);
+
     _bcuIterator = _bcusMap.end();
+
+    // modbus slave
+#ifdef Q_OS_UNIX
+    GSettings::instance().Info("Start MODBUS");
+    _mbSlave = new BMS_ModbusSlave();
+    if(GSettings::instance().bcuSection()->mb_rtu_enabled()){
+        GSettings::instance().Info("MODBUS RTU Enabled");
+        _mbSlave->startRTUSlave(GSettings::instance().bcuSection()->mb_rtu_connection());
+    }
+    if(GSettings::instance().bcuSection()->mb_tcp_enabled()){
+        GSettings::instance().Info("MODBUS TCP Enabled");
+        _mbSlave->startTCPServer("localhost",GSettings::instance().bcuSection()->mb_tcp_port());
+    }
+#endif
+    QTimer::singleShot(24*60*60*1000,this,&BMS_StackManager::dailyTimeout);
+
+}
+
+BMS_StackManager::~BMS_StackManager()
+{
+#ifdef Q_OS_UNIX
+    if(GSettings::instance().bcuSection()->mb_rtu_enabled()){
+
+    }
+    if(GSettings::instance().bcuSection()->mb_tcp_enabled()){
+
+    }
+#endif
+
+    // actions
+    _actScanBus = new QAction("TEST");
+    _actScanBus->setIcon(QIcon(":/icons/img/icons8-search-database.png"));
+    _actScanBus->setEnabled(true);
+    _actScanBus->setStatusTip("Scan buses");
+    connect(_actScanBus,&QAction::triggered,this,&BMS_StackManager::scanBus);
 }
 
 void BMS_StackManager::setCanOpen(CanOpen *canoopen)
@@ -42,21 +85,71 @@ void BMS_StackManager::pollState()
         if(_bcuIterator == _bcusMap.end()){
             _bcuIterator = _bcusMap.begin();
         }
-        //BCU *b = _bcuIterator.value();
-        BCU *b = _bcusMap.first();
-        if(!b->isConfigReady() && !b->isConfigFail()){
+
+        _mtx_poll.lock();
+        BCU *b = _bcuIterator.value();
+        //BCU *b = _bcusMap.first();
+
+        if(b != nullptr && !b->isConfigReady()){
+//        if(b != nullptr && !b->isConfigReady() && !b->isConfigFail()){
             b->accessConfig();
         }
 
+
+        if(b->dataReady()){
+            validateState(b);
+            _mbSlave->updateBcuData(b);
+            //b->notifyUpdate();
+        }
+        _mtx_poll.unlock();
         _bcuIterator++;
     }
+
+    _pollCounter++;
+    if(_pollCounter == 20){
+        _pollCounter = 0;
+        updateStackStatus();
+    }
+}
+
+void BMS_StackManager::scanDone()
+{
+    _tmr_statemachine->start(50);
+    _logger->startLog(GSettings::instance().bcuSection()->log_interval());
+    _currentBcuId = -1;
+//    if(_bcusMap.size() > 0){
+//        _currentBcuId = 0;
+//    }
+}
+
+void BMS_StackManager::dailyTimeout()
+{
+    if(!GSettings::instance().bcuSection()->move_to_path().isEmpty()){
+        _logger->movdLogFiles(GSettings::instance().bcuSection()->move_to_path());
+    }
+
+    QTimer::singleShot(24*60*60*1000,this,&BMS_StackManager::dailyTimeout);
 }
 
 void BMS_StackManager::scanBus()
 {
+    _tmr_statemachine->stop();
+    _logger->stopLog();
+    _mtx_poll.lock();
+    for(int i=0;i<_bcusMap.size();i++){
+        Node *n = _bcusMap.keys().at(i);
+        BCU *b = _bcusMap.values().at(i);
+        delete b;
+    //    _bcusMap.remove(n);
+    }
+    _bcusMap.clear();
+    _bcuIterator = _bcusMap.begin();
+    _mtx_poll.unlock();
     foreach (CanOpenBus *b, CanOpen::buses()) {
         b->exploreBus();
     }
+    QTimer::singleShot(20000,this,&BMS_StackManager::scanDone);
+    emit updateStatusText("裝置掃瞄中...",0);
 }
 
 void BMS_StackManager::startActivity()
@@ -76,7 +169,7 @@ void BMS_StackManager::addBus(quint8 busId)
 
 void BMS_StackManager::addBcu(quint8 nodeId)
 {
-    qDebug()<<Q_FUNC_INFO;
+    qDebug()<<Q_FUNC_INFO<<nodeId;
     CanOpenBus *bus = static_cast<CanOpenBus*>(sender());
 
     Node *node = bus->node(nodeId);
@@ -84,24 +177,16 @@ void BMS_StackManager::addBcu(quint8 nodeId)
         return;
     }
 
-    bool found = false;
+    //bool found = false;
     QMap<Node*,BCU*>::const_iterator it = _bcusMap.constFind(node);
     if(it != _bcusMap.constEnd()){
         return;
     }
 
-    BCU *b = new BCU(node,false);
+    BCU *b = new BCU(node,true);
     _bcusMap.insert(node,b);
     //connect(node,&Node::nameChanged,this,&BMS_StackManager::nodeNameChanged);
     connect(b,&BCU::configReady,this,&BMS_StackManager::bcuConfigReady);
-
-    if(_logger != nullptr){
-        _logger->addBCU(b);
-    }
-    if(_currentBcuId == -1){
-        _currentBcuId = 0;
-        emit activeBcuChannged(b);
-    }
     //qDebug()<<Q_FUNC_INFO<<_currentBcuId;
 
 }
@@ -116,11 +201,14 @@ void BMS_StackManager::removeBcu(quint8 nodeId)
         Node *n = m.key();
         BCU *b = m.value();
         if((n == node) && (n->bus() == bus)){
+            _mtx_poll.lock();
             if(_logger != nullptr){
                 _logger->removeBCU(m.value());
             }
             b->deleteLater();
+            //b = nullptr;
             _bcusMap.remove(n);
+            _mtx_poll.unlock();
             break;
         }
     }
@@ -145,50 +233,62 @@ void BMS_StackManager::removeBcu(quint8 nodeId)
 
 void BMS_StackManager::bcuConfigReady()
 {
-    BCU *bcu = static_cast<BCU*>(sender());
+    BCU *bu = static_cast<BCU*>(sender());
     Node *node = nullptr;
 
     QMap<Node*,BCU*>::ConstIterator it = _bcusMap.constBegin();
 
     foreach(BCU *b, _bcusMap.values()){
-        if(b == bcu){
-            node = _bcusMap.key(bcu);
+        if(b == bu){
+            node = _bcusMap.key(bu);
         }
     }
     if(node != nullptr){
-        AlarmManager *alm = new AlarmManager(bcu->nofPacks(),bcu->nofCellsPerPack(),bcu->nofNtcsPerPack());
-        bcu->setAlarmManager(alm);
+        AlarmManager *alm = new AlarmManager(bu->nofPacks(),bu->nofCellsPerPack(),bu->nofNtcsPerPack());
+        //alm->setDuration();
+        bu->setAlarmManager(alm);
         //_alarmManager.append(alm);
         node->sendStart();
         foreach (PDO *p, node->tpdos()) {
             p->setEnabled(true);
         }
-        connect(bcu,&BCU::dataAccessed,this,&BMS_StackManager::bcuDataAccessed);
+        if(_logger != nullptr){
+            _logger->addBCU(bu);
+        }
+        //connect(bu,&BCU::dataAccessed,this,&BMS_StackManager::bcuDataAccessed);
         // read control state
-        node->readObject(0x2003,0x01);
+        //node->readObject(0x2003,0x01);
+    }
+    if(_currentBcuId == -1){
+        _currentBcuId = _bcusMap.values().indexOf(bu);
+        emit activeBcuChannged(bcu());
     }
 
 }
 
-void BMS_StackManager::nodeNameChanged(QString name)
-{
+//void BMS_StackManager::nodeNameChanged(QString name)
+//{
 //    qDebug()<<Q_FUNC_INFO;
 //    Node *node = static_cast<Node*>(sender());
 //    QMap<Node*, BCU*>::const_iterator it = _bcusMap.constFind(node);
 //    if(it != _bcusMap.constEnd()){
 //        it.value()->readConfig();
 //    }
-}
+//}
 
 void BMS_StackManager::bcuDataAccessed()
 {
-    BCU *bcu = static_cast<BCU*>(sender());
-    validateState(bcu);
+//    BCU *bcu = static_cast<BCU*>(sender());
+//    if(bcu->isConfigReady()){
+//        validateState(bcu);
+//        _mbSlave->updateBcuData(bcu);
+//    }
 }
 
 BCU *BMS_StackManager::bcu()
 {
     //qDebug()<<Q_FUNC_INFO;
+    if(_bcusMap.size() == 0) return nullptr;
     BCU *b = nullptr;
     if(_currentBcuId >= 0){
         b = _bcusMap.values().at(_currentBcuId);
@@ -198,9 +298,10 @@ BCU *BMS_StackManager::bcu()
 
 BCU *BMS_StackManager::nextBcu()
 {
+    if(_bcusMap.size() == 0) return nullptr;
     _currentBcuId++;
     if(_currentBcuId >= _bcusMap.size()){
-        _currentBcuId--;
+        _currentBcuId = 0;
     }
     BCU *b = bcu();
     emit activeBcuChannged(b);
@@ -209,9 +310,10 @@ BCU *BMS_StackManager::nextBcu()
 
 BCU *BMS_StackManager::prevBcu()
 {
+    if(_bcusMap.size() == 0) return nullptr;
     _currentBcuId--;
     if(_currentBcuId < 0){
-        _currentBcuId++;
+        _currentBcuId = _bcusMap.size()-1;
     }
     BCU *b = bcu();
     emit activeBcuChannged(b);
@@ -227,6 +329,11 @@ int BMS_StackManager::totalBcus()
 {
     return _bcusMap.size();
 }
+
+BMS_Logger *BMS_StackManager::logger() const
+{
+    return _logger;
+}
 /*
  *  validate system alarm status
  */
@@ -234,7 +341,7 @@ void BMS_StackManager::validateState(BCU *b)
 {
     Node *n = _bcusMap.key(b);
     if(n == nullptr) return;
-
+    b->validate();
 //    for(auto m = _bcusMap.cbegin(), end = _bcusMap.cend(); m != end;++m){
         //Node *n = m.key();
         //BCU *b = m.value();
@@ -271,9 +378,19 @@ void BMS_StackManager::validateState(BCU *b)
             //qDebug()<< Q_FUNC_INFO << " :Issue digital output";
             n->writeObject(0x6300,0x01, valueToWrite);
         }
+
+        if(a->isEvent()){
+            // todo: log event string
+            _logger->logEvent(a->eventString());
+        }
 //    }
 
 
+
+}
+
+void BMS_StackManager::updateStackStatus()
+{
     // loop through each alarm manager to find max/min
     double maxcv = 0;
     double mincv = 10000;
@@ -290,8 +407,13 @@ void BMS_StackManager::validateState(BCU *b)
     double cvdiff = 100;
 
     int packId = 1;
+    double _current = 0;
     foreach(BCU *b,_bcusMap.values()){
+        if(!b->isConfigReady()) continue;
         AlarmManager *m = b->alarmManager();
+        _packVoltage = b->voltage();
+        _current += b->current();
+        if(m == nullptr) continue;
         if(m->maxCv() > maxcv){
             maxcv = m->maxCv();
             maxcv_p = m->maxCvPos()/b->nofCellsPerPack();
@@ -314,6 +436,7 @@ void BMS_StackManager::validateState(BCU *b)
         }
         packId++;
     }
+    _totalCurrent = _current;
     _maxCV = maxcv;
     _maxCVID = maxcv_c+1;
     _minCV = mincv;
@@ -331,6 +454,19 @@ void BMS_StackManager::validateState(BCU *b)
 
     emit statusUpdated();
 
+    QString statustip = "";
+    statustip += QString("連線BCU數量:%1").arg(totalBcus());
+    // storage info
+#ifdef Q_OS_UNIX
+    QStorageInfo sd_info = QStorageInfo("/run/media/mmcblk1p1");
+    if(sd_info.isValid()){
+        statustip += QString("SD:%1/%2 MB").arg(sd_info.bytesFree()>>20).arg(sd_info.bytesTotal()>>20);
+    }
+    else{
+        statustip += "SD:Not Installed";
+    }
+#endif
+    emit updateStatusText(statustip,0);
 }
 
 void BMS_StackManager::clearAlarm()
@@ -414,6 +550,10 @@ bool BMS_StackManager::setCurrent(Node *node)
     return false;
 }
 
+QAction *BMS_StackManager::actionScanBus() const
+{
+    return _actScanBus;
+}
 
 //void BMS_StackManager::validate()
 //{

@@ -26,6 +26,7 @@ GSettings::GSettings(QObject *parent):QObject(parent)
     _lanConfig = new LanSection("ETHERNET");
     _criteriaConfig = new AlarmCriteriaSection("ALARM_SETTINGS");
     _bcusection = new BCUSection();
+    _systemSection = new SystemSection();
 
     _settingPath = "";
     _modified = false;
@@ -70,6 +71,7 @@ void GSettings::LoadConfig(QString path)
     _lanConfig->readSection(setting);
     _criteriaConfig->readSection(setting);
     _bcusection->readSection(setting);
+    _systemSection->readSection(setting);
 
 //    int sz = setting->beginReadArray("CANBUS");
 //    if(sz > 0){
@@ -108,7 +110,7 @@ void GSettings::StoreConfig(QString path)
     _lanConfig->writeSection(setting);
     _criteriaConfig->writeSection(setting);
     _bcusection->writeSection(setting);
-
+    _systemSection->writeSection(setting);
 }
 
 GSettings &GSettings::instance()
@@ -216,6 +218,11 @@ SerialSection *GSettings::serialSection() const
 BCUSection *GSettings::bcuSection() const
 {
     return _bcusection;
+}
+
+SystemSection *GSettings::systemSection() const
+{
+    return _systemSection;
 }
 
 /* serialportsection */
@@ -378,6 +385,7 @@ void AlarmCriteriaSection::readSection(QSettings *s)
     _size = sz;
     Criteria* config;
     QStringList sl;
+    int _time;
     for(int i=0;i<sz;i++){
         if(i < _data.size()){
             config = _data.at(i);
@@ -388,7 +396,12 @@ void AlarmCriteriaSection::readSection(QSettings *s)
         }
 
         s->setArrayIndex(i);
+        _time = s->value("TIME").toInt();
+
         config->setName(s->value("NAME").toString());
+        config->setEnable(s->value("ENABLE").toString().contains("TRUE")?true:false);
+        config->setTime(_time);
+        config->setLabel(s->value("LABEL").toString());
         sl = s->value("HIGH").toString().split(",");
         if(sl.size() == 3){
             double set = sl[0].toDouble();
@@ -406,7 +419,7 @@ void AlarmCriteriaSection::readSection(QSettings *s)
             else if(sl[2].contains("LT")){
                 type = SetResetPair::CMP_LT;
             }
-            config->setHigh(set,reset,type);
+            config->setHigh(set,reset,type,_time);
         }
         sl = s->value("LOW").toString().split(",");
         if(sl.size() == 3){
@@ -425,11 +438,8 @@ void AlarmCriteriaSection::readSection(QSettings *s)
             else if(sl[2].contains("LT")){
                 type = SetResetPair::CMP_LT;
             }
-            config->setLow(set,reset,type);
+            config->setLow(set,reset,type,_time);
         }
-        config->setEnable(s->value("ENABLE").toString().contains("TRUE")?true:false);
-        config->setTime(s->value("TIME").toInt());
-        config->setLabel(s->value("LABEL").toString());
     }
     s->endArray();
 }
@@ -499,6 +509,8 @@ void BCUSection::readSection(QSettings *s)
    _recPath = s->value("PATH_REC").toString();
    _evtPath = s->value("PATH_EVENT").toString();
    _sysPath = s->value("PATH_SYS").toString();
+   _logRoot = s->value("LOG_ROOT").toString();
+   _logMoveTo = s->value("LOG_MOVE_TO").toString();
    s->endGroup();
 
     // balancing
@@ -551,6 +563,8 @@ void BCUSection::writeSection(QSettings *s)
     s->setValue("PATH_REC",_recPath);
     s->setValue("PATH_EVENT",_evtPath);
     s->setValue("PATH_SYS",_sysPath);
+    s->setValue("LOG_ROOT",_logRoot);
+    s->setValue("LOG_MOVE_TO",_logMoveTo);
     s->endGroup();
 
     s->beginGroup("CELL_BALANCE");
@@ -664,6 +678,22 @@ QString BCUSection::sys_path() const
 {
     return _sysPath;
 }
+void BCUSection::set_log_root(QString path)
+{
+    _logRoot = path;
+}
+QString BCUSection::log_root_path() const
+{
+    return _logRoot;
+}
+void BCUSection::set_move_to_path(QString path)
+{
+    _logMoveTo = path;
+}
+QString BCUSection::move_to_path() const
+{
+   return _logMoveTo;
+}
 
 void BCUSection::set_balancing_min(double value)
 {
@@ -721,4 +751,29 @@ OutputControl *BCUSection::outputConctrol(int id)
     return nullptr;
 }
 
+/* system config */
+SystemSection::SystemSection(QString sectionName)
+    :AbstractSection(sectionName)
+{
 
+}
+
+void SystemSection::readSection(QSettings *s)
+{
+    s->beginGroup(_sectionName);
+    _backlight_off_time_sec = s->value("BACKLIGHT_OFF_TIME").toInt();
+    s->endGroup();
+
+}
+void SystemSection::writeSection(QSettings *s)
+{
+    s->beginGroup(_sectionName);
+    s->setValue("BACKLIGHT_OFF_TIME",_backlight_off_time_sec);
+    s->endGroup();
+
+}
+
+int SystemSection::backlightTime() const
+{
+    return _backlight_off_time_sec;
+}

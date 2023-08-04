@@ -79,6 +79,7 @@ void BMS_BusNodesManagerView::setStackManager(BMS_StackManager *manager)
     _stackManager = manager;
     if(_stackManager != nullptr){
         connect(_stackManager,&BMS_StackManager::activeBcuChannged,this,&BMS_BusNodesManagerView::activeBcuChanged);
+        _busNodeTreeView->addBusAction(_stackManager->actionScanBus());
     }
 }
 
@@ -148,11 +149,11 @@ void BMS_BusNodesManagerView::activeBcuChanged(BCU *bcu)
     qDebug()<<Q_FUNC_INFO;
     if(bcu != nullptr && bcu->node() != nullptr){
         emit nodeSelected(bcu->node());
-        emit bcuSelected(bcu);
+        //emit bcuSelected(bcu);
     }
     else{
         emit nodeSelected(nullptr);
-        emit bcuSelected(nullptr);
+        //emit bcuSelected(nullptr);
     }
 }
 

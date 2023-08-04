@@ -4,6 +4,11 @@
 
 WAState::WAState()
 {
+    reset();
+}
+
+void WAState::reset()
+{
     isSet = false;
     isReset = false;
     setTime = QDateTime::currentDateTime();
@@ -13,10 +18,11 @@ WAState::WAState()
 }
 
 /*** SetResetPair  ***/
-SetResetPair::SetResetPair(double set, double reset, Comparator compare)
+SetResetPair::SetResetPair(double set, double reset, Comparator compare, int duration)
     :_set(set)
     ,_reset(reset)
     ,_comparator(compare)
+    ,_duration(duration)
 {
 
 }
@@ -91,7 +97,8 @@ void SetResetPair::validate(double value, WAState *state, WAState::Type type)
     state->value = value;
     if(set){
         if(!state->isSet){
-            if(QDateTime::currentDateTime().secsTo(state->setTime) > _duration){
+            //int secs = QDateTime::currentDateTime().secsTo(state->setTime);
+            if(state->setTime.secsTo(QDateTime::currentDateTime()) > _duration){
                 state->isSet = true;
                 state->isReset = false;
                 state->setTime = QDateTime::currentDateTime();
@@ -105,15 +112,15 @@ void SetResetPair::validate(double value, WAState *state, WAState::Type type)
     }
     else{
         state->setTime = QDateTime::currentDateTime();
-        state->isSet = false;
+        //state->isSet = false;
     }
     if(reset){
         if(!state->isReset){
-            if(QDateTime::currentDateTime().secsTo(state->resetTime) > _duration){
+            if(state->resetTime.secsTo(QDateTime::currentDateTime()) > _duration){
                 state->isReset = true;
-                state->isSet = false;
                 state->resetTime = QDateTime::currentDateTime();
-                state->isTransition = true;
+                state->isTransition = state->isSet;
+                state->isSet = false;
                 state->actionType = type;
             }
         }
@@ -123,7 +130,7 @@ void SetResetPair::validate(double value, WAState *state, WAState::Type type)
     }
     else{
         state->resetTime = QDateTime::currentDateTime();
-        state->isReset = false;
+        //state->isReset = false;
     }
 }
 
@@ -173,14 +180,14 @@ void Criteria::setLabel(QString label)
 {
     _label = label;
 }
-void Criteria::setHigh(float set, float reset, SetResetPair::Comparator cmp)
+void Criteria::setHigh(float set, float reset, SetResetPair::Comparator cmp, int time)
 {
-    _highLmt = new SetResetPair(set,reset,cmp);
+    _highLmt = new SetResetPair(set,reset,cmp,time);
 }
 
-void Criteria::setLow(float set, float reset, SetResetPair::Comparator cmp)
+void Criteria::setLow(float set, float reset, SetResetPair::Comparator cmp,int time)
 {
-    _lowLmt = new SetResetPair(set,reset,cmp);
+    _lowLmt = new SetResetPair(set,reset,cmp,time);
 }
 
 /*** alarm criteria ***/
@@ -197,20 +204,40 @@ AlarmManager::AlarmManager(int packs, int cells, int ntcs, QObject *parent)
     ,_cells_per_pack(cells)
     ,_ntcs_per_pack(ntcs)
 {
+    _cell_count = _packs * _cells_per_pack;
+    _ntc_count = _packs * _ntcs_per_pack;
+
     for(int i=0;i<NOF_ALARM;i++){
         _criterias[i] = GSettings::instance().criteria(i);
+        if(_criterias[i]->time()<=0){
+            _criterias[i]->setTime(5);
+        }
     }
 
-    for(int i=0;i<_packs * _cells_per_pack;i++){
-        _cvStates.append(new WAState());
+    for(int i=0;i<_cell_count;i++){
+        _cvhStates.append(new WAState());
+        _cvlStates.append(new WAState());
     }
-    for(int i=0;i<_packs * _ntcs_per_pack;i++){
-        _ctStates.append(new WAState());
+    for(int i=0;i<_ntc_count;i++){
+        _cthStates.append(new WAState());
+        _ctlStates.append(new WAState());
     }
     _socStates = new WAState();
-    _pvStates = new WAState();
-    _paStates = new WAState();
+    _pvhStates = new WAState();
+    _pvlStates = new WAState();
+    _pahStates = new WAState();
+    _palStates = new WAState();
 
+    _maxCv = 0;
+    _minCv = 5000;
+    _maxCvPos = 0;
+    _minCvPos = 0;
+    _maxCt = -100;
+    _minCt = 200;
+    _maxCtPos = 0;
+    _minCtPos = 0;
+
+    resetState();
 }
 
 void AlarmManager::addCriteria(SetResetPair *criteria, CriteriaType type)
@@ -227,6 +254,8 @@ void AlarmManager::set_cell_voltage(int id,double value)
     }
     else{
         if(value > _maxCv){
+
+
             _maxCv = value;
             _maxCvPos = id;
         }
@@ -236,13 +265,15 @@ void AlarmManager::set_cell_voltage(int id,double value)
         }
     }
 
-    if(id < _cvStates.count()){
-        _isCvEvent = false;
-        // new criteria class
-        _criterias[CV_ALARM]->high()->validate(value,_cvStates[CV_ALARM],WAState::TYPE_ALARM);
-        _criterias[CV_WARNING]->high()->validate(value,_cvStates[CV_WARNING],WAState::TYPE_WARNING);
-        _criterias[CV_ALARM]->low()->validate(value,_cvStates[CV_ALARM],WAState::TYPE_ALARM);
-        _criterias[CV_WARNING]->low()->validate(value,_cvStates[CV_WARNING],WAState::TYPE_WARNING);
+    _isCvEvent = false;
+    // new criteria class
+    _criterias[CV_ALARM]->high()->validate(value,_cvhStates[id],WAState::TYPE_ALARM);
+    if((!_cvhStates[id]->isSet) && (!_cvhStates[id]->isReset)){
+        _criterias[CV_WARNING]->high()->validate(value,_cvhStates[id],WAState::TYPE_WARNING);
+    }
+    _criterias[CV_ALARM]->low()->validate(value,_cvlStates[id],WAState::TYPE_ALARM);
+    if((!_cvlStates[id]->isSet) && (!_cvlStates[id]->isReset)){
+        _criterias[CV_WARNING]->low()->validate(value,_cvlStates[id],WAState::TYPE_WARNING);
     }
 }
 
@@ -264,70 +295,153 @@ void AlarmManager::set_cell_temperature(int id, double value)
         }
     }
     // new criteria
-    _criterias[CT_ALARM]->high()->validate(value,_ctStates[CT_ALARM],WAState::TYPE_ALARM);
-    _criterias[CT_WARNING]->high()->validate(value,_ctStates[CT_WARNING],WAState::TYPE_WARNING);
-    _criterias[CT_ALARM]->low()->validate(value,_ctStates[CT_ALARM],WAState::TYPE_ALARM);
-    _criterias[CT_WARNING]->low()->validate(value,_ctStates[CT_WARNING],WAState::TYPE_WARNING);
+    _criterias[CT_ALARM]->high()->validate(value,_cthStates[id],WAState::TYPE_ALARM);
+    if((!_cthStates[id]->isSet) && (!_cthStates[id]->isReset)){
+        _criterias[CT_WARNING]->high()->validate(value,_cthStates[id],WAState::TYPE_WARNING);
+    }
+    _criterias[CT_ALARM]->low()->validate(value,_ctlStates[id],WAState::TYPE_ALARM);
+    if((!_ctlStates[id]->isSet) && (!_ctlStates[id]->isReset)){
+        _criterias[CT_WARNING]->low()->validate(value,_ctlStates[id],WAState::TYPE_WARNING);
+    }
+
+//    if(id == (_ntc_count-1)){
+//        bool _otw = false;
+//        bool _utw = false;
+//        bool _ota = false;
+//        bool _uta = false;
+//        for(int i=0;i<_ntc_count;i++){
+//            switch(_cthStates[i]->actionType){
+//            case WAState::TYPE_WARNING: _otw |= _cvhStates[i]->isSet;break;
+//            case WAState::TYPE_ALARM: _ota |= _cvhStates[i]->isSet;break;
+//            }
+//            switch(_ctlStates[i]->actionType){
+//            case WAState::TYPE_WARNING: _utw |= _cvhStates[i]->isSet;break;
+//            case WAState::TYPE_ALARM: _uta |= _cvhStates[i]->isSet;break;
+//            }
+//        }
+
+//        _cthWarning = _otw;
+//        _cthAlarm = _ota;
+//        _ctlWarning = _utw;
+//        _ctlAlarm = _uta;
+//    }
+
 }
 
 void AlarmManager::set_soc(double value)
 {
     _criterias[SOC_ALARM]->high()->validate(value,_socStates,WAState::TYPE_ALARM);
-    _criterias[SOC_WARNING]->high()->validate(value,_socStates,WAState::TYPE_WARNING);
+    if(!_socStates->isSet && !_socStates->isReset){
+        _criterias[SOC_WARNING]->high()->validate(value,_socStates,WAState::TYPE_WARNING);
+    }
     _criterias[SOC_ALARM]->low()->validate(value,_socStates,WAState::TYPE_ALARM);
-    _criterias[SOC_WARNING]->low()->validate(value,_socStates,WAState::TYPE_WARNING);
+    if(!_socStates->isSet && !_socStates->isReset){
+        _criterias[SOC_WARNING]->low()->validate(value,_socStates,WAState::TYPE_WARNING);
+    }
 }
 
 void AlarmManager::set_pack_voltage(double value)
 {
     _packVoltage = value;
-    _criterias[PV_ALARM]->high()->validate(value,_pvStates,WAState::TYPE_ALARM);
-    _criterias[PV_WARNING]->high()->validate(value,_pvStates,WAState::TYPE_WARNING);
-    _criterias[PV_ALARM]->low()->validate(value,_pvStates,WAState::TYPE_ALARM);
-    _criterias[PV_WARNING]->low()->validate(value,_pvStates,WAState::TYPE_WARNING);
+    _criterias[PV_ALARM]->high()->validate(value,_pvhStates,WAState::TYPE_ALARM);
+    if(!_pvhStates->isSet && !_pvhStates->isReset){
+        _criterias[PV_WARNING]->high()->validate(value,_pvhStates,WAState::TYPE_WARNING);
+    }
+    _criterias[PV_ALARM]->low()->validate(value,_pvlStates,WAState::TYPE_ALARM);
+    if(!_pvlStates->isSet && !_pvlStates->isReset){
+        _criterias[PV_WARNING]->low()->validate(value,_pvlStates,WAState::TYPE_WARNING);
+    }
 }
 
 void AlarmManager::set_pack_current(double value)
 {
     _packCurrent = value;
-    _criterias[PA_ALARM]->high()->validate(value,_paStates,WAState::TYPE_ALARM);
-    _criterias[PA_WARNING]->high()->validate(value,_paStates,WAState::TYPE_WARNING);
-    _criterias[PA_ALARM]->low()->validate(value,_paStates,WAState::TYPE_ALARM);
-    _criterias[PA_WARNING]->low()->validate(value,_paStates,WAState::TYPE_WARNING);
+    _criterias[PA_ALARM]->high()->validate(value,_pahStates,WAState::TYPE_ALARM);
+    if(!_pahStates->isSet && !_pahStates->isReset){
+        _criterias[PA_WARNING]->high()->validate(value,_pahStates,WAState::TYPE_WARNING);
+    }
+    _criterias[PA_ALARM]->low()->validate(value,_palStates,WAState::TYPE_ALARM);
+    if(!_palStates->isSet && !_palStates->isReset){
+        _criterias[PA_WARNING]->low()->validate(value,_palStates,WAState::TYPE_WARNING);
+    }
 }
 
 void AlarmManager::resetState()
 {
-    _cvAlarm = false;
-    _cvWarning = false;
-    _ctAlarm = false;
-    _ctWarning = false;
+    _cvhAlarm = false;
+    _cvhWarning = false;
+    _cthAlarm = false;
+    _cthWarning = false;
+    _cvlAlarm = false;
+    _cvlWarning = false;
+    _ctlAlarm = false;
+    _ctlWarning = false;
     _socAlarm = false;
     _socWarning = false;
-    _pvAlarm = false;
-    _pvWarning = false;
+    _pvhAlarm = false;
+    _pvhWarning = false;
+    _pvlAlarm = false;
+    _pvlWarning = false;
     _paAlarm = false;
     _paWarning = false;
+
+    foreach (WAState *s, _cvhStates) {
+        s->reset();
+    }
+    foreach (WAState *s, _cvlStates) {
+        s->reset();
+    }
+    foreach (WAState *s, _cthStates) {
+        s->reset();
+    }
+    foreach (WAState *s, _ctlStates) {
+        s->reset();
+    }
+    _socStates->reset();
+    _pvhStates->reset();
+    _pvlStates->reset();
+    _pahStates->reset();
+    _palStates->reset();
 }
 
-bool AlarmManager::isCvWarning() const
+bool AlarmManager::isCvHWarning() const
 {
-    return _cvWarning;
+    return _cvhWarning;
 }
 
-bool AlarmManager::isCvAlarm() const
+bool AlarmManager::isCvHAlarm() const
 {
-    return _cvAlarm;
+    return _cvhAlarm;
 }
 
-bool AlarmManager::isCtWarning() const
+bool AlarmManager::isCvLWarning() const
 {
-    return _ctWarning;
+    return _cvlWarning;
 }
 
-bool AlarmManager::isCtAlarm() const
+bool AlarmManager::isCvLAlarm() const
 {
-    return _ctAlarm;
+    return _cvlAlarm;
+}
+
+bool AlarmManager::isCtHWarning() const
+{
+    return _cthWarning;
+}
+
+bool AlarmManager::isCtHAlarm() const
+{
+    return _cthAlarm;
+}
+
+bool AlarmManager::isCtLWarning() const
+{
+    return _ctlWarning;
+}
+
+bool AlarmManager::isCtLAlarm() const
+{
+    return _ctlAlarm;
 }
 
 bool AlarmManager::isSocWarning() const
@@ -340,16 +454,25 @@ bool AlarmManager::isSocAlarm() const
     return _socAlarm;
 }
 
-bool AlarmManager::isPvWarning() const
+bool AlarmManager::isPvHWarning() const
 {
-    return _pvWarning;
+    return _pvhWarning;
 }
 
-bool AlarmManager::isPvAlarm() const
+bool AlarmManager::isPvHAlarm() const
 {
-    return _pvAlarm;
+    return _pvhAlarm;
 }
 
+bool AlarmManager::isPvLWarning() const
+{
+    return _pvlWarning;
+}
+
+bool AlarmManager::isPvLAlarm() const
+{
+    return _pvlAlarm;
+}
 bool AlarmManager::isPaWarning() const
 {
     return _paWarning;
@@ -362,12 +485,12 @@ bool AlarmManager::isPaAlarm() const
 
 bool AlarmManager::isWarning()
 {
-    return (_cvWarning || _ctWarning || _socWarning);
+    return (_cvhWarning || _cthWarning || _socWarning);
 }
 
 bool AlarmManager::isAlarm()
 {
-    return(_cvAlarm || _ctAlarm || _socAlarm);
+    return(_cvhAlarm || _cthAlarm || _socAlarm);
 }
 
 int AlarmManager::maxCvPos() const
@@ -419,45 +542,226 @@ double AlarmManager::current() const
 bool AlarmManager::isEvent()
 {
     bool ret = false;
-    foreach (WAState *w, _cvStates) {
+    foreach (WAState *w, _cvhStates) {
         ret |= w->isTransition;
     }
-    foreach (WAState *w, _ctStates) {
+    foreach (WAState *w, _cvlStates) {
+        ret |= w->isTransition;
+    }
+    foreach (WAState *w, _cthStates) {
+        ret |= w->isTransition;
+    }
+    foreach (WAState *w, _ctlStates) {
         ret |= w->isTransition;
     }
     ret |= _socStates->isTransition;
+    ret |= _pvhStates->isTransition;
+    ret |= _pvlStates->isTransition;
+    ret |= _pahStates->isTransition;
+    ret |= _palStates->isTransition;
 
-    _eventString = "";
-    for(int i=0;i<_cvStates.count();i++){
-        if(_cvStates[i]->isTransition){
-            ret |= _cvStates[i]->isTransition;
+    QString _dateTime =QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss => ");
+    _eventString ="" ;
+    //int evtOrd = 1;
+    QString sta = "";
+    bool alarm = false;
+    bool warning = false;
+    for(int i=0;i<_cvhStates.count();i++){
+        if(_cvhStates[i]->isTransition){
+            ret |= _cvhStates[i]->isTransition;
+            sta = "";
+            if(_cvhStates[i]->isSet){
+                sta = "OV";
+                if(_cvhStates[i]->actionType == WAState::TYPE_WARNING){
+                    warning = true;
+                }
+                else if(_cvhStates[i]->actionType == WAState::TYPE_ALARM){
+                    alarm = true;
+                }
+
+            }
+            else if(_cvhStates[i]->isReset){
+                sta = "OV Clr";
+            }
+            _eventString += _dateTime;
             _eventString += QString("Cell[%1] ,%2 ,Value=%3, Level=%4\n")
-                    .arg(i+1)
-                    .arg(_cvStates[i]->isSet?"OV":"UV")
-                    .arg(_cvStates[i]->value)
-                    .arg(_cvStates[i]->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
+                    .arg(QString("#%1-%2").arg(i/_cells_per_pack+1).arg(i%_cells_per_pack+1))
+                    .arg(sta)
+                    .arg(_cvhStates[i]->value)
+                    .arg(_cvhStates[i]->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
+        }
+    }
+    _cvhWarning = warning;
+    _cvhAlarm = alarm;
+
+    warning = alarm = false;
+    for(int i=0;i<_cvlStates.count();i++){
+        if(_cvlStates[i]->isTransition){
+            ret |= _cvlStates[i]->isTransition;
+            sta = "";
+            if(_cvlStates[i]->isSet){
+                sta = "UV";
+                if(_cvlStates[i]->actionType == WAState::TYPE_WARNING){
+                    warning = true;
+                }
+                else if(_cvlStates[i]->actionType == WAState::TYPE_WARNING){
+                    alarm = true;
+                }
+            }
+            else if(_cvlStates[i]->isReset){
+                sta = "UV Clr";
+            }
+            _eventString += _dateTime;
+            _eventString += QString("Cell[%1] ,%2 ,Value=%3, Level=%4\n")
+                    .arg(QString("#%1-%2").arg(i/_cells_per_pack+1).arg(i%_cells_per_pack+1))
+                    .arg(sta)
+                    .arg(_cvlStates[i]->value)
+                    .arg(_cvlStates[i]->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
         }
 
     }
+    _cvlWarning = warning;
+    _cvlAlarm = alarm;
 
-    for(int i=0;i<_ctStates.count();i++){
-        if(_ctStates[i]->isTransition){
-            ret |= _ctStates[i]->isTransition;
-            _eventString += QString("NTC[%1] ,%2 ,Value=%3, Level=%4\n")
-                    .arg(i+1)
-                    .arg(_ctStates[i]->isSet?"OT":"UT")
-                    .arg(_ctStates[i]->value)
-                    .arg(_ctStates[i]->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
+    warning = alarm = false;
+    for(int i=0;i<_cthStates.count();i++){
+        if(_cthStates[i]->isTransition){
+            if(_cthStates[i]->isSet){
+                ret |= _cthStates[i]->isTransition;
+                sta = "";
+                if(_cthStates[i]->isSet){
+                    sta = "OT";
+                    if(_cthStates[i]->actionType == WAState::TYPE_WARNING){
+                        warning = true;
+                    }
+                    else if(_cthStates[i]->actionType == WAState::TYPE_ALARM){
+                        alarm = true;
+                    }
+
+                }
+                else if(_cthStates[i]->isReset){
+                    sta = "OT Clr";
+                }
+                _eventString += _dateTime;
+                _eventString += QString("NTC[%1] ,%2 ,Value=%3, Level=%4\n")
+                        .arg(QString("#%1-%2").arg(i/_ntcs_per_pack+1).arg(i%_ntcs_per_pack+1))
+                        .arg(sta)
+                        .arg(_cthStates[i]->value)
+                        .arg(_cthStates[i]->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
+            }
         }
     }
+    _cthWarning = warning;
+    _cthAlarm = alarm;
+
+    warning = alarm = false;
+    for(int i=0;i<_ctlStates.count();i++){
+        if(_ctlStates[i]->isTransition){
+            if(_ctlStates[i]->isSet){
+                ret |= _ctlStates[i]->isTransition;
+                sta = "";
+                if(_ctlStates[i]->isSet){
+                    sta = "UT";
+                    if(_ctlStates[i]->actionType == WAState::TYPE_WARNING){
+                        warning = true;
+                    }
+                    else if(_ctlStates[i]->actionType == WAState::TYPE_ALARM){
+                        alarm = true;
+                    }
+                }
+                else if(_ctlStates[i]->isReset){
+                    sta = "UT Clr";
+                }
+                _eventString += _dateTime;
+                _eventString += QString("NTC[%1] ,%2 ,Value=%3, Level=%4\n")
+                        .arg(QString("#%1-%2").arg(i/_ntcs_per_pack+1).arg(i%_ntcs_per_pack+1))
+                        .arg(sta)
+                        .arg(_ctlStates[i]->value)
+                        .arg(_ctlStates[i]->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
+            }
+        }
+    }
+
+    _ctlWarning = warning;
+    _ctlAlarm = alarm;
+    alarm = warning = false;
 
     if(_socStates->isTransition){
         ret |= _socStates->isTransition;
+        sta = "";
+        if(_socStates->isSet){
+            sta = "USOC";
+            if(_socStates->actionType == WAState::TYPE_WARNING){
+                _socWarning = true;
+                _socAlarm = false;
+            }
+            else if(_pvhStates->actionType == WAState::TYPE_ALARM){
+                _socWarning = false;
+                _socAlarm = true;
+            }
+        }
+        else if(_socStates->isReset){
+            sta = "USOC Clr";
+            _socWarning = _socAlarm = false;
+        }
+        _eventString += _dateTime;
         _eventString += QString("SOC %1 ,Value=%2, Level=%3\n")
-                .arg(_socStates->isSet?"HIGH":"LOW")
+                .arg(sta)
                 .arg(_socStates->value)
                 .arg(_socStates->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
     }
+
+    if(_pvhStates->isTransition){
+        ret |= _pvhStates->isTransition;
+        sta = "";
+        if(_pvhStates->isSet){
+            sta = "OPV";
+            if(_pvhStates->actionType == WAState::TYPE_WARNING){
+                _pvhWarning = true;
+                _pvhAlarm = false;
+            }
+            else if(_pvhStates->actionType == WAState::TYPE_ALARM){
+                _pvhWarning = false;
+                _pvhAlarm = true;
+            }
+        }
+        else if(_pvhStates->isReset){
+            sta = "OPV Clr";
+            _pvhWarning = _pvhAlarm = false;
+        }
+        _eventString += _dateTime;
+        _eventString += QString("PV %1 ,Value=%2, Level=%3\n")
+                .arg(sta)
+                .arg(_pvhStates->value)
+                .arg(_pvhStates->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
+    }
+
+    if(_pvlStates->isTransition){
+        ret |= _pvlStates->isTransition;
+        sta = "";
+        if(_pvlStates->isSet){
+            sta = "UPV";
+            if(_pvlStates->actionType == WAState::TYPE_WARNING){
+                _pvlWarning = true;
+                _pvlAlarm = false;
+            }
+            else if(_pvlStates->actionType == WAState::TYPE_ALARM){
+                _pvlWarning = false;
+                _pvlAlarm = true;
+            }
+        }
+        else if(_pvlStates->isReset){
+            sta = "UPV Clr";
+            _pvlWarning = _pvlAlarm = false;
+        }
+        _eventString += _dateTime;
+        _eventString += QString("PV %1 ,Value=%2, Level=%3\n")
+                .arg(sta)
+                .arg(_pvlStates->value)
+                .arg(_pvlStates->actionType == WAState::TYPE_WARNING?"Warning":"Alarm");
+    }
+
+    _eventString += "\n";
 
     return ret;
 }

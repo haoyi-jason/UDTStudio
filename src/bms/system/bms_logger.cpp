@@ -5,15 +5,32 @@
 #include <QDateTime>
 #include <QDebug>
 #include "gsettings.h"
+#include <QStorageInfo>
 
 BMS_Logger::BMS_Logger(QObject *parent) : QThread(parent)
 {
-    _appPath = QApplication::applicationDirPath()+"/";
+    if(GSettings::instance().bcuSection()->log_root_path().isEmpty()){
+        _appPath = QApplication::applicationDirPath()+"/";
+    }
+    else{
+        _appPath = GSettings::instance().bcuSection()->log_root_path()+"/";
+    }
     _logTimer = new QTimer();
     connect(_logTimer,&QTimer::timeout,this,&BMS_Logger::log);
 
     _logPath = _appPath + GSettings::instance().bcuSection()->rec_path();
-    _recordPath = _appPath + GSettings::instance().bcuSection()->rec_path();
+    _recordPath = _appPath + GSettings::instance().bcuSection()->rec_path()+"/records";
+    _eventPath = _appPath + GSettings::instance().bcuSection()->rec_path()+"/events";
+
+    if(!QDir(_logPath).exists()){
+        QDir().mkpath(_logPath);
+    }
+    if(!QDir(_recordPath).exists()){
+        QDir().mkpath(_recordPath);
+    }
+    if(!QDir(_eventPath).exists()){
+        QDir().mkpath(_eventPath);
+    }
 }
 
 void BMS_Logger::addBCU(BCU *bcu)
@@ -29,7 +46,7 @@ void BMS_Logger::addBCU(BCU *bcu)
             QMutexLocker locker(&_mutex);
             _bcuList.append(bcu);
             //connect(bcu,&BCU::sendEvent,this,&BMS_Logger::logEvent);
-            connect(bcu,&BCU::dataAccessed,this,&BMS_Logger::dataAccessed);
+            //connect(bcu,&BCU::dataAccessed,this,&BMS_Logger::dataAccessed);
         }
     }
 }
@@ -154,7 +171,7 @@ void BMS_Logger::generateRecord(BCU *bcu)
 
 void BMS_Logger::logEvent(QString event)
 {
-    QString fileName =QString("%1/events/event%2.log").arg(_recordPath).arg(QDateTime::currentDateTime().toString("yyyyMMdd"));
+    QString fileName =QString("%1/event-%2.log").arg(_eventPath).arg(QDateTime::currentDateTime().toString("yyyyMMdd"));
     QFile f(fileName);
     f.open(QIODevice::ReadWrite | QIODevice::Append);
     QTextStream ds(&f);
@@ -166,4 +183,57 @@ void BMS_Logger::dataAccessed()
 {
     BCU *bcu = static_cast<BCU*>(sender());
     generateRecord(bcu);
+}
+
+void BMS_Logger::cleanFiles()
+{
+    QStorageInfo storage = QStorageInfo::root();
+
+    if(storage.isValid()){
+        int sizeMb = storage.bytesFree()<<20;
+        if(sizeMb < 200){
+            // remove old files
+
+        }
+    }
+}
+
+void BMS_Logger::moveFiles(QString srcPath, QString destPath, int reserved)
+{
+    QDir src(srcPath);
+    QDir dst(destPath);
+    if(!src.exists()) return;
+    if(!dst.exists()){
+        QDir().mkpath(destPath);
+        if(!dst.exists()) return;
+    }
+
+    if(src.count() > 0){
+        QStringList files = src.entryList(QStringList()<<"*.*",QDir::Files | QDir::NoDotAndDotDot, QDir::Time | QDir::Reversed);
+        if(files.size() >reserved){
+            for(int i=10;i<files.size();i++){
+                QString srcName = QString("%1/%2").arg(srcPath).arg(files[i]);
+                QString dstName = QString("%1/%2").arg(destPath).arg(files[i]);
+                QFile().copy(srcName,dstName);
+                QFile().remove(srcName);
+            }
+        }
+    }
+}
+
+void BMS_Logger::movdLogFiles(QString destPath)
+{
+    QString destDir;
+    // move log
+    destDir = QString("%1/%2").arg(destPath).arg("log");
+    moveFiles(_logPath,destDir,1);
+    // move record
+    destDir = QString("%1/%2").arg(destPath).arg("records");
+    moveFiles(_recordPath,destDir);
+
+
+    // move event
+//    destDir = QString("%1/%2").arg(destPath).arg("events");
+//    moveFiles(_eventPath,destDir,1);
+
 }

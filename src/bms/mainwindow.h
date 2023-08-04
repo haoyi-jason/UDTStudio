@@ -52,6 +52,10 @@ public slots:
     void handleAdcValue(int id, int value);
 
     void handleOutputToggle(int id, bool state);
+    void showStatus(QString text, int timeout);
+
+private slots:
+
 
 protected:
     QDockWidget *_dockWidget;
@@ -81,9 +85,6 @@ public:
     void writeSettings();
     void readSettings();
     void initSettings();
-
-public slots:
-    void scanBus();
 
 signals:
     void windowIdle();

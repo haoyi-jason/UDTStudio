@@ -11,9 +11,9 @@ class BMS_ModbusSlave:public QObject
     Q_OBJECT
 public:
     explicit BMS_ModbusSlave(QObject *parent = nullptr);
-    bool startRTUSlave(QString portName, quint32 baudrate);
+    bool startRTUSlave(QString portName, quint32 baudrate=9600);
     void stopRTUSlave();
-    bool startTCPServer(QString address, quint32 port);
+    bool startTCPServer(QString address="localhost", quint32 port=502);
     void stopTCPServer();
     void updateBcuData(BCU *bcu);
 

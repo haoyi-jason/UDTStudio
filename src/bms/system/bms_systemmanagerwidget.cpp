@@ -48,6 +48,11 @@ void BMS_SystemManagerWidget::createWidgets()
     connect(button,&QPushButton::clicked,this,&BMS_SystemManagerWidget::buttonClicked);
     layout->addWidget(button);
 
+    button = new QPushButton("Scan");
+    button->setProperty("ID", 6);
+    connect(button,&QPushButton::clicked,this,&BMS_SystemManagerWidget::buttonClicked);
+    layout->addWidget(button);
+
     //layout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Maximum));
 
     gb->setLayout(layout);
@@ -65,5 +70,6 @@ void BMS_SystemManagerWidget::buttonClicked()
 
     int id = btn->property("ID").toInt();
 //    qDebug()<<Q_FUNC_INFO<<" ID:"<<id;
+
     emit validFunction(id);
 }

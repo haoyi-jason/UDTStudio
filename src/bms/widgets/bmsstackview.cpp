@@ -80,10 +80,26 @@ void BMSStackView::createWidget()
     _btnStartsStop->setProperty("ID",2);
     gl->addWidget(_btnStartsStop,1,0);
 
-    btn = new QPushButton("進階設定");
+    btn = new QPushButton("BCU設定");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",3);
-    gl->addWidget(btn,1,1);
+    gl->addWidget(btn,3,1);
+
+    btn = new QPushButton("載入參數");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",7);
+    gl->addWidget(btn,2,0);
+
+    btn = new QPushButton("事件檢視");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",12);
+    gl->addWidget(btn,2,1);
+    btn = new QPushButton("系統設定");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",13);
+    gl->addWidget(btn,3,0);
+
+
     vl->addItem(gl);
 
     FocusedEditor *editor;
@@ -120,7 +136,7 @@ void BMSStackView::createWidget()
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",5);
     hl->addWidget(btn);
-    gl->addItem(hl,3,0,1,2);
+    //gl->addItem(hl,3,0,1,2);
 
     btn = new QPushButton("重新啟動");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
@@ -128,6 +144,19 @@ void BMSStackView::createWidget()
     hl->addWidget(btn);
 
     gl->addItem(hl,3,0,1,2);
+
+    hl = new QHBoxLayout();
+    btn = new QPushButton("BCU休眠");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",10);
+    hl->addWidget(btn);
+
+    btn = new QPushButton("BCU喚醒");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",11);
+    hl->addWidget(btn);
+    gl->addItem(hl,4,0,1,2);
+
     _gbConfig->setLayout(gl);
     vl->addWidget(_gbConfig);
 
@@ -160,7 +189,7 @@ void BMSStackView::createWidget()
     gb->setLayout(vl);
     mainLayout->addWidget(gb);
 
-    gb = new QGroupBox("警報狀態");
+    _gbStatus = new QGroupBox("警報狀態");
     vl = new QVBoxLayout();
     vl->setContentsMargins(0,0,0,0);
 
@@ -170,7 +199,7 @@ void BMSStackView::createWidget()
         l->setMinimumHeight(24);
         l->setAlignment(Qt::AlignHCenter);
         l->setFont(f);
-        l->setStyleSheet(style1);
+        l->setStyleSheet(style_normal);
         l->setFrameStyle(QFrame::Panel | QFrame::Sunken);
         l->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         vl->addWidget(l,0,Qt::AlignHCenter);
@@ -182,10 +211,35 @@ void BMSStackView::createWidget()
     btn = new QPushButton("清除報警");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleClearAlarm);
     vl->addWidget(btn);
-    gb->setLayout(vl);
-    mainLayout->addWidget(gb);
+    _gbStatus->setLayout(vl);
+    mainLayout->addWidget(_gbStatus);
 
+    _gbSystem = new QGroupBox("進階設置");
+    _gbSystem->setVisible(false);
+    vl = new QVBoxLayout();
+    vl->setContentsMargins(0,0,0,0);
+    btn = new QPushButton("硬體設定");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",21);
+    vl->addWidget(btn);
 
+    btn = new QPushButton("均衡參數設定");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",22);
+    vl->addWidget(btn);
+
+    btn = new QPushButton("報警參數設定");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",23);
+    vl->addWidget(btn);
+
+    btn = new QPushButton("重新掃瞄");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",24);
+    vl->addWidget(btn);
+
+    _gbSystem->setLayout(vl);
+    mainLayout->addWidget(_gbSystem);
 
 
     setLayout(mainLayout);
@@ -225,10 +279,12 @@ void BMSStackView::handleStackSwitch()
         if(btn->isChecked()){
             btn->setText("停止");
             _stackManager->bcu()->node()->writeObject(0x2003,0x01,0x01);
+            _stackManager->bcu()->node()->readObject(0x2003,0x01);
         }
         else{
             btn->setText("啟動");
             _stackManager->bcu()->node()->writeObject(0x2003,0x01,0x00);
+            _stackManager->bcu()->node()->readObject(0x2003,0x01);
         }
 //        pdo = _stackManager->bcu()->node()->tpdos().at(0);
 //        qDebug()<<Q_FUNC_INFO<<pdo->isEnabled();
@@ -290,6 +346,44 @@ void BMSStackView::handleStackSwitch()
     case 6: // restart bmu stack
         _stackManager->bcu()->node()->writeObject(0x2003,0x04,0xaa);
         break;
+    case 7: // re-read config
+        _stackManager->bcu()->readConfig();
+        break;
+    case 10:
+        _stackManager->bcu()->node()->sendPreop();
+        break;
+    case 11:
+        _stackManager->bcu()->node()->sendStart();
+        break;
+    case 12: // event view
+        emit functionSelected(4);
+        break;
+    case 13: // system config
+        if(_gbSystem->isVisible()){
+            _gbSystem->setVisible(false);
+            _gbStatus->setVisible(true);
+            emit functionSelected(0xFF);
+        }
+        else{
+            if(Login::instance()->exec() == QDialog::Accepted){
+                _gbStatus->setVisible(false);
+                _gbSystem->setVisible(true);
+            }
+        }
+        break;
+    case 21: // hardware config
+        emit functionSelected(1);
+        break;
+    case 22: // balancing parameter
+        emit functionSelected(2);
+        break;
+    case 23: // warning alarm
+        emit functionSelected(3);
+        break;
+    case 24:
+        _stackManager->scanBus();
+        break;
+
     }
 }
 
@@ -309,6 +403,84 @@ void BMSStackView::updateView()
     text += QString("電芯壓差:%1<br>").arg(_stackManager->cvDiff());
 
     _stackInfo->setText(text);
+
+    // check alarm
+    BCU *bcu = _stackManager->bcu();
+    if(bcu != nullptr && bcu->isConfigReady()){
+        if(bcu->alarmManager()->isPvHWarning()){
+            _alarmLabels[0]->setStyleSheet(style_warning);
+        }
+        else if(bcu->alarmManager()->isPvHAlarm()){
+            _alarmLabels[0]->setStyleSheet(style_alarm);
+        }
+        else{
+            _alarmLabels[0]->setStyleSheet(style_normal);
+        }
+        _alarmLabels[0]->update();
+
+        if(bcu->alarmManager()->isPvLWarning()){
+            _alarmLabels[1]->setStyleSheet(style_warning);
+        }
+        else if(bcu->alarmManager()->isPvLAlarm()){
+            _alarmLabels[1]->setStyleSheet(style_alarm);
+        }
+        else{
+            _alarmLabels[1]->setStyleSheet(style_normal);
+        }
+        _alarmLabels[1]->update();
+
+
+//    if(bcu->alarmManager()->isPaWarning()){
+//        _alarmLabels[1]->setStyleSheet(style_warning);
+//    }
+//    else if(bcu->alarmManager()->isPaAlarm()){
+//        _alarmLabels[1]->setStyleSheet(style_alarm);
+//    }
+//    else{
+//        _alarmLabels[1]->setStyleSheet(style_normal);
+//    }
+
+        if(bcu->alarmManager()->isCvHWarning()){
+            _alarmLabels[2]->setStyleSheet(style_warning);
+            _alarmLabels[2]->update();
+        }
+        else if(bcu->alarmManager()->isCvHAlarm()){
+            _alarmLabels[2]->setStyleSheet(style_alarm);
+            _alarmLabels[2]->update();
+        }
+        else{
+            _alarmLabels[2]->setStyleSheet(style_normal);
+            _alarmLabels[2]->update();
+        }
+        if(bcu->alarmManager()->isCvLWarning()){
+            _alarmLabels[3]->setStyleSheet(style_warning);
+        }
+        else if(bcu->alarmManager()->isCvLAlarm()){
+            _alarmLabels[3]->setStyleSheet(style_alarm);
+        }
+        else{
+            _alarmLabels[3]->setStyleSheet(style_normal);
+        }
+
+        if(bcu->alarmManager()->isCtHWarning()){
+            _alarmLabels[4]->setStyleSheet(style_warning);
+        }
+        else if(bcu->alarmManager()->isCtHAlarm()){
+            _alarmLabels[4]->setStyleSheet(style_alarm);
+        }
+        else{
+            _alarmLabels[4]->setStyleSheet(style_normal);
+        }
+        if(bcu->alarmManager()->isCtLWarning()){
+            _alarmLabels[5]->setStyleSheet(style_warning);
+        }
+        else if(bcu->alarmManager()->isCtLAlarm()){
+            _alarmLabels[5]->setStyleSheet(style_alarm);
+        }
+        else{
+            _alarmLabels[5]->setStyleSheet(style_normal);
+        }
+    }
 }
 
 QString BMSStackView::colorText(QString text, QString color)
@@ -332,8 +504,7 @@ void BMSStackView::handleBcuChanged(BCU *bcu)
         _activeBcu = bcu;
         updateView();
         if(_stackManager->bcu()->isConfigReady()){
-            quint8 sta = static_cast<quint8>(_stackManager->bcu()->node()->nodeOd()->value(0x2003,0x01).toInt());
-            if(sta != 0){
+            if(_stackManager->bcu()->cmdState() != 0){
                 _btnStartsStop->setChecked(true);
                 _btnStartsStop->setText("停止");
             }

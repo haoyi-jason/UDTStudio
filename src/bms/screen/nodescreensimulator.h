@@ -21,7 +21,7 @@ public:
 
 public slots:
     void addNode(Node *node);
-    void setBCU(BCU *bcu);
+    void setBcu(BCU *bcu);
 
 protected:
     void createWidgets();

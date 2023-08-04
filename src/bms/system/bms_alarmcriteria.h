@@ -14,6 +14,7 @@ public:
     };
 
     explicit WAState();
+    void reset();
     bool isSet;
     bool isReset;
     QDateTime setTime;
@@ -21,6 +22,11 @@ public:
     bool isTransition;
     Type actionType;
     double value;
+
+    bool warningSet;
+    bool warningReset;
+    bool alarmSet;
+    bool alarmReset;
 };
 
 class SetResetPair
@@ -33,7 +39,7 @@ public:
         CMP_LE
     };
 
-    explicit SetResetPair(double set, double reset, Comparator compare);
+    explicit SetResetPair(double set, double reset, Comparator compare, int duration = 10);
     void validate(double value, WAState *state, WAState::Type type);
     void setDuration(int secs);
     SetResetPair::Comparator type() const;
@@ -62,8 +68,8 @@ public:
     void setEnable(bool set);
     void setTime(int time);
     void setLabel(QString label);
-    void setHigh(float set, float reset, SetResetPair::Comparator cmp);
-    void setLow(float set, float reset,SetResetPair::Comparator cmp);
+    void setHigh(float set, float reset, SetResetPair::Comparator cmp, int time);
+    void setLow(float set, float reset, SetResetPair::Comparator cmp, int time);
 private:
     SetResetPair *_highLmt;
     SetResetPair *_lowLmt;
@@ -79,6 +85,7 @@ class AlarmManager : public QObject
 public:
     explicit AlarmManager(QObject *parent = nullptr);
     explicit AlarmManager(int packs, int cells, int ntcs, QObject *parent = nullptr);
+    // AlarmType should map to config.ini
     enum AlarmType{
         CV_WARNING,
         CV_ALARM,
@@ -107,14 +114,20 @@ public:
 
     void addCriteria(SetResetPair *criteria, CriteriaType type);
 
-    bool isCvAlarm() const;
-    bool isCvWarning() const;
-    bool isCtAlarm() const;
-    bool isCtWarning() const;
+    bool isCvHAlarm() const;
+    bool isCvHWarning() const;
+    bool isCtHAlarm() const;
+    bool isCtHWarning() const;
+    bool isCvLAlarm() const;
+    bool isCvLWarning() const;
+    bool isCtLAlarm() const;
+    bool isCtLWarning() const;
     bool isSocAlarm() const;
     bool isSocWarning() const;
-    bool isPvWarning() const;
-    bool isPvAlarm() const;
+    bool isPvHWarning() const;
+    bool isPvHAlarm() const;
+    bool isPvLWarning() const;
+    bool isPvLAlarm() const;
     bool isPaWarning() const;
     bool isPaAlarm() const;
 
@@ -155,14 +168,20 @@ private:
 
     Criteria *_criterias[NOF_ALARM];
 
-    bool _cvAlarm;
-    bool _cvWarning;
-    bool _ctAlarm;
-    bool _ctWarning;
+    bool _cvhAlarm;
+    bool _cvhWarning;
+    bool _cvlAlarm;
+    bool _cvlWarning;
+    bool _cthAlarm;
+    bool _cthWarning;
+    bool _ctlAlarm;
+    bool _ctlWarning;
     bool _socAlarm;
     bool _socWarning;
-    bool _pvAlarm;
-    bool _pvWarning;
+    bool _pvhAlarm;
+    bool _pvhWarning;
+    bool _pvlAlarm;
+    bool _pvlWarning;
     bool _paAlarm;
     bool _paWarning;
 
@@ -170,11 +189,15 @@ private:
     int _cells_per_pack;
     int _ntcs_per_pack;
 
-    QList<WAState *> _cvStates;
-    QList<WAState *> _ctStates;
+    QList<WAState *> _cvhStates;
+    QList<WAState *> _cthStates;
+    QList<WAState *> _cvlStates;
+    QList<WAState *> _ctlStates;
     WAState *_socStates;
-    WAState *_pvStates;
-    WAState *_paStates;
+    WAState *_pvhStates;
+    WAState *_pvlStates;
+    WAState *_pahStates;
+    WAState *_palStates;
 
     int _maxCvPos,_minCvPos;
     int _maxCtPos,_minCtPos;
@@ -188,6 +211,8 @@ private:
     QString _eventString;
 
     double _packVoltage,_packCurrent;
+    int _cell_count;
+    int _ntc_count;
 
 };
 

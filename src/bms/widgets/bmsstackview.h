@@ -19,7 +19,9 @@
 
 #include "bms_ui/focusededitor.h"
 
-const QString style1 = "border: 5px outset #888888; line-height:2; border-radius: 5px; background: white; color: #00aabb; font-weight:bold;background: #008800; font-size:20px;";
+const QString style_normal = "padding:5px;border: 2px outset #AAAAAA; line-height:2; border-radius: 5px; color: #8888aa; font-weight:bold;background: #00FF00; font-size:16px;";
+const QString style_warning = "padding:5px;border: 2px outset #AAAAAA; line-height:2; border-radius: 5px;color: #8888aa; font-weight:bold;background: #FFFF00; font-size:16px;";
+const QString style_alarm = "padding:5px;border: 2px outset #AAAAAA; line-height:2; border-radius: 5px;  color: #8888aa; font-weight:bold;background: #FF0000; font-size:16px;";
 
 class BMSStackView : public QWidget, public NodeOdSubscriber
 {
@@ -37,7 +39,7 @@ public:
     BMS_StackManager *stackManager() const;
 
 signals:
-
+    void functionSelected(int);
 public slots:
     void handleBcuChanged(BCU *bcu);
     void updateView();
@@ -65,6 +67,8 @@ private:
     QLabel *_stackInfo;
     QLabel *_hwInfo;
     QGroupBox *_gbConfig;
+    QGroupBox *_gbSystem;
+    QGroupBox *_gbStatus;
 
     QList<FocusedEditor*> _editList;
     BCU *_activeBcu;

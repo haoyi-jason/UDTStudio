@@ -15,7 +15,7 @@ bool BMS_ModbusSlave::startRTUSlave(QString portName, quint32 baudrate)
     _rtuSlave->setConnectionParameter(QModbusDevice::SerialParityParameter, QSerialPort::EvenParity);
     _rtuSlave->setConnectionParameter(QModbusDevice::SerialDataBitsParameter,8);
     _rtuSlave->setConnectionParameter(QModbusDevice::SerialStopBitsParameter,QSerialPort::OneStop);
-    _rtuSlave->connectDevice();
+    return _rtuSlave->connectDevice();
 }
 
 void BMS_ModbusSlave::stopRTUSlave()
@@ -30,10 +30,10 @@ void BMS_ModbusSlave::stopRTUSlave()
 bool BMS_ModbusSlave::startTCPServer(QString address, quint32 port)
 {
     _tcpServer = new QModbusTcpServer();
-    _tcpServer->setConnectionParameter(QModbusDevice::NetworkAddressParameter,"localhost");
-    _tcpServer->setConnectionParameter(QModbusDevice::NetworkPortParameter,502);
+    _tcpServer->setConnectionParameter(QModbusDevice::NetworkAddressParameter,address);
+    _tcpServer->setConnectionParameter(QModbusDevice::NetworkPortParameter,port);
     _tcpServer->setMap(_registers);
-    _tcpServer->connectDevice();
+    return _tcpServer->connectDevice();
 
 }
 

@@ -12,7 +12,8 @@
 #include <QSettings>
 #include <QCoreApplication>
 #include <QTextCodec>
-
+#include "system/gsettings.h"
+#include "system/bms_alarmcriteria.h"
 #include <QDebug>
 
 NodeScreenPack::NodeScreenPack(QWidget *parent)
@@ -40,9 +41,15 @@ BCU* NodeScreenPack::bcu() const
 void NodeScreenPack::setBcu(BCU *bcu)
 {
     if(bcu == nullptr) return;
-    _bcu = bcu;
-    connect(_bcu,&BCU::configReady,this,&NodeScreenPack::BCUConfigReady);
-    connect(_bcu,&BCU::dataAccessed,this,&NodeScreenPack::updateCellData);
+    if(_bcu != bcu){
+        if(_bcu != nullptr){
+            //disconnect(_bcu,&BCU::dataAccessed,this,&NodeScreenPack::updateCellData);
+        }
+        _bcu = bcu;
+//        connect(_bcu,&BCU::configReady,this,&NodeScreenPack::BCUConfigReady);
+        connect(_bcu,&BCU::dataAccessed,this,&NodeScreenPack::updateCellData);
+    }
+    UpdateHeader(bcu);
     updateCellData();
     //setNodeInternal(_bcu->node(),0);
 }
@@ -301,18 +308,63 @@ void NodeScreenPack::updateCellData()
     QString text = _header;
     quint16 v;
     double vd;
+    NodeOd *od = _bcu->node()->nodeOd();
+    Criteria *warn = GSettings::instance().criteria(AlarmManager::CV_WARNING);
+    Criteria *alm = GSettings::instance().criteria(AlarmManager::CV_ALARM);
+    QString css = "";
+    if(od == nullptr) return;
     for(int i=0;i<_bcu->nofPacks();i++){
         text += "<tr>";
         text += cellText(QString("#%1").arg(i+1),css_normal);
-        v = static_cast<quint16>(node()->nodeOd()->value(0x2100+i,1).toInt());
+        v = static_cast<quint16>(_bcu->node()->nodeOd()->value(0x2100+i,1).toInt());
         text += cellText(QString::number(double(v/10.),'f',1),css_normal);
+        warn = GSettings::instance().criteria(AlarmManager::CV_WARNING);
+        alm = GSettings::instance().criteria(AlarmManager::CV_ALARM);
         for(int j=0;j<_bcu->nofCellsPerPack();j++){
-            v = static_cast<quint16>(node()->nodeOd()->value(0x2100+i,j+0x0a).toInt());
-            text += cellText(node()->nodeOd()->value(0x2100+i,j+0x0a).toString(),v<2000?css_normal:css_warning);
+            v = static_cast<quint16>(_bcu->node()->nodeOd()->value(0x2100+i,j+0x0a).toInt());
+            css = css_normal;
+            if(v > warn->high()->set()){
+                if(v > alm->high()->set()){
+                    css = css_halarm;
+                }
+                else{
+                    css = css_hwarning;
+                }
+            }
+            else if(v < warn->low()->set()){
+                if(v < alm->low()->set()){
+                    css = css_lalarm;
+                }
+                else{
+                    css = css_lwarning;
+                }
+            }
+//            text += cellText(node()->nodeOd()->value(0x2100+i,j+0x0a).toString(),v<2000?css_normal:css_warning);
+            text += cellText(_bcu->node()->nodeOd()->value(0x2100+i,j+0x0a).toString(),css);
         }
+        warn = GSettings::instance().criteria(AlarmManager::CT_WARNING);
+        alm = GSettings::instance().criteria(AlarmManager::CT_ALARM);
         for(int j=0;j<_bcu->nofNtcsPerPack();j++){
-            vd = (node()->nodeOd()->value(0x2100+i,j+0x1a).toDouble()/10);
-            text += cellText(QString("%1").arg(vd,4,'f',1),vd<20?css_normal:css_alarm);
+            vd = (_bcu->node()->nodeOd()->value(0x2100+i,j+0x1a).toDouble()/10);
+            css = css_normal;
+            if(vd > warn->high()->set()){
+                if(vd > alm->high()->set()){
+                    css = css_halarm;
+                }
+                else{
+                    css = css_hwarning;
+                }
+            }
+            else if(vd < warn->low()->set()){
+                if(vd < alm->low()->set()){
+                    css = css_lalarm;
+                }
+                else{
+                    css = css_lwarning;
+                }
+            }
+//            text += cellText(QString("%1").arg(vd,4,'f',1),vd<20?css_normal:css_alarm);
+            text += cellText(QString("%1").arg(vd,4,'f',1),css);
         }
         text += "</tr>";
     }
@@ -337,42 +389,42 @@ QString NodeScreenPack::cellText(QString text,QString style)
 void NodeScreenPack::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
 {
     //qDebug()<<Q_FUNC_INFO;
-    if((flags & NodeOd::FlagsRequest::Error) != 0){
-        // todo: handle error here
-        _odError = true;
-        return;
-    }
-    if(_node->status() == Node::UNKNOWN) return;
-    if(_node->status() == Node::PREOP) return;
-    if(_node->status() == Node::INIT) return;
+//    if((flags & NodeOd::FlagsRequest::Error) != 0){
+//        // todo: handle error here
+//        _odError = true;
+//        return;
+//    }
+//    if(_node->status() == Node::UNKNOWN) return;
+//    if(_node->status() == Node::PREOP) return;
+//    if(_node->status() == Node::INIT) return;
 
-    int pack = objId.index() - 0x2100;
-    if(objId.index() == 0x2001){
-        //qDebug()<<Q_FUNC_INFO;
-//        _bcu->configReceived(objId.index(),objId.subIndex());
+//    int pack = objId.index() - 0x2100;
+//    if(objId.index() == 0x2001){
+//        //qDebug()<<Q_FUNC_INFO;
+////        _bcu->configReceived(objId.index(),objId.subIndex());
 
-        switch(objId.subIndex()){
-        case 0x01:
-            _packs = _node->nodeOd()->value(objId).toInt()-1;
-            break;
-        case 0x02:
-            _cells = _node->nodeOd()->value(objId).toInt();
-            break;
-        case 0x03:
-            _ntcs = _node->nodeOd()->value(objId).toInt();
-            //refreshContent();
-            break;
-        }
-    }
-    else if(objId.index() == 0x1018){
+//        switch(objId.subIndex()){
+//        case 0x01:
+//            _packs = _node->nodeOd()->value(objId).toInt()-1;
+//            break;
+//        case 0x02:
+//            _cells = _node->nodeOd()->value(objId).toInt();
+//            break;
+//        case 0x03:
+//            _ntcs = _node->nodeOd()->value(objId).toInt();
+//            //refreshContent();
+//            break;
+//        }
+//    }
+//    else if(objId.index() == 0x1018){
 
-    }
-    else if(objId.index() == 0x2011){
-        quint8 cell = static_cast<quint8>(node()->nodeOd()->value(objId.index(),0x02).toInt());
-        if(cell == 0xff){
-            updateCellData();
-        }
-    }
+//    }
+//    else if(objId.index() == 0x2011){
+//        quint8 cell = static_cast<quint8>(node()->nodeOd()->value(objId.index(),0x02).toInt());
+//        if(cell == 0xff){
+//            updateCellData();
+//        }
+//    }
 //    else if((pack >= 0) && (pack < _packs)){
 //        quint16 mask = (quint16)(_node->nodeOd()->value(objId).toInt());
 //        int base = pack *(_cells + _ntcs + 1) + 1;
@@ -432,6 +484,9 @@ void NodeScreenPack::loadCriteria()
 
 void NodeScreenPack::BCUConfigReady()
 {
+}
+void NodeScreenPack::UpdateHeader(BCU *bcu)
+{
       //qDebug()<<Q_FUNC_INFO;
       //refreshContent();
     QString text;
@@ -446,10 +501,10 @@ void NodeScreenPack::BCUConfigReady()
     text += cellText("簇",css_header);
     text += cellText("電壓(V)",css_header);
 
-    for(int i=0;i<_bcu->nofCellsPerPack();i++){
+    for(int i=0;i<bcu->nofCellsPerPack();i++){
         text += cellText(QString("C#%1").arg(i+1),css_header);
     }
-    for(int i=0;i<_bcu->nofNtcsPerPack();i++){
+    for(int i=0;i<bcu->nofNtcsPerPack();i++){
         text += cellText(QString("T#%1").arg(i+1),css_header);
     }
     text += "</tr>";
@@ -468,21 +523,21 @@ void NodeScreenPack::updateBCUInfo()
     double value;
     text += "<table width=100%;>";
     text += "<tr>";
-    text += cellText("總壓(V)",css_header);
-    value = node()->nodeOd()->value(0x2002,0x03).toDouble()/10;
-    text += cellText(QString::number(value,'f',1),css_normal);
-    text += cellText("總電流(A)",css_header);
-    value = node()->nodeOd()->value(0x2002,0x04).toDouble()/10;
-    text += cellText(QString::number(value,'f',1),css_normal);
+    text += cellText("簇電壓(V)",css_header);
+    //value = node()->nodeOd()->value(0x2002,0x03).toDouble()/10;
+    text += cellText(QString::number(_bcu->voltage(),'f',1),css_normal);
+    text += cellText("簇電流(A)",css_header);
+    //value = node()->nodeOd()->value(0x2002,0x04).toDouble()/10;
+    text += cellText(QString::number(_bcu->current(),'f',1),css_normal);
     text += "</tr>";
 
     text += "<tr>";
     text += cellText("SOC(%)",css_header);
-    value = node()->nodeOd()->value(0x2002,0x01).toDouble()/10;
-    text += cellText(QString::number(value,'f',1),css_normal);
+//    value = node()->nodeOd()->value(0x2002,0x01).toDouble()/10;
+    text += cellText(QString::number(_bcu->soc(),'f',1),css_normal);
     text += cellText("SOH(%)",css_header);
-    value = node()->nodeOd()->value(0x2002,0x02).toDouble()/10;
-    text += cellText(QString::number(value,'f',1),css_normal);
+//    value = node()->nodeOd()->value(0x2002,0x02).toDouble()/10;
+    text += cellText(QString::number(_bcu->soh(),'f',1),css_normal);
     text += "</tr>";
 
     text += "</table>";

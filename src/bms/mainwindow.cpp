@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     resize(1280,800);
     QString path = QCoreApplication::applicationDirPath();
 #ifdef Q_OS_WIN
-    path  += "//config.ini";
+    path  += "/config.ini";
 #else
     path  += "/config.ini";
 #endif
@@ -54,6 +54,8 @@ MainWindow::MainWindow(QWidget *parent) :
 #else
     GSettings::instance().LoadConfig(path);
 #endif
+
+    // test file move
 
     setWindowTitle(tr("BMS"));
     statusBar()->setVisible(true);
@@ -76,6 +78,9 @@ MainWindow::MainWindow(QWidget *parent) :
     _stackManager->setCanOpen(CanOpen::instance());
     _stackview->setStackManager(_stackManager);
     connect(_stackManager,&BMS_StackManager::activeBcuChannged,_nodeScreens,&BcuScreenWidget::setActiveBcu);
+    connect(_stackManager,&BMS_StackManager::updateStatusText,this->statusBar(),&QStatusBar::showMessage);
+    connect(_stackview,&BMSStackView::functionSelected,this,&MainWindow::setFunction);
+
     _busNodesManagerView->setStackManager(_stackManager);
 
     CanOpenBus *b = nullptr;
@@ -153,6 +158,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(Login::instance(),&Login::expired,this,&MainWindow::exitSuperUser);
 #ifdef Q_OS_UNIX
     initSettings();
+    GSettings::Info(QString("Start daily event handler"));
+    QTimer::singleShot(24*60*60*1000,this,&MainWindow::dailyTimeout);
 #endif
 }
 
@@ -196,8 +203,9 @@ void MainWindow::createDocks()
     _busNodesManagerView = new BMS_BusNodesManagerView(CanOpen::instance());
     _busNodesManagerDock->setWidget(_busNodesManagerView);
     addDockWidget(Qt::LeftDockWidgetArea,_busNodesManagerDock);
+    //_busNodesManagerDock->hide();
 
-    _canFrameListDock = new QDockWidget(tr("系統資訊"),this);
+    _canFrameListDock = new QDockWidget(tr("BMS資訊"),this);
     _canFrameListDock->setObjectName("canFrameListDock");
     _canFrameListView = new BMS_CanFrameListView();
     _stackview = new BMSStackView();
@@ -214,7 +222,7 @@ void MainWindow::createDocks()
 //    _dataLoggerDock->setWidget(_dataLoggerWidget);
 //    addDockWidget(Qt::BottomDockWidgetArea,_dataLoggerDock);
 
-    _busNodesManagerDock->raise();
+    _canFrameListDock->raise();
 }
 
 void MainWindow::createWidgets()
@@ -361,36 +369,42 @@ void MainWindow::initSettings()
 
 void MainWindow::setFunction(int func)
 {
-    if(func == 5){
-        if(_logger->isRunning()){
-            _logger->stopLog();
-        }
-        else{
-            _logger->startLog(GSettings::instance().bcuSection()->log_interval());
-        }
+    if(func == 0xFF){
+        _stackWidget->setCurrentIndex(0);
+//        if(_stackManager != nullptr && _stackManager->logger() != nullptr)
+//        if(_stackManager->logger()->isRunning()){
+//            _stackManager->logger()->stopLog();
+//        }
+//        else{
+//            _stackManager->logger()->startLog(GSettings::instance().bcuSection()->log_interval());
+//        }
+    }
+    else if(func == 6){
+        //_stackManager->scanBus();
     }
     else{
-        Login::instance()->resetTimer();
-        if(Login::instance()->isValid()){
-            _stackWidget->setCurrentIndex(1);
-            _configScreens->setActivePage(func);
-        }
-        else
-        {
-            Login::instance()->setModal(true);
-            Login::instance()->showFullScreen();
-            if(Login::instance()->exec() == QDialog::Accepted){
-                if(Login::instance()->isValid()){
-                    _stackWidget->setCurrentIndex(1);
-                    _configScreens->setActivePage(func);
-                }
-                else{
+        _stackWidget->setCurrentIndex(1);
+        _configScreens->setActivePage(func);
+//        Login::instance()->resetTimer();
+//        if(Login::instance()->isValid()){
+//            _stackWidget->setCurrentIndex(1);
+//            _configScreens->setActivePage(func);
+//        }
+//        else
+//        {
+//            Login::instance()->setModal(true);
+//            Login::instance()->showFullScreen();
+//            if(Login::instance()->exec() == QDialog::Accepted){
+//                if(Login::instance()->isValid()){
+//                    _stackWidget->setCurrentIndex(1);
+//                    _configScreens->setActivePage(func);
+//                }
+//                else{
 
-                }
-            }
+//                }
+//            }
 
-        }
-
+//        }
     }
 }
 
@@ -417,6 +431,11 @@ void MainWindow::handleOutputToggle(int id, bool state)
 #endif
 }
 
+void MainWindow::showStatus(QString text, int timeout)
+{
+    statusBar()->showMessage(text,timeout);
+}
+
 void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
 {
     qDebug()<<Q_FUNC_INFO;
@@ -441,9 +460,5 @@ void MainWindow::handleGpioValue(int id, int value)
 void MainWindow::handleAdcValue(int id, int value)
 {
 
-}
-
-void MainWindow::scanBus()
-{
 }
 

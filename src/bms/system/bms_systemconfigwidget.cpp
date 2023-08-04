@@ -552,10 +552,10 @@ void BMS_SystemConfigWidget::alarmSettingChanged()
     Criteria *cfg = GSettings::instance().criteria(id);
     if(cfg == nullptr) return;
     SetResetPair *sr = cfg->high();
-    cfg->setHigh(_alarmEdits[0]->text().toDouble(),_alarmEdits[1]->text().toDouble(),sr->type());
+    cfg->setHigh(_alarmEdits[0]->text().toDouble(),_alarmEdits[1]->text().toDouble(),sr->type(),_alarmEdits[4]->text().toInt());
     sr = cfg->low();
-    cfg->setLow(_alarmEdits[2]->text().toDouble(),_alarmEdits[3]->text().toDouble(),sr->type());
-    cfg->setTime(_alarmEdits[4]->text().toInt());
+    cfg->setLow(_alarmEdits[2]->text().toDouble(),_alarmEdits[3]->text().toDouble(),sr->type(),_alarmEdits[4]->text().toInt());
+    //cfg->setTime(_alarmEdits[4]->text().toInt());
     GSettings::instance().setModified();
 //    QString path = QCoreApplication::applicationDirPath();
 //    path  += "//config.ini";

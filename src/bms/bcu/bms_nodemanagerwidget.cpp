@@ -118,18 +118,18 @@ void BMS_NodeManagerWidget::updateThreadState(bool state)
 
 void BMS_NodeManagerWidget::pollNode()
 {
-    qDebug()<<Q_FUNC_INFO<<_bcu->isPolling();
-    if(_bcu->isPolling()){
-        _bcu->stopPoll();
-        _actionStartPoll->setIcon(QIcon(":/icons/img/icons8-sort-desc.png"));
-    }
-    else{
-        int interval = _feInterval->text().toInt();
-        if(interval < 10) interval = 10;
-        if(interval > 10000) interval = 10000;
-        _bcu->startPoll(interval);
-        _actionStartPoll->setIcon(QIcon(":/icons/img/icons8-stop.png"));
-    }
+//    qDebug()<<Q_FUNC_INFO<<_bcu->isPolling();
+//    if(_bcu->isPolling()){
+//        _bcu->stopPoll();
+//        _actionStartPoll->setIcon(QIcon(":/icons/img/icons8-sort-desc.png"));
+//    }
+//    else{
+//        int interval = _feInterval->text().toInt();
+//        if(interval < 10) interval = 10;
+//        if(interval > 10000) interval = 10000;
+//        _bcu->startPoll(interval);
+//        _actionStartPoll->setIcon(QIcon(":/icons/img/icons8-stop.png"));
+//    }
 }
 
 void BMS_NodeManagerWidget::preop()

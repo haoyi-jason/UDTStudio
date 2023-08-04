@@ -84,9 +84,9 @@ void BcuScreenWidget::setActiveNode(Node *node)
 
 void BcuScreenWidget::setOneShot()
 {
-    if(_bcu == nullptr) return;
+//    if(_bcu == nullptr) return;
 
-    _bcu->accessVoltage(0,0);
+    //_bcu->accessVoltage(0,0);
 }
 
 void BcuScreenWidget::setActiveTab(int id)
@@ -159,6 +159,7 @@ void BcuScreenWidget::addNode(Node *node)
     screen = new NodeScreenSimulator();
     screen->setNode(node);
     screen->setScreenWidget(this);
+    connect(this,&BcuScreenWidget::bcuSelected,static_cast<NodeScreenSimulator*>(screen),&NodeScreenSimulator::setBcu);
     nodeScreens.screens.append(screen);
 
     _nodesMap.insert(node, nodeScreens);
