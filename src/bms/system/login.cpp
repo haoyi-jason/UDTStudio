@@ -4,6 +4,8 @@
 #include <QPushButton>
 #include <QDebug>
 #include <QTimer>
+#include <QCryptographicHash>
+#include <system/gsettings.h>
 
 Login *Login::_instance = nullptr;
 QMutex Login::_mutex;
@@ -16,6 +18,8 @@ Login::Login(QWidget *parent) : QDialog(parent)
     _timer->setSingleShot(true);
     connect(_timer,&QTimer::timeout,this,&Login::timeout);
     setWindowTitle("帳戶切換");
+    _accountId = -1;
+    _modifyPasswd = false;
 }
 
 Login::~Login(){
@@ -28,6 +32,13 @@ void Login::createWidgets()
 
     QHBoxLayout *layout = new QHBoxLayout();
     QFormLayout *flayout = new QFormLayout();
+
+    _cboAccount = new QComboBox();
+    _cboAccount->addItem("高級用戶");
+    _cboAccount->addItem("系統管理員");
+    _accountSelect = new QLabel(tr("選擇登入帳戶"));
+    flayout->addRow(_accountSelect,_cboAccount);
+
 
     _edPassword1 = new FocusedEditor();
     _edPassword2 = new FocusedEditor();
@@ -47,15 +58,16 @@ void Login::createWidgets()
     connect(btnOk,&QPushButton::clicked,this,&Login::validate);
     QPushButton *btnCancel = new QPushButton();
     connect(btnCancel,&QPushButton::clicked,this,&Login::accept);
-    QPushButton *btnModifyPasswd = new QPushButton();
-    connect(btnModifyPasswd,&QPushButton::clicked,this,&Login::modifyPassword);
+    _btnModifyPasswd = new QPushButton();
+    connect(_btnModifyPasswd,&QPushButton::clicked,this,&Login::modifyPassword);
 
     btnOk->setText("確定");
     btnCancel->setText("取消");
-    btnModifyPasswd->setText("變更密碼");
+    _btnModifyPasswd->setText("變更密碼");
+    _btnModifyPasswd->hide();
     flayout->addWidget(btnOk);
     flayout->addWidget(btnCancel);
-    flayout->addWidget(btnModifyPasswd);
+    flayout->addWidget(_btnModifyPasswd);
 
     layout->addStretch(0);
     layout->addLayout(flayout);
@@ -73,10 +85,41 @@ void Login::createWidgets()
 void Login::validate()
 {
     //qDebug()<<_edPassword1->text();
-    _logIn = true;
-    _timer->start(600*1000);
+    AccountSection *account = GSettings::instance().accountSection();
+    QString name = "USER";
+    switch(_cboAccount->currentIndex()){
+    case 0:name="SUPERUSER";_accountId = 0; break;
+    case 1:name = "ADMIN";_accountId = 1; break;
+    }
+    if(_modifyPasswd){
+        if(_edPassword1->text() == _edPassword2->text()){
+            QByteArray newpwd;
+            newpwd.append(_edPassword1->text());
+            QByteArray hash = QCryptographicHash::hash(newpwd,QCryptographicHash::Sha256);
+            account->setPasswd(name,hash);
+            GSettings::instance().StoreConfig();
+        }
+    }
+    else{
+        QByteArray newpwd;
+        newpwd.append(_edPassword1->text());
+        QByteArray hash = QCryptographicHash::hash(newpwd,QCryptographicHash::Sha256);
+        QByteArray hash_org;
+        hash_org.append(account->passwd(name));
+        if(hash_org == "0921"){
+            hash_org = QCryptographicHash::hash("0921",QCryptographicHash::Sha256);
+            account->setPasswd(name,hash);
+            GSettings::instance().StoreConfig();
+        }
+        if(hash == hash_org){
+            _logIn = true;
+            _timer->start(600*1000);
+        }
+        accept();
+        return;
+    }
     //_timer->singleShot(600*1000,this,&Login::timeout);
-    accept();
+    reject();
 }
 
 void Login::modifyPassword()
@@ -85,16 +128,20 @@ void Login::modifyPassword()
     if(_edPassword2->isVisible()){
         _edPassword2->hide();
         _lbChangePasswd->hide();
+        _cboAccount->show();
         btn->setText("變更密碼");
+        _modifyPasswd = false;
     }
     else{
+        _cboAccount->hide();
         _edPassword2->show();
         _lbChangePasswd->show();
         btn->setText("取消變更密碼");
         _edPassword1->setText("");
         _edPassword1->setFocus();
+        _modifyPasswd = true;
     }
-    accept();
+    //accept();
 }
 
 void Login::timeout()
@@ -126,4 +173,23 @@ bool Login::eventFilter(QObject *pObject, QEvent *e)
     }
 
     return true;
+}
+
+void Login::modifyMode(bool set)
+{
+    _modifyPasswd = set;
+    if(_modifyPasswd){
+        //_btnModifyPasswd->show();
+        _edPassword2->show();
+        _lbChangePasswd->show();
+        _edPassword1->setText("");
+        _edPassword1->setFocus();
+        _cboAccount->hide();
+    }
+    else{
+        _btnModifyPasswd->hide();
+        _edPassword2->hide();
+        _lbChangePasswd->hide();
+        _cboAccount->show();
+    }
 }

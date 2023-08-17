@@ -237,7 +237,31 @@ AlarmManager::AlarmManager(int packs, int cells, int ntcs, QObject *parent)
     _maxCtPos = 0;
     _minCtPos = 0;
 
+    _balMask = (quint32*)malloc(_packs * sizeof(quint32));
+    _openWire = (quint32*)malloc(_packs * sizeof(quint32));
+
     resetState();
+}
+
+AlarmManager::~AlarmManager()
+{
+    foreach (auto a, _cvhStates) {
+        delete a;
+    }
+    foreach (auto a, _cvlStates) {
+        delete a;
+    }
+    foreach (auto a, _cthStates) {
+        delete a;
+    }
+    foreach (auto a, _ctlStates) {
+        delete a;
+    }
+    delete _socStates;
+    delete _pvhStates;
+    delete _pvlStates;
+    delete _pahStates;
+    delete _palStates;
 }
 
 void AlarmManager::addCriteria(SetResetPair *criteria, CriteriaType type)
@@ -769,6 +793,36 @@ bool AlarmManager::isEvent()
 QString AlarmManager::eventString()
 {
     return _eventString;
+}
+
+void AlarmManager::setOpenWire(int pack, quint32 val)
+{
+    if(pack < _packs){
+        _openWire[pack] = val;
+    }
+}
+
+quint32 AlarmManager::openWire(int pack) const
+{
+    if(pack < _packs){
+        return _openWire[pack];
+    }
+    return 0xffffffff;
+}
+
+void AlarmManager::setBalMask(int pack, quint32 val)
+{
+    if(pack < _packs){
+        _balMask[pack] = val;
+    }
+}
+
+quint32 AlarmManager::balMask(int pack) const
+{
+    if(pack <_packs){
+        return _balMask[pack];
+    }
+    return 0xffffffff;
 }
 
 

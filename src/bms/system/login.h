@@ -6,6 +6,7 @@
 #include "bms_ui/focusededitor.h"
 #include <QTimer>
 #include <QDebug>
+#include <QComboBox>
 
 class QTimer;
 
@@ -41,6 +42,8 @@ public:
 
     }
 
+    void modifyMode(bool set);
+
 signals:
     void expired();
 
@@ -66,7 +69,11 @@ private:
 
     static bool _logIn;
     QTimer *_timer;
-
+    QComboBox *_cboAccount;
+    int _accountId;
+    bool _modifyPasswd;
+    QPushButton *_btnModifyPasswd;
+    QLabel *_accountSelect;
 };
 
 #endif // LOGIN_H

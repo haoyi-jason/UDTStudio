@@ -40,6 +40,7 @@ BCU::BCU(Node *node, bool autoStart, QObject *parent)
     _nameDefined = false;
     _configDone = false;
     _dataReady = false;
+    _scannedDevice = 0;
 }
 
 BCU::~BCU()
@@ -115,6 +116,11 @@ void BCU::notifyUpdate()
         //emit dataAccessed();
         _dataReady = false;
     }
+}
+
+int BCU::scannedDevices() const
+{
+    return _scannedDevice;
 }
 
 double BCU::voltage() const{
@@ -298,8 +304,11 @@ bool BCU::validate()
     // loop through pack/cell/ntcs to validate
     NodeObjectId obj = NodeObjectId();
 
-    _voltage = _node->nodeOd()->value(0x2002,0x03).toDouble()/10.;
-    _current = _node->nodeOd()->value(0x2002,0x04).toDouble()/10.;
+   // double scale_v = node()->nodeOd()->value(0x642F,0x03).toDouble();
+   // double scale_a = node()->nodeOd()->value(0x642F,0x04).toDouble();
+
+    _voltage = _node->nodeOd()->value(0x2002,0x03).toDouble()/10;
+    _current = _node->nodeOd()->value(0x2002,0x04).toDouble()/10;
     _soc = node()->nodeOd()->value(0x2002,0x01).toDouble()/10;
     _soh = node()->nodeOd()->value(0x2002,0x02).toDouble()/10;
     _dataReady = false;
@@ -623,10 +632,20 @@ void BCU::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
         quint16 v2 = static_cast<quint16>(_node->nodeOd()->value(index,0x04).toInt());
         quint16 v3 = static_cast<quint16>(_node->nodeOd()->value(index,0x05).toInt());
         if(pack == 0xf0){ // 0xf0 == state report
+            switch(id){
+            case 0: // scanned device
+                _scannedDevice = v1;
+                break;
+            case 1:
+                _errorCode = v1;
+                break;
+            }
             emit statusReported();
         }
         else if(pack < _nofPacks && !_simulate){
-            node()->nodeOd()->subIndex(0x2100+pack,id)->setValue(v1);
+            if(id < 0x04){
+                node()->nodeOd()->subIndex(0x2100+pack,id)->setValue(v1);
+            }
         }
     }
 

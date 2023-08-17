@@ -45,6 +45,19 @@ const QString css_halarm =  "style='text-align:right; padding:5px;font-size:16px
 const QString css_lwarning ="style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:yellow;background:green'";
 const QString css_lalarm =  "style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:#ffffff;background:blue'";
 
+const QString _style =  "style='text-align:right; padding:5px;font-size:16px;font-weight:bold;color:#%1;background:#%2'";
+//const QString _style = "padding:2px;border: 2px solid #AAAAAA; border-radius: 5px; font-weight:bold; color: #%1;background: %2; font-size:16px;";
+const uint color_opw = 0x00FF00;
+const uint color_bal = 0xFF0000;
+const uint color_bg = 0x888888;
+
+const uint color_fg = 0xAAAAAA;
+const uint color_ow = 0xFFFF00;
+const uint color_oa = 0xFF0000;
+const uint color_uw = 0x00FFFF;
+const uint color_ua = 0x0000FF;
+
+
 class NodeScreenPack : public NodeScreen,public NodeOdSubscriber
 {
     Q_OBJECT

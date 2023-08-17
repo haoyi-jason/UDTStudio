@@ -308,12 +308,18 @@ void NodeScreenPack::updateCellData()
     QString text = _header;
     quint16 v;
     double vd;
+    quint32 bg_color,color;
     NodeOd *od = _bcu->node()->nodeOd();
     Criteria *warn = GSettings::instance().criteria(AlarmManager::CV_WARNING);
     Criteria *alm = GSettings::instance().criteria(AlarmManager::CV_ALARM);
     QString css = "";
     if(od == nullptr) return;
+    quint16 ow = 0x0;
+    quint16 bal = 0x0;
+    quint16 mask = 0x0;
     for(int i=0;i<_bcu->nofPacks();i++){
+        bal = _bcu->node()->nodeOd()->value(0x2100+i,0x02).toInt();
+        ow = _bcu->node()->nodeOd()->value(0x2100+i,0x03).toInt();
         text += "<tr>";
         text += cellText(QString("#%1").arg(i+1),css_normal);
         v = static_cast<quint16>(_bcu->node()->nodeOd()->value(0x2100+i,1).toInt());
@@ -321,25 +327,40 @@ void NodeScreenPack::updateCellData()
         warn = GSettings::instance().criteria(AlarmManager::CV_WARNING);
         alm = GSettings::instance().criteria(AlarmManager::CV_ALARM);
         for(int j=0;j<_bcu->nofCellsPerPack();j++){
+            mask = (1 << j);
             v = static_cast<quint16>(_bcu->node()->nodeOd()->value(0x2100+i,j+0x0a).toInt());
             css = css_normal;
+            bg_color = color_bg;
+            color = color_fg;
             if(v > warn->high()->set()){
                 if(v > alm->high()->set()){
                     css = css_halarm;
+                    color = color_oa;
                 }
                 else{
                     css = css_hwarning;
+                    color = color_ow;
                 }
             }
             else if(v < warn->low()->set()){
                 if(v < alm->low()->set()){
                     css = css_lalarm;
+                    color = color_ua;
                 }
                 else{
                     css = css_lwarning;
+                    color = color_uw;
                 }
             }
+            // check if balancing or openwire
+            if(bal & mask){
+                bg_color = color_bal;
+            }
+            if(ow & mask){
+                bg_color |= color_opw;
+            }
 //            text += cellText(node()->nodeOd()->value(0x2100+i,j+0x0a).toString(),v<2000?css_normal:css_warning);
+            css = QString(_style).arg(color,6,16,QChar('0')).arg(bg_color,6,16,QChar('0'));
             text += cellText(_bcu->node()->nodeOd()->value(0x2100+i,j+0x0a).toString(),css);
         }
         warn = GSettings::instance().criteria(AlarmManager::CT_WARNING);
@@ -388,62 +409,7 @@ QString NodeScreenPack::cellText(QString text,QString style)
 
 void NodeScreenPack::odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags)
 {
-    //qDebug()<<Q_FUNC_INFO;
-//    if((flags & NodeOd::FlagsRequest::Error) != 0){
-//        // todo: handle error here
-//        _odError = true;
-//        return;
-//    }
-//    if(_node->status() == Node::UNKNOWN) return;
-//    if(_node->status() == Node::PREOP) return;
-//    if(_node->status() == Node::INIT) return;
 
-//    int pack = objId.index() - 0x2100;
-//    if(objId.index() == 0x2001){
-//        //qDebug()<<Q_FUNC_INFO;
-////        _bcu->configReceived(objId.index(),objId.subIndex());
-
-//        switch(objId.subIndex()){
-//        case 0x01:
-//            _packs = _node->nodeOd()->value(objId).toInt()-1;
-//            break;
-//        case 0x02:
-//            _cells = _node->nodeOd()->value(objId).toInt();
-//            break;
-//        case 0x03:
-//            _ntcs = _node->nodeOd()->value(objId).toInt();
-//            //refreshContent();
-//            break;
-//        }
-//    }
-//    else if(objId.index() == 0x1018){
-
-//    }
-//    else if(objId.index() == 0x2011){
-//        quint8 cell = static_cast<quint8>(node()->nodeOd()->value(objId.index(),0x02).toInt());
-//        if(cell == 0xff){
-//            updateCellData();
-//        }
-//    }
-//    else if((pack >= 0) && (pack < _packs)){
-//        quint16 mask = (quint16)(_node->nodeOd()->value(objId).toInt());
-//        int base = pack *(_cells + _ntcs + 1) + 1;
-//        switch(objId.subIndex()){
-//        case 0x02:
-//            //qDebug()<<Q_FUNC_INFO << "Read Balance mask";
-//            for(int i=0;i<_cells;i++){
-//                _lcdNumbers[base+i]->setBalancing((mask & (1 << i)) != 0);
-//            }
-//            break;
-//        case 0x03:
-//            //qDebug()<<Q_FUNC_INFO << "Read open wire mask";
-//            for(int i=0;i<_cells;i++){
-//                _lcdNumbers[base+i]->setOpenWire((mask & (1 << i)) != 0);
-//            }
-//            break;
-//        }
-
-//    }
 }
 
 void NodeScreenPack::loadCriteria()

@@ -85,6 +85,7 @@ class AlarmManager : public QObject
 public:
     explicit AlarmManager(QObject *parent = nullptr);
     explicit AlarmManager(int packs, int cells, int ntcs, QObject *parent = nullptr);
+    ~AlarmManager();
     // AlarmType should map to config.ini
     enum AlarmType{
         CV_WARNING,
@@ -154,6 +155,11 @@ public:
 
     QString eventString();
 
+    void setOpenWire(int pack, quint32 val);
+    void setBalMask(int pack,quint32 val);
+    quint32 openWire(int pack) const;
+    quint32 balMask(int pack) const;
+
 signals:
 
 public slots:
@@ -214,6 +220,8 @@ private:
     int _cell_count;
     int _ntc_count;
 
+    quint32 *_openWire;
+    quint32 *_balMask;
 };
 
 #endif // BMS_ALARMCRITERIA_H

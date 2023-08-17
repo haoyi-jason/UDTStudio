@@ -49,7 +49,7 @@ BMS_StackManager::BMS_StackManager()
     }
 #endif
     QTimer::singleShot(24*60*60*1000,this,&BMS_StackManager::dailyTimeout);
-
+    _enableBalance = false;
 }
 
 BMS_StackManager::~BMS_StackManager()
@@ -117,6 +117,9 @@ void BMS_StackManager::scanDone()
     _tmr_statemachine->start(50);
     _logger->startLog(GSettings::instance().bcuSection()->log_interval());
     _currentBcuId = -1;
+//    if(_bcusMap.count() > 0){
+//        nextBcu();
+//    }
 //    if(_bcusMap.size() > 0){
 //        _currentBcuId = 0;
 //    }
@@ -145,11 +148,28 @@ void BMS_StackManager::scanBus()
     _bcusMap.clear();
     _bcuIterator = _bcusMap.begin();
     _mtx_poll.unlock();
+    bool scan = false;
     foreach (CanOpenBus *b, CanOpen::buses()) {
         b->exploreBus();
+        scan = true;
     }
-    QTimer::singleShot(20000,this,&BMS_StackManager::scanDone);
-    emit updateStatusText("裝置掃瞄中...",0);
+    if(scan){
+        QTimer::singleShot(20000,this,&BMS_StackManager::scanDone);
+        emit updateStatusText("裝置掃瞄中...",0);
+        emit uiControl(false);
+    }
+    else{
+        emit updateStatusText("沒有找到通訊裝置",0);
+    }
+}
+
+void BMS_StackManager::enableBalance()
+{
+
+    foreach (BCU *b, _bcusMap.values()) {
+        b->node()->writeObject(0x2003,0x07,_enableBalance?0x0:0x2);
+    }
+    _enableBalance = !_enableBalance;
 }
 
 void BMS_StackManager::startActivity()
@@ -260,8 +280,9 @@ void BMS_StackManager::bcuConfigReady()
         //node->readObject(0x2003,0x01);
     }
     if(_currentBcuId == -1){
-        _currentBcuId = _bcusMap.values().indexOf(bu);
-        emit activeBcuChannged(bcu());
+        nextBcu();
+//        _currentBcuId = _bcusMap.values().indexOf(bu);
+//        emit activeBcuChannged(bcu());
     }
 
 }
@@ -348,6 +369,8 @@ void BMS_StackManager::validateState(BCU *b)
         AlarmManager *a = b->alarmManager();
 
         for(int i=0;i<b->nofPacks();i++){
+            a->setBalMask(i,(quint32)n->nodeOd()->value(0x2010+i,0x02).toInt());
+            a->setOpenWire(i,(quint32)n->nodeOd()->value(0x2010+i,0x03).toInt());
             for(int j=0;j<b->nofCellsPerPack();j++){
                 a->set_cell_voltage(i * b->nofCellsPerPack() + j,n->nodeOd()->value(0x2100 + i,j + 0x0a).toDouble());
             }
@@ -383,6 +406,8 @@ void BMS_StackManager::validateState(BCU *b)
             // todo: log event string
             _logger->logEvent(a->eventString());
         }
+
+        // check balancing or openwire here
 //    }
 
 
@@ -455,7 +480,7 @@ void BMS_StackManager::updateStackStatus()
     emit statusUpdated();
 
     QString statustip = "";
-    statustip += QString("連線BCU數量:%1").arg(totalBcus());
+    statustip += QString("連線BCU數量:%1,均衡控制:%2").arg(totalBcus()).arg(_enableBalance?"作用":"停用");
     // storage info
 #ifdef Q_OS_UNIX
     QStorageInfo sd_info = QStorageInfo("/run/media/mmcblk1p1");
@@ -467,6 +492,7 @@ void BMS_StackManager::updateStackStatus()
     }
 #endif
     emit updateStatusText(statustip,0);
+    emit uiControl(true);
 }
 
 void BMS_StackManager::clearAlarm()

@@ -19,6 +19,7 @@ BMSStackView::BMSStackView(CanOpen *canopen, QWidget *parent)
     _stackManager = nullptr;
     _activeBcu = nullptr;
     createWidget();
+    enableUI(false);
 }
 
 CanOpen *BMSStackView::canOpen() const
@@ -59,7 +60,7 @@ void BMSStackView::createWidget()
     QGroupBox *gb;
     QPushButton *btn;
 
-    gb = new QGroupBox("系統訊息");
+    gb = new QGroupBox("系統控制");
     vl = new QVBoxLayout();
     hl = new QHBoxLayout();
     gl = new QGridLayout();
@@ -157,6 +158,28 @@ void BMSStackView::createWidget()
     hl->addWidget(btn);
     gl->addItem(hl,4,0,1,2);
 
+    hl = new QHBoxLayout();
+    btn = new QPushButton("設定SOC");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",14);
+    hl->addWidget(btn);
+    editor = new FocusedEditor();
+    _editList.append(editor);
+    editor->setText("100");
+    hl->addWidget(editor);
+    gl->addItem(hl,5,0,1,2);
+
+    hl = new QHBoxLayout();
+    btn = new QPushButton("設定SOH");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",15);
+    hl->addWidget(btn);
+    editor = new FocusedEditor();
+    _editList.append(editor);
+    editor->setText("100");
+    hl->addWidget(editor);
+    gl->addItem(hl,6,0,1,2);
+
     _gbConfig->setLayout(gl);
     vl->addWidget(_gbConfig);
 
@@ -176,7 +199,7 @@ void BMSStackView::createWidget()
     text += QString("第[%1/%2]簇<br>").arg(1).arg(1);
     text += QString("總電壓(V):%1<br>").arg(100);
     text += QString("總電流(A):%1<br>").arg(50);
-    text += QString("運行狀態:%1<br>").arg(colorText("充電","blue"));
+    text += QString("運行狀態:%1<br>").arg(colorText("未知","blue"));
     text += QString("最高電芯電壓:%1,[%2]<br>").arg(1).arg(linkText(QString::number(3),"max_cv"));
     text += QString("最低電芯電壓:%1,[%2]<br>").arg(2).arg(linkText(QString::number(4),"min_cv"));
     text += QString("最高溫:%1,[%2]<br>").arg(1).arg(linkText(QString::number(3),"max_ct"));
@@ -187,6 +210,7 @@ void BMSStackView::createWidget()
 
 
     gb->setLayout(vl);
+    _gbSysControl = gb;
     mainLayout->addWidget(gb);
 
     _gbStatus = new QGroupBox("警報狀態");
@@ -233,9 +257,23 @@ void BMSStackView::createWidget()
     btn->setProperty("ID",23);
     vl->addWidget(btn);
 
+    vl->addSpacing(10);
+
     btn = new QPushButton("重新掃瞄");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",24);
+    vl->addWidget(btn);
+
+    vl->addSpacing(10);
+    btn = new QPushButton("均衡致能");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",25);
+    vl->addWidget(btn);
+
+    vl->addSpacing(10);
+    btn = new QPushButton("修改密碼");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",26);
     vl->addWidget(btn);
 
     _gbSystem->setLayout(vl);
@@ -251,6 +289,7 @@ void BMSStackView::setStackManager(BMS_StackManager *manager)
     if(_stackManager != nullptr){
         connect(_stackManager,&BMS_StackManager::activeBcuChannged,this,&BMSStackView::handleBcuChanged);
         connect(_stackManager,&BMS_StackManager::statusUpdated,this,&BMSStackView::updateView);
+        connect(_stackManager,&BMS_StackManager::uiControl,this,&BMSStackView::enableUI);
     }
 }
 
@@ -264,6 +303,7 @@ void BMSStackView::handleStackSwitch()
     QPushButton *btn = static_cast<QPushButton*>(sender());
     int id = btn->property("ID").toInt();
     TPDO *pdo = nullptr;
+    int value;
     switch(id){
     case 0:
         if(_stackManager != nullptr)
@@ -302,12 +342,14 @@ void BMSStackView::handleStackSwitch()
             _gbConfig->setVisible(false);
         }
         else{
+            Login::instance()->modifyMode(false);
             if(Login::instance()->exec() == QDialog::Accepted){
-                if(_activeBcu != nullptr){
-                    _editList[0]->setText(_activeBcu->node()->nodeOd()->value(0x2001,0x01).toString());
-                    _editList[1]->setText(_activeBcu->node()->nodeOd()->value(0x2001,0x02).toString());
-                    _editList[2]->setText(_activeBcu->node()->nodeOd()->value(0x2001,0x03).toString());
+                if(_stackManager->bcu() != nullptr){
+                    _editList[0]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x01).toString());
+                    _editList[1]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x02).toString());
+                    _editList[2]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x03).toString());
                     _gbConfig->setVisible(true);
+                    _gbSystem->setVisible(false);
                 }
             }
         }
@@ -371,6 +413,18 @@ void BMSStackView::handleStackSwitch()
             }
         }
         break;
+    case 14: // SOC
+        value = _editList[3]->text().toInt();
+        if((value > 0) && (value <=100)){
+            _stackManager->bcu()->node()->writeObject(0x2003,0x05,value);
+        }
+        break;
+    case 15: // SOH
+        value = _editList[3]->text().toInt();
+        if((value > 0) && (value <=100)){
+            _stackManager->bcu()->node()->writeObject(0x2003,0x06,value);
+        }
+        break;
     case 21: // hardware config
         emit functionSelected(1);
         break;
@@ -383,7 +437,13 @@ void BMSStackView::handleStackSwitch()
     case 24:
         _stackManager->scanBus();
         break;
-
+    case 25:
+        _stackManager->enableBalance();
+        break;
+    case 26:
+        Login::instance()->modifyMode(true);
+        Login::instance()->show();
+        break;
     }
 }
 
@@ -395,7 +455,16 @@ void BMSStackView::updateView()
     QString text = QString("第[%1/%2]簇<br>").arg(_stackManager->currentBcuId()+1).arg(_stackManager->totalBcus());
     text += QString("總電壓(V):%1<br>").arg(_stackManager->packVoltage());
     text += QString("總電流(A):%1<br>").arg(_stackManager->packCurrent());
-    text += QString("運行狀態:%1<br>").arg(_stackManager->packCurrent()<-1?colorText("充電","blue"):colorText("放電","red"));
+    if(_stackManager->packCurrent() > 1){
+        text += QString("運行狀態:%1<br>").arg(colorText("充電","blue"));
+    }
+    else if(_stackManager->packCurrent() < -1)
+    {
+        text += QString("運行狀態:%1<br>").arg(colorText("放電","red"));
+    }
+    else{
+        text += QString("運行狀態:%1<br>").arg(colorText("閒置","black"));
+    }
     text += QString("最高電芯電壓:%1,[%2]<br>").arg(_stackManager->maxCV()).arg(linkText2(QString::number(_stackManager->maxCvPID()),QString::number(_stackManager->maxCvPos()),"max_cv"));
     text += QString("最低電芯電壓:%1,[%2]<br>").arg(_stackManager->minCV()).arg(linkText2(QString::number(_stackManager->minCvPID()),QString::number(_stackManager->minCvPos()),"min_cv"));
     text += QString("最高溫:%1,[%2]<br>").arg(_stackManager->maxCT()).arg(linkText2(QString::number(_stackManager->maxCtPID()),QString::number(_stackManager->maxCtPos()),"max_ct"));
@@ -406,16 +475,21 @@ void BMSStackView::updateView()
 
     // check alarm
     BCU *bcu = _stackManager->bcu();
+   // quint32 color = color_nor;
     if(bcu != nullptr && bcu->isConfigReady()){
         if(bcu->alarmManager()->isPvHWarning()){
             _alarmLabels[0]->setStyleSheet(style_warning);
+     //       color = color_ow;
         }
         else if(bcu->alarmManager()->isPvHAlarm()){
             _alarmLabels[0]->setStyleSheet(style_alarm);
+       //     color = color_oa;
         }
         else{
             _alarmLabels[0]->setStyleSheet(style_normal);
+         //   color = color_nor;
         }
+
         _alarmLabels[0]->update();
 
         if(bcu->alarmManager()->isPvLWarning()){
@@ -438,7 +512,7 @@ void BMSStackView::updateView()
 //    }
 //    else{
 //        _alarmLabels[1]->setStyleSheet(style_normal);
-//    }
+//    }x
 
         if(bcu->alarmManager()->isCvHWarning()){
             _alarmLabels[2]->setStyleSheet(style_warning);
@@ -481,6 +555,11 @@ void BMSStackView::updateView()
             _alarmLabels[5]->setStyleSheet(style_normal);
         }
     }
+}
+
+void BMSStackView::enableUI(bool state)
+{
+    _gbSysControl->setEnabled(state);
 }
 
 QString BMSStackView::colorText(QString text, QString color)

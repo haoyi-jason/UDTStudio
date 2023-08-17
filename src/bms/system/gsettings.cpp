@@ -26,7 +26,8 @@ GSettings::GSettings(QObject *parent):QObject(parent)
     _lanConfig = new LanSection("ETHERNET");
     _criteriaConfig = new AlarmCriteriaSection("ALARM_SETTINGS");
     _bcusection = new BCUSection();
-    _systemSection = new SystemSection();
+    _systemSection = new SystemSection("SYSTEM");
+    _accountSection = new AccountSection("ACCOUNT");
 
     _settingPath = "";
     _modified = false;
@@ -72,22 +73,7 @@ void GSettings::LoadConfig(QString path)
     _criteriaConfig->readSection(setting);
     _bcusection->readSection(setting);
     _systemSection->readSection(setting);
-
-//    int sz = setting->beginReadArray("CANBUS");
-//    if(sz > 0){
-//        for(int i=0;i<sz;i++){
-//            setting->setArrayIndex(i);
-//            SerialPortConfig *cfg = new SerialPortConfig();
-//            cfg->connection = setting->value("PORT").toString();
-//            cfg->baudrate = setting->value("BITRATE").toInt();
-//            cfg->mode = setting->value("MODE").toString();
-//            _canPortConfig.append(cfg);
-//        }
-//    }
-//    setting->endArray();
-
-
-//    sz = setting->beginReadArray("INTERFACES");
+    _accountSection->readSection(setting);
 
 }
 
@@ -111,6 +97,8 @@ void GSettings::StoreConfig(QString path)
     _criteriaConfig->writeSection(setting);
     _bcusection->writeSection(setting);
     _systemSection->writeSection(setting);
+    _accountSection->writeSection(setting);
+
 }
 
 GSettings &GSettings::instance()
@@ -223,6 +211,11 @@ BCUSection *GSettings::bcuSection() const
 SystemSection *GSettings::systemSection() const
 {
     return _systemSection;
+}
+
+AccountSection *GSettings::accountSection() const
+{
+    return _accountSection;
 }
 
 /* serialportsection */
@@ -776,4 +769,44 @@ void SystemSection::writeSection(QSettings *s)
 int SystemSection::backlightTime() const
 {
     return _backlight_off_time_sec;
+}
+
+/* account */
+AccountSection::AccountSection(QString sectionName)
+    :AbstractSection(sectionName)
+{
+
+}
+
+void AccountSection::readSection(QSettings *s)
+{
+    int sz = s->beginReadArray(_sectionName);
+    for(int i=0;i<sz;i++){
+        s->setArrayIndex(i);
+        QString uname = s->value("NAME").toString();
+        QString pass = s->value("PASSWD").toString();
+        _accounts.insert(uname,pass);
+    }
+     s->endArray();
+}
+void AccountSection::writeSection(QSettings *s)
+{
+    s->beginWriteArray(_sectionName);
+
+    for(int i=0;i<_accounts.size();i++){
+        s->setArrayIndex(i);
+        s->setValue("NAME",_accounts.keys().at(i));
+        s->setValue("PASSWD",_accounts.values().at(i));
+    }
+    s->endArray();
+}
+
+void AccountSection::setPasswd(QString name, QString passwd)
+{
+    _accounts[name] = passwd;
+}
+
+QString AccountSection::passwd(QString name)
+{
+    return _accounts[name];
 }

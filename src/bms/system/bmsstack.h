@@ -84,6 +84,7 @@ public:
     int pollRetry() const;
     QDateTime lastSeen() const;
     void notifyUpdate();
+    int scannedDevices() const;
 public slots:
     //void startPollThread(int interval=50);
     bool validate();
@@ -174,6 +175,9 @@ private:
     quint8 _cmdState;
     bool _dataReady;
     QDateTime _firstPollTime;
+
+    int _scannedDevice;
+
 };
 
 

@@ -17,6 +17,7 @@ class AlarmCriteriaSection;
 class EthernetConfig;
 class BCUSection;
 class SystemSection;
+class AccountSection;
 
 class GSettings:public QObject
 {
@@ -45,6 +46,7 @@ public:
     SerialSection *serialSection() const;
     BCUSection *bcuSection() const;
     SystemSection *systemSection() const;
+    AccountSection *accountSection() const;
 
     void setModified();
 protected:
@@ -68,6 +70,7 @@ private:
     QString _settingPath;
     BCUSection *_bcusection;
     SystemSection *_systemSection;
+    AccountSection *_accountSection;
 
     bool _modified;
     int _autoSaveInterval;
@@ -278,5 +281,19 @@ private:
 
 };
 
+class AccountSection:public AbstractSection
+{
+public:
+    explicit AccountSection(QString sectionName="ACCOUNT");
+    void readSection(QSettings *s) override;
+    void writeSection(QSettings *s) override;
+
+    void setPasswd(QString name, QString passwd);
+    QString passwd(QString name);
+
+private:
+    QMap<QString,QString> _accounts;
+
+};
 
 #endif // GSETTINGS_H

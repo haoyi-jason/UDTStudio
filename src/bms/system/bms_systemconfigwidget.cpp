@@ -294,27 +294,7 @@ QWidget *BMS_SystemConfigWidget::createBCUWidget()
 
 
     BCUSection *bcu = GSettings::instance().bcuSection();
-    _grpRecords = new QGroupBox(tr("系統記錄"));
-    _storedDays = new FocusedEditor();
-    _eventRecordInterval = new FocusedEditor();
-    _eventRecordCount = new FocusedEditor();
-    connect(_storedDays,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::recordSettingChanged);
-    connect(_eventRecordInterval,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::recordSettingChanged);
-    _eventRecordInterval->setText(QString::number(bcu->log_interval()));
-    //_eventRecordCount->setText(bcu->log_keep_days());
-    _storedDays->setText(QString::number(bcu->log_keep_days()));
 
-    QHBoxLayout *hlayout = new QHBoxLayout();
-
-    hlayout->setContentsMargins(5,5,5,5);
-    hlayout->setSpacing(20);
-    hlayout->addWidget(new QLabel(tr("儲存天數")));
-    hlayout->addWidget(_storedDays);
-    hlayout->addWidget(new QLabel(tr("記錄間隔(秒)")));
-    hlayout->addWidget(_eventRecordInterval);
-    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed));
-    _grpRecords->setLayout(hlayout);
-    layout->addWidget(_grpRecords);
 
     _grpBalancing = new QGroupBox("均衡設定");
     _balancingVoltage = new FocusedEditor();
@@ -460,7 +440,29 @@ QWidget *BMS_SystemConfigWidget::createAlarmWidget()
 
     layout->addWidget(_grpAlarm);
 
+    BCUSection *bcu = GSettings::instance().bcuSection();
 
+    _grpRecords = new QGroupBox(tr("系統記錄"));
+    _storedDays = new FocusedEditor();
+    _eventRecordInterval = new FocusedEditor();
+    _eventRecordCount = new FocusedEditor();
+    connect(_storedDays,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::recordSettingChanged);
+    connect(_eventRecordInterval,&FocusedEditor::editingFinished,this,&BMS_SystemConfigWidget::recordSettingChanged);
+    _eventRecordInterval->setText(QString::number(bcu->log_interval()));
+    //_eventRecordCount->setText(bcu->log_keep_days());
+    _storedDays->setText(QString::number(bcu->log_keep_days()));
+
+    QHBoxLayout *hlayout = new QHBoxLayout();
+
+    hlayout->setContentsMargins(5,5,5,5);
+    hlayout->setSpacing(20);
+    hlayout->addWidget(new QLabel(tr("儲存天數")));
+    hlayout->addWidget(_storedDays);
+    hlayout->addWidget(new QLabel(tr("記錄間隔(秒)")));
+    hlayout->addWidget(_eventRecordInterval);
+    hlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed));
+    _grpRecords->setLayout(hlayout);
+    layout->addWidget(_grpRecords);
     /*******************/
 
     layout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Minimum, QSizePolicy::Expanding));

@@ -56,6 +56,7 @@ public slots:
     void bcuConfigReady();
     //void nodeNameChanged(QString name);
     void bcuDataAccessed();
+    void enableBalance();
 
 private:
     void updateStackStatus();
@@ -69,6 +70,7 @@ signals:
     void activeBcuChannged(BCU *bcu);
     void statusUpdated();
     void updateStatusText(QString, int);
+    void uiControl(bool);
 
 private:
     //QList<BCU*> _bcus;
@@ -92,6 +94,7 @@ private:
     QMutex _mtx_poll;
     QAction *_actScanBus;
     int _pollCounter;
+    bool _enableBalance;
 };
 
 #endif // BMS_STACKMANAGER_H
