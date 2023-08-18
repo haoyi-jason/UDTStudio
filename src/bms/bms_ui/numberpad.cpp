@@ -112,17 +112,22 @@ void NumberPad::padClicked()
             str = btn->text();
         }
         else{
-            str += btn->text();
-        }
-        if(_isNumber){
-            int v = str.toInt();
-            if((v <= _maxInput) || (v >= _minInput )){
-                _inBox->setText(str);
+            QString tmp = str+ btn->text();
+            double v = tmp.toDouble();
+            if(v < _maxInput && v > _minInput){
+                str = tmp;
             }
         }
-        else{
+//        if(_isNumber){
+//            //int v = str.toInt();
+//            double v = str.toDouble();
+//            if((v <= _maxInput) || (v >= _minInput )){
+//                _inBox->setText(str);
+//            }
+//        }
+//        else{
             _inBox->setText(str);
-        }
+//        }
         break;
     case 10:
         str += btn->text();
@@ -154,7 +159,7 @@ void NumberPad::padClicked()
     case 13:
         str = str.left(str.size()-1);
         if(str.size() == 0){
-            str = "0";
+            str = "";
         }
         _inBox->setText(str);
         break;

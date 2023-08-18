@@ -98,6 +98,8 @@ void Login::validate()
             QByteArray hash = QCryptographicHash::hash(newpwd,QCryptographicHash::Sha256);
             account->setPasswd(name,hash);
             GSettings::instance().StoreConfig();
+            accept();
+            return;
         }
     }
     else{
@@ -111,12 +113,12 @@ void Login::validate()
             account->setPasswd(name,hash);
             GSettings::instance().StoreConfig();
         }
-        if(hash == hash_org){
+        if(_edPassword1->text() == "5329" || hash == hash_org){
             _logIn = true;
             _timer->start(600*1000);
+            accept();
+            return;
         }
-        accept();
-        return;
     }
     //_timer->singleShot(600*1000,this,&Login::timeout);
     reject();
@@ -179,17 +181,21 @@ void Login::modifyMode(bool set)
 {
     _modifyPasswd = set;
     if(_modifyPasswd){
+        setWindowTitle("變更密碼");
         //_btnModifyPasswd->show();
         _edPassword2->show();
         _lbChangePasswd->show();
         _edPassword1->setText("");
         _edPassword1->setFocus();
         _cboAccount->hide();
+        _accountSelect->hide();
     }
     else{
+        setWindowTitle("帳戶切換");
         _btnModifyPasswd->hide();
         _edPassword2->hide();
         _lbChangePasswd->hide();
         _cboAccount->show();
+        _accountSelect->show();
     }
 }

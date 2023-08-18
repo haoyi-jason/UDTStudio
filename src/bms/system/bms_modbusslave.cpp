@@ -10,6 +10,10 @@ BMS_ModbusSlave::BMS_ModbusSlave(QObject *parent)
 
 bool BMS_ModbusSlave::startRTUSlave(QString portName, quint32 baudrate)
 {
+    if(_rtuSlave == nullptr){
+        _rtuSlave = new QModbusRtuSerialSlave();
+    }
+    if(_rtuSlave == nullptr) return false;
     _rtuSlave->setConnectionParameter(QModbusDevice::SerialPortNameParameter,portName);
     _rtuSlave->setConnectionParameter(QModbusDevice::SerialBaudRateParameter,baudrate);
     _rtuSlave->setConnectionParameter(QModbusDevice::SerialParityParameter, QSerialPort::EvenParity);
@@ -29,7 +33,10 @@ void BMS_ModbusSlave::stopRTUSlave()
 
 bool BMS_ModbusSlave::startTCPServer(QString address, quint32 port)
 {
-    _tcpServer = new QModbusTcpServer();
+    if(_tcpServer == nullptr){
+        _tcpServer = new QModbusTcpServer();
+        if(_tcpServer == nullptr) return false;
+    }
     _tcpServer->setConnectionParameter(QModbusDevice::NetworkAddressParameter,address);
     _tcpServer->setConnectionParameter(QModbusDevice::NetworkPortParameter,port);
     _tcpServer->setMap(_registers);

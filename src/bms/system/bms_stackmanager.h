@@ -46,6 +46,7 @@ public:
     bool setCurrent(Node *node);
 
     QAction *actionScanBus() const;
+    bool bcuLost() const;
 public slots:
     void scanBus();
     void startActivity();
@@ -95,6 +96,8 @@ private:
     QAction *_actScanBus;
     int _pollCounter;
     bool _enableBalance;
+
+    bool _bcuLost;
 };
 
 #endif // BMS_STACKMANAGER_H

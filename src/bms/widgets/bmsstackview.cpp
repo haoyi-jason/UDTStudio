@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QDebug>
 #include "system/login.h"
+#include <QFont>
 
 BMSStackView::BMSStackView(QWidget *parent)
     :BMSStackView(nullptr,parent)
@@ -61,6 +62,9 @@ void BMSStackView::createWidget()
     QPushButton *btn;
 
     gb = new QGroupBox("系統控制");
+    QFont f = gb->font();
+    f.setPointSize(14);
+    gb->setFont(f);
     vl = new QVBoxLayout();
     hl = new QHBoxLayout();
     gl = new QGridLayout();
@@ -191,7 +195,7 @@ void BMSStackView::createWidget()
     vl->addWidget(_stackInfo);
     vl->addItem(new QSpacerItem(0,0,QSizePolicy::Fixed,QSizePolicy::Expanding));
 
-    QFont f = _stackInfo->font();
+    f = _stackInfo->font();
     f.setPixelSize(18);
     _stackInfo->setFont(f);
 
@@ -342,7 +346,6 @@ void BMSStackView::handleStackSwitch()
             _gbConfig->setVisible(false);
         }
         else{
-            Login::instance()->modifyMode(false);
             if(Login::instance()->exec() == QDialog::Accepted){
                 if(_stackManager->bcu() != nullptr){
                     _editList[0]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x01).toString());
@@ -407,6 +410,7 @@ void BMSStackView::handleStackSwitch()
             emit functionSelected(0xFF);
         }
         else{
+            Login::instance()->modifyMode(false);
             if(Login::instance()->exec() == QDialog::Accepted){
                 _gbStatus->setVisible(false);
                 _gbSystem->setVisible(true);
@@ -442,7 +446,7 @@ void BMSStackView::handleStackSwitch()
         break;
     case 26:
         Login::instance()->modifyMode(true);
-        Login::instance()->show();
+        Login::instance()->exec();
         break;
     }
 }
@@ -476,6 +480,7 @@ void BMSStackView::updateView()
     // check alarm
     BCU *bcu = _stackManager->bcu();
    // quint32 color = color_nor;
+    bool bcuLost = false;
     if(bcu != nullptr && bcu->isConfigReady()){
         if(bcu->alarmManager()->isPvHWarning()){
             _alarmLabels[0]->setStyleSheet(style_warning);
@@ -554,6 +559,15 @@ void BMSStackView::updateView()
         else{
             _alarmLabels[5]->setStyleSheet(style_normal);
         }
+
+
+    }
+
+    if(_stackManager->bcuLost()){
+        _alarmLabels[6]->setStyleSheet(style_alarm);
+    }
+    else{
+        _alarmLabels[6]->setStyleSheet(style_normal);
     }
 }
 

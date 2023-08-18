@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QAction>
 #include <QStorageInfo>
+#include <QDateTime>
 
 BMS_StackManager::BMS_StackManager()
 {
@@ -433,6 +434,7 @@ void BMS_StackManager::updateStackStatus()
 
     int packId = 1;
     double _current = 0;
+    _bcuLost = false;
     foreach(BCU *b,_bcusMap.values()){
         if(!b->isConfigReady()) continue;
         AlarmManager *m = b->alarmManager();
@@ -460,6 +462,12 @@ void BMS_StackManager::updateStackStatus()
             minct_n = m->minCtPos()%b->nofNtcsPerPack();
         }
         packId++;
+
+        // check if bcu lost
+        int diff = QDateTime::currentDateTime().secsTo(b->lastSeen());
+        if(diff > 10){
+            _bcuLost = true;
+        }
     }
     _totalCurrent = _current;
     _maxCV = maxcv;
@@ -563,6 +571,11 @@ double BMS_StackManager::packVoltage() const
 double BMS_StackManager::packCurrent() const
 {
     return _totalCurrent;
+}
+
+bool BMS_StackManager::bcuLost() const
+{
+    return _bcuLost;
 }
 
 bool BMS_StackManager::setCurrent(Node *node)

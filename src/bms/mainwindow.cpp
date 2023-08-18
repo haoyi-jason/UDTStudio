@@ -159,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent) :
 #ifdef Q_OS_UNIX
     initSettings();
     GSettings::Info(QString("Start daily event handler"));
-    QTimer::singleShot(24*60*60*1000,this,&MainWindow::dailyTimeout);
+//    QTimer::singleShot(24*60*60*1000,this,&MainWindow::dailyTimeout);
 #endif
 }
 
