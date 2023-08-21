@@ -755,6 +755,7 @@ void SystemSection::readSection(QSettings *s)
 {
     s->beginGroup(_sectionName);
     _backlight_off_time_sec = s->value("BACKLIGHT_OFF_TIME").toInt();
+    _auto_save_interval_sec = s->value("AUTO_SAVE_INTERVAL_SEC").toInt();
     s->endGroup();
 
 }
@@ -762,6 +763,7 @@ void SystemSection::writeSection(QSettings *s)
 {
     s->beginGroup(_sectionName);
     s->setValue("BACKLIGHT_OFF_TIME",_backlight_off_time_sec);
+    s->setValue("AUTO_SAVE_INTERVAL_SEC",_auto_save_interval_sec);
     s->endGroup();
 
 }

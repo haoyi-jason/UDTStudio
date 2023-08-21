@@ -20,6 +20,7 @@ Login::Login(QWidget *parent) : QDialog(parent)
     setWindowTitle("帳戶切換");
     _accountId = -1;
     _modifyPasswd = false;
+    resize(320,160);
 }
 
 Login::~Login(){
@@ -69,15 +70,15 @@ void Login::createWidgets()
     flayout->addWidget(btnCancel);
     flayout->addWidget(_btnModifyPasswd);
 
-    layout->addStretch(0);
-    layout->addLayout(flayout);
-    layout->addStretch(0);
+    //layout->addStretch(0);
+    //layout->addLayout(flayout);
+    //layout->addStretch(0);
 
     QVBoxLayout *vlayout = new QVBoxLayout();
-    vlayout->addStretch(0);
-    vlayout->addLayout(layout);
-    vlayout->addStretch(0);
-    setLayout(vlayout);
+    //vlayout->addStretch(0);
+    //vlayout->addLayout(layout);
+    //vlayout->addStretch(0);
+    setLayout(flayout);
 
 
 }
@@ -95,8 +96,9 @@ void Login::validate()
         if(_edPassword1->text() == _edPassword2->text()){
             QByteArray newpwd;
             newpwd.append(_edPassword1->text());
-            QByteArray hash = QCryptographicHash::hash(newpwd,QCryptographicHash::Sha256);
-            account->setPasswd(name,hash);
+            QByteArray hash = QCryptographicHash::hash(newpwd,QCryptographicHash::Sha256).toHex();
+
+            account->setPasswd(name,QString(hash));
             GSettings::instance().StoreConfig();
             accept();
             return;
@@ -105,11 +107,12 @@ void Login::validate()
     else{
         QByteArray newpwd;
         newpwd.append(_edPassword1->text());
-        QByteArray hash = QCryptographicHash::hash(newpwd,QCryptographicHash::Sha256);
+        QByteArray hash = QCryptographicHash::hash(newpwd,QCryptographicHash::Sha256).toHex();
         QByteArray hash_org;
         hash_org.append(account->passwd(name));
+//        QString hash_org_str = QString(hash_org);
         if(hash_org == "0921"){
-            hash_org = QCryptographicHash::hash("0921",QCryptographicHash::Sha256);
+            hash_org = QCryptographicHash::hash("0921",QCryptographicHash::Sha256).toHex();
             account->setPasswd(name,hash);
             GSettings::instance().StoreConfig();
         }

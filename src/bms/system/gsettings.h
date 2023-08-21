@@ -278,6 +278,8 @@ public:
 
 private:
     int _backlight_off_time_sec;
+    int _auto_save_interval_sec;
+
 
 };
 
