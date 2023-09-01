@@ -58,12 +58,12 @@ public slots:
     //void nodeNameChanged(QString name);
     void bcuDataAccessed();
     void enableBalance();
+    void pollState();
 
 private:
     void updateStackStatus();
 
 private slots:
-    void pollState();
     void scanDone();
     void dailyTimeout();
 
@@ -98,6 +98,9 @@ private:
     bool _enableBalance;
 
     bool _bcuLost;
+
+    QThread _workThread;
+    QList<BCU*> _pollQueue;
 };
 
 #endif // BMS_STACKMANAGER_H

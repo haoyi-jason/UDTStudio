@@ -4,6 +4,7 @@
 #include <QAction>
 #include <QStorageInfo>
 #include <QDateTime>
+#include <QThread>
 
 BMS_StackManager::BMS_StackManager()
 {
@@ -30,6 +31,9 @@ BMS_StackManager::BMS_StackManager()
     _tmr_statemachine = new QTimer();
     connect(_tmr_statemachine,&QTimer::timeout,this,&BMS_StackManager::pollState);
     _tmr_statemachine->start(50);
+//    this->moveToThread(&_workThread);
+//    connect(&_workThread,&QThread::started,this,&BMS_StackManager::pollState);
+
 
     _tmr_scanbus = new QTimer();
     connect(_tmr_scanbus,&QTimer::timeout,this,&BMS_StackManager::scanDone);
@@ -63,13 +67,14 @@ BMS_StackManager::~BMS_StackManager()
 
     }
 #endif
-
+//    _workThread.quit();
+//    _workThread.wait();
     // actions
-    _actScanBus = new QAction("TEST");
-    _actScanBus->setIcon(QIcon(":/icons/img/icons8-search-database.png"));
-    _actScanBus->setEnabled(true);
-    _actScanBus->setStatusTip("Scan buses");
-    connect(_actScanBus,&QAction::triggered,this,&BMS_StackManager::scanBus);
+//    _actScanBus = new QAction("TEST");
+//    _actScanBus->setIcon(QIcon(":/icons/img/icons8-search-database.png"));
+//    _actScanBus->setEnabled(true);
+//    _actScanBus->setStatusTip("Scan buses");
+//    connect(_actScanBus,&QAction::triggered,this,&BMS_StackManager::scanBus);
 }
 
 void BMS_StackManager::setCanOpen(CanOpen *canoopen)
@@ -96,12 +101,34 @@ void BMS_StackManager::pollState()
             b->accessConfig();
         }
 
-
-        if(b->dataReady()){
-            validateState(b);
-            _mbSlave->updateBcuData(b);
-            //b->notifyUpdate();
+        if(_pollQueue.size() > 0){
+            BCU *bb = _pollQueue.first();
+            if(!bb->isTransfer()){
+                bb->startTransfer();
+            }
+            else{
+                if(bb->dataReady()){
+                    bb->stopTransfer();
+                    validateState(bb);
+                    _mbSlave->updateBcuData(bb);
+                    _pollQueue.removeOne(bb);
+                }
+            }
         }
+        else if(_pollQueue.size() == 0){
+            foreach (BCU *bcu, _bcusMap.values()) {
+                if(bcu->isConfigReady()){
+                   _pollQueue.append(bcu);
+                }
+            }
+        }
+
+
+//        if(b->dataReady()){
+//            validateState(b);
+//            _mbSlave->updateBcuData(b);
+//            //b->notifyUpdate();
+//        }
         _mtx_poll.unlock();
         _bcuIterator++;
     }
@@ -111,11 +138,13 @@ void BMS_StackManager::pollState()
         _pollCounter = 0;
         updateStackStatus();
     }
+    QThread::msleep(50);
 }
 
 void BMS_StackManager::scanDone()
 {
     _tmr_statemachine->start(50);
+    //_workThread.start();
     _logger->startLog(GSettings::instance().bcuSection()->log_interval());
     _currentBcuId = -1;
 //    if(_bcusMap.count() > 0){
@@ -138,6 +167,8 @@ void BMS_StackManager::dailyTimeout()
 void BMS_StackManager::scanBus()
 {
     _tmr_statemachine->stop();
+    //_workThread.exit();
+
     _logger->stopLog();
     _mtx_poll.lock();
     for(int i=0;i<_bcusMap.size();i++){

@@ -6,6 +6,7 @@
 #include <QDebug>
 #include "system/login.h"
 #include <QFont>
+#include <QProcess>
 
 BMSStackView::BMSStackView(QWidget *parent)
     :BMSStackView(nullptr,parent)
@@ -60,134 +61,60 @@ void BMSStackView::createWidget()
     QVBoxLayout *vl;
     QGroupBox *gb;
     QPushButton *btn;
+    FocusedEditor *editor;
 
+    /* group 1 */
     gb = new QGroupBox("系統控制");
+    gb->resize(360,240);
+    //gb->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
     QFont f = gb->font();
-    f.setPointSize(14);
+    f.setPointSize(12);
     gb->setFont(f);
     vl = new QVBoxLayout();
     hl = new QHBoxLayout();
-    gl = new QGridLayout();
 
     btn = new QPushButton("上一簇");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",0);
     //hl->addWidget(btn);
-    gl->addWidget(btn,0,0);
+    hl->addWidget(btn);
     btn = new QPushButton("下一簇");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",1);
-    gl->addWidget(btn,0,1);
+    hl->addWidget(btn);
+    vl->addItem(hl);
 //    hl->addWidget(btn);
-    _btnStartsStop = new QPushButton("啟動");
-    _btnStartsStop->setCheckable(true);
-    connect(_btnStartsStop,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    _btnStartsStop->setProperty("ID",2);
-    gl->addWidget(_btnStartsStop,1,0);
+//    _btnStartsStop = new QPushButton("啟動");
+//    _btnStartsStop->setCheckable(true);
+//    connect(_btnStartsStop,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+//    _btnStartsStop->setProperty("ID",2);
+//    gl->addWidget(_btnStartsStop,1,0);
 
-    btn = new QPushButton("BCU設定");
-    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",3);
-    gl->addWidget(btn,3,1);
-
+    hl = new QHBoxLayout();
     btn = new QPushButton("載入參數");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",7);
-    gl->addWidget(btn,2,0);
+    hl->addWidget(btn);
 
     btn = new QPushButton("事件檢視");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",12);
-    gl->addWidget(btn,2,1);
+    hl->addWidget(btn);
+    vl->addItem(hl);
+
+    hl = new QHBoxLayout();
     btn = new QPushButton("系統設定");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",13);
-    gl->addWidget(btn,3,0);
-
-
-    vl->addItem(gl);
-
-    FocusedEditor *editor;
-    _gbConfig = new QGroupBox("BCU設定");
-    _gbConfig->setVisible(false);
-    gl = new QGridLayout();
-    editor = new FocusedEditor();
-    _editList.append(editor);
-    //editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-    editor->setFixedWidth(200);
-    gl->addWidget(new QLabel("電池數量"),0,0);
-    gl->addWidget(editor,0,1);
-    // 2001.02
-    editor = new FocusedEditor();
-    _editList.append(editor);
-    //editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-    editor->setFixedWidth(200);
-    gl->addWidget(new QLabel("電芯數量"),1,0);
-    gl->addWidget(editor,1,1);
-    //2001.03
-    editor = new FocusedEditor();
-    _editList.append(editor);
-    //editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
-    editor->setFixedWidth(200);
-    gl->addWidget(new QLabel("溫度感測器數量"),2,0);
-    gl->addWidget(editor,2,1);
-    // save button
-    hl = new QHBoxLayout();
-    btn = new QPushButton("儲存");
-    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",4);
     hl->addWidget(btn);
-    btn = new QPushButton("回復預設值");
+    btn = new QPushButton("BCU設定");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",5);
+    btn->setProperty("ID",3);
     hl->addWidget(btn);
-    //gl->addItem(hl,3,0,1,2);
-
-    btn = new QPushButton("重新啟動");
-    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",6);
-    hl->addWidget(btn);
-
-    gl->addItem(hl,3,0,1,2);
-
-    hl = new QHBoxLayout();
-    btn = new QPushButton("BCU休眠");
-    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",10);
-    hl->addWidget(btn);
-
-    btn = new QPushButton("BCU喚醒");
-    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",11);
-    hl->addWidget(btn);
-    gl->addItem(hl,4,0,1,2);
-
-    hl = new QHBoxLayout();
-    btn = new QPushButton("設定SOC");
-    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",14);
-    hl->addWidget(btn);
-    editor = new FocusedEditor();
-    _editList.append(editor);
-    editor->setText("100");
-    hl->addWidget(editor);
-    gl->addItem(hl,5,0,1,2);
-
-    hl = new QHBoxLayout();
-    btn = new QPushButton("設定SOH");
-    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
-    btn->setProperty("ID",15);
-    hl->addWidget(btn);
-    editor = new FocusedEditor();
-    _editList.append(editor);
-    editor->setText("100");
-    hl->addWidget(editor);
-    gl->addItem(hl,6,0,1,2);
-
-    _gbConfig->setLayout(gl);
-    vl->addWidget(_gbConfig);
+    vl->addItem(hl);
 
     _hwInfo = new QLabel("硬體資訊");
+
     vl->addWidget(_hwInfo);
 
     _stackInfo = new QLabel();
@@ -214,10 +141,110 @@ void BMSStackView::createWidget()
 
 
     gb->setLayout(vl);
-    _gbSysControl = gb;
     mainLayout->addWidget(gb);
 
+
+
+
+    /* group */
+    _gbConfig = new QGroupBox("BCU設定");
+    //_gbConfig->resize(360,320);
+    _gbConfig->setVisible(false);
+    vl = new QVBoxLayout();
+    vl->setContentsMargins(0,0,0,0);
+    hl = new QHBoxLayout();
+    editor = new FocusedEditor();
+    _editList.append(editor);
+    //editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+    //editor->setFixedWidth(120);
+    hl->addWidget(new QLabel("#電池"));
+    hl->addWidget(editor);
+    vl->addItem(hl);
+    // 2001.02
+    editor = new FocusedEditor();
+    _editList.append(editor);
+    //editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+    //editor->setFixedWidth(120);
+    hl = new QHBoxLayout();
+    hl->addWidget(new QLabel("#電芯"));
+    hl->addWidget(editor);
+    vl->addItem(hl);
+    //2001.03
+    editor = new FocusedEditor();
+    _editList.append(editor);
+    //editor->setDisplayHint(AbstractIndexWidget::DisplayDirectValue);
+    //editor->setFixedWidth(120);
+    hl = new QHBoxLayout();
+    hl->addWidget(new QLabel("#NTC"));
+    hl->addWidget(editor);
+    vl->addItem(hl);
+
+    hl = new QHBoxLayout();
+    btn = new QPushButton("設定SOC");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",14);
+    hl->addWidget(btn);
+    editor = new FocusedEditor();
+    _editList.append(editor);
+    editor->setText("100");
+    hl->addWidget(editor);
+    vl->addItem(hl);
+
+    hl = new QHBoxLayout();
+    btn = new QPushButton("設定SOH");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",15);
+    hl->addWidget(btn);
+    editor = new FocusedEditor();
+    _editList.append(editor);
+    editor->setText("100");
+    hl->addWidget(editor);
+    vl->addItem(hl);
+
+    // save button
+    //hl = new QHBoxLayout();
+    btn = new QPushButton("儲存");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",4);
+    vl->addWidget(btn);
+    btn = new QPushButton("回復預設值");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",5);
+    vl->addWidget(btn);
+    //gl->addItem(hl,3,0,1,2);
+
+    btn = new QPushButton("重新啟動");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",6);
+    vl->addWidget(btn);
+
+    //vl->addItem(hl);
+
+    //hl = new QHBoxLayout();
+    btn = new QPushButton("BCU休眠");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",10);
+    vl->addWidget(btn);
+
+    btn = new QPushButton("BCU喚醒");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",11);
+    vl->addWidget(btn);
+    //vl->addItem(hl);
+
+    _gbConfig->setLayout(vl);
+    mainLayout->addWidget(_gbConfig);
+
+
+
+
+//    gb->setLayout(vl);
+//    _gbSysControl = gb;
+//    mainLayout->addWidget(_gbConfig);
+//    mainLayout->addWidget(gb);
+
     _gbStatus = new QGroupBox("警報狀態");
+    //_gbStatus->resize(480,320);
     vl = new QVBoxLayout();
     vl->setContentsMargins(0,0,0,0);
 
@@ -243,6 +270,7 @@ void BMSStackView::createWidget()
     mainLayout->addWidget(_gbStatus);
 
     _gbSystem = new QGroupBox("進階設置");
+    //_gbSystem->resize(400,320);
     _gbSystem->setVisible(false);
     vl = new QVBoxLayout();
     vl->setContentsMargins(0,0,0,0);
@@ -278,6 +306,11 @@ void BMSStackView::createWidget()
     btn = new QPushButton("修改密碼");
     connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
     btn->setProperty("ID",26);
+    vl->addWidget(btn);
+
+    btn = new QPushButton("重新開機");
+    connect(btn,&QPushButton::clicked,this,&BMSStackView::handleStackSwitch);
+    btn->setProperty("ID",27);
     vl->addWidget(btn);
 
     _gbSystem->setLayout(vl);
@@ -322,13 +355,11 @@ void BMSStackView::handleStackSwitch()
         // use Control index to enable/disable cell data dump
         if(btn->isChecked()){
             btn->setText("停止");
-            _stackManager->bcu()->node()->writeObject(0x2003,0x01,0x01);
-            _stackManager->bcu()->node()->readObject(0x2003,0x01);
+            _stackManager->bcu()->startTransfer();
         }
         else{
             btn->setText("啟動");
-            _stackManager->bcu()->node()->writeObject(0x2003,0x01,0x00);
-            _stackManager->bcu()->node()->readObject(0x2003,0x01);
+            _stackManager->bcu()->stopTransfer();
         }
 //        pdo = _stackManager->bcu()->node()->tpdos().at(0);
 //        qDebug()<<Q_FUNC_INFO<<pdo->isEnabled();
@@ -343,16 +374,19 @@ void BMSStackView::handleStackSwitch()
         break;
     case 3: // setting
         if(_gbConfig->isVisible()){
+            _gbSystem->setVisible(false);
             _gbConfig->setVisible(false);
+            _gbStatus->setVisible(true);
         }
         else{
             if(Login::instance()->exec() == QDialog::Accepted){
                 if(_stackManager->bcu() != nullptr){
-                    _editList[0]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x01).toString());
-                    _editList[1]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x02).toString());
-                    _editList[2]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x03).toString());
-                    _gbConfig->setVisible(true);
+//                    _editList[0]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x01).toString());
+//                    _editList[1]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x02).toString());
+//                    _editList[2]->setText(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x03).toString());
                     _gbSystem->setVisible(false);
+                    _gbStatus->setVisible(false);
+                    _gbConfig->setVisible(true);
                 }
             }
         }
@@ -406,6 +440,7 @@ void BMSStackView::handleStackSwitch()
     case 13: // system config
         if(_gbSystem->isVisible()){
             _gbSystem->setVisible(false);
+            _gbConfig->setVisible(false);
             _gbStatus->setVisible(true);
             emit functionSelected(0xFF);
         }
@@ -413,6 +448,7 @@ void BMSStackView::handleStackSwitch()
             Login::instance()->modifyMode(false);
             if(Login::instance()->exec() == QDialog::Accepted){
                 _gbStatus->setVisible(false);
+                _gbConfig->setVisible(false);
                 _gbSystem->setVisible(true);
             }
         }
@@ -447,6 +483,9 @@ void BMSStackView::handleStackSwitch()
     case 26:
         Login::instance()->modifyMode(true);
         Login::instance()->exec();
+        break;
+    case 27:
+        QProcess::execute("sudo",QStringList()<<"/sbin/reboot");
         break;
     }
 }
@@ -573,7 +612,7 @@ void BMSStackView::updateView()
 
 void BMSStackView::enableUI(bool state)
 {
-    _gbSysControl->setEnabled(state);
+    //_gbSysControl->setEnabled(state);
 }
 
 QString BMSStackView::colorText(QString text, QString color)
@@ -596,18 +635,18 @@ void BMSStackView::handleBcuChanged(BCU *bcu)
     if(bcu != nullptr){
         _activeBcu = bcu;
         updateView();
-        if(_stackManager->bcu()->isConfigReady()){
-            if(_stackManager->bcu()->cmdState() != 0){
-                _btnStartsStop->setChecked(true);
-                _btnStartsStop->setText("停止");
-            }
-            else{
-                _btnStartsStop->setChecked(false);
-                _btnStartsStop->setText("啟動");
-            }
+//        if(_stackManager->bcu()->isConfigReady()){
+//            if(_stackManager->bcu()->cmdState() != 0){
+//                _btnStartsStop->setChecked(true);
+//                _btnStartsStop->setText("停止");
+//            }
+//            else{
+//                _btnStartsStop->setChecked(false);
+//                _btnStartsStop->setText("啟動");
+//            }
 
 
-        }
+//        }
         QString text;
         text = QString::number(_stackManager->bcu()->node()->nodeOd()->value(0x2001,0x01).toInt());
         _editList[0]->setText(text);

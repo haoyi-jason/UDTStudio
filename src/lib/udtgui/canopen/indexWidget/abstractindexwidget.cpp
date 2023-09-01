@@ -116,6 +116,7 @@ void AbstractIndexWidget::requestWriteValue(const QVariant &value)
             break;
 
         case AbstractIndexWidget::DisplayFloat:
+            _pendingValue = static_cast<QString>(QString::number(_pendingValue.toDouble(),'g',3));
             break;
     }
 
@@ -197,6 +198,14 @@ QVariant AbstractIndexWidget::pValue(const QVariant &value, const AbstractIndexW
     {
         val = value.toDouble() / 65536.0;
     }
+    else if(hint == AbstractIndexWidget::DisplayFloat){
+        QString str = QString::number(val.toDouble(), 'g', 3);
+        if (!str.contains('.'))
+        {
+            str.append(".0");
+        }
+        val = str;
+    }
 
     return val;
 }
@@ -224,7 +233,7 @@ QString AbstractIndexWidget::pstringValue(const QVariant &value, const AbstractI
         case AbstractIndexWidget::DisplayQ1_15:
         case AbstractIndexWidget::DisplayQ15_16:
         case AbstractIndexWidget::DisplayFloat:
-            str = QString::number(value.toDouble(), 'g', 10);
+            str = QString::number(value.toDouble(), 'g', 3);
             if (!str.contains('.'))
             {
                 str.append(".0");

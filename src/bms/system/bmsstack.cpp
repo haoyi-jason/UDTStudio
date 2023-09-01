@@ -123,6 +123,23 @@ int BCU::scannedDevices() const
     return _scannedDevice;
 }
 
+void BCU::startTransfer()
+{
+    node()->writeObject(0x2003,0x01,0x01);
+    node()->readObject(0x2003,0x01);
+}
+
+void BCU::stopTransfer()
+{
+    node()->writeObject(0x2003,0x01,0x00);
+    node()->readObject(0x2003,0x01);
+}
+
+bool BCU::isTransfer() const
+{
+    return (node()->nodeOd()->value(0x2003,0x01).toInt() == 0x01);
+}
+
 double BCU::voltage() const{
 
     return _voltage;

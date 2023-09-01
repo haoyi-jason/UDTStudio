@@ -36,7 +36,6 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
-    resize(1280,800);
     QString path = QCoreApplication::applicationDirPath();
 #ifdef Q_OS_WIN
     path  += "/config.ini";
@@ -159,8 +158,8 @@ MainWindow::MainWindow(QWidget *parent) :
 #ifdef Q_OS_UNIX
     initSettings();
     GSettings::Info(QString("Start daily event handler"));
-//    QTimer::singleShot(24*60*60*1000,this,&MainWindow::dailyTimeout);
 #endif
+    resize(1280,800);
 }
 
 MainWindow::~MainWindow()
@@ -203,12 +202,15 @@ void MainWindow::createDocks()
     _busNodesManagerView = new BMS_BusNodesManagerView(CanOpen::instance());
     _busNodesManagerDock->setWidget(_busNodesManagerView);
     addDockWidget(Qt::LeftDockWidgetArea,_busNodesManagerDock);
-    //_busNodesManagerDock->hide();
+    _busNodesManagerDock->hide();
 
     _canFrameListDock = new QDockWidget(tr("BMS資訊"),this);
     _canFrameListDock->setObjectName("canFrameListDock");
+    _canFrameListDock->resize(480,_canFrameListDock->height());
     _canFrameListView = new BMS_CanFrameListView();
     _stackview = new BMSStackView();
+
+    _stackview->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
     _canFrameListDock->setWidget(_stackview);
     addDockWidget(Qt::LeftDockWidgetArea,_canFrameListDock);
     tabifyDockWidget(_busNodesManagerDock,_canFrameListDock);

@@ -123,13 +123,17 @@ void NodeScreenPack::createWidgets()
     _cellLayout->setContentsMargins(1,5,1,5);
 
     QVBoxLayout *vl = new QVBoxLayout();
+
     _cellInfo = new QLabel();
+    _cellInfo->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
     _cellInfo2 = new QTextBrowser();
     //_cellInfo2->setStyleSheet(css2);
     //_cellInfo->setTextFormat(Qt::RichText);
     vl->addWidget(_cellInfo);
 
     _cellGroup = new QGroupBox();
+    _cellGroup->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     _cellGroup->setLayout(vl);
     vlayout->addWidget(_cellGroup);
 
@@ -302,6 +306,11 @@ void NodeScreenPack::toggleOneShot()
 
 void NodeScreenPack::updateCellData()
 {
+//    if(message != ""){
+//        _cellInfo->setText(message);
+//        return;
+//    }
+
     if(_bcu == nullptr) return;
     if(!_bcu->isConfigReady()) return;
 
@@ -484,6 +493,10 @@ void NodeScreenPack::UpdateHeader(BCU *bcu)
 
 void NodeScreenPack::updateBCUInfo()
 {
+//    if(message != ""){
+//        _bcuInfo->setText(message);
+//        return;
+//    }
     //qDebug()<<Q_FUNC_INFO;
     QString text;
     double value;

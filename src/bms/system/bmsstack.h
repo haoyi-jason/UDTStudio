@@ -85,6 +85,9 @@ public:
     QDateTime lastSeen() const;
     void notifyUpdate();
     int scannedDevices() const;
+    void startTransfer();
+    void stopTransfer();
+    bool isTransfer() const;
 public slots:
     //void startPollThread(int interval=50);
     bool validate();

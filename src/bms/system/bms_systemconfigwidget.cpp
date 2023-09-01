@@ -408,8 +408,8 @@ QWidget *BMS_SystemConfigWidget::createAlarmWidget()
     _cboAlarmType->setMinimumWidth(250);
     connect(_cboAlarmType,qOverload<int>(&QComboBox::currentIndexChanged),this,&BMS_SystemConfigWidget::changeAlarmItem);
     glayout->addWidget(_cboAlarmType,0,0);
-    glayout->addWidget(new QLabel("作動"),0,1);
-    glayout->addWidget(new QLabel("復歸"),0,3);
+    glayout->addWidget(new QLabel("作動"),0,1,1,1,Qt::AlignHCenter);
+    glayout->addWidget(new QLabel("復歸"),0,3,1,1,Qt::AlignHCenter);
 
     for(int i=0;i<5;i++){
         FocusedEditor *editor = new FocusedEditor();
@@ -424,17 +424,17 @@ QWidget *BMS_SystemConfigWidget::createAlarmWidget()
         _cboAlarmType->addItem(cfg->name());
     }
 
-    glayout->addWidget(_alarmLabels[0],1,0);
+    glayout->addWidget(_alarmLabels[0],1,0,1,1,Qt::AlignRight);
     glayout->addWidget(_alarmEdits[0],1,1);
-    glayout->addWidget(_alarmLabels[1],1,2);
+    glayout->addWidget(_alarmLabels[1],1,2,1,1,Qt::AlignRight);
     glayout->addWidget(_alarmEdits[1],1,3);
 
-    glayout->addWidget(_alarmLabels[2],2,0);
+    glayout->addWidget(_alarmLabels[2],2,0,1,1,Qt::AlignRight);
     glayout->addWidget(_alarmEdits[2],2,1);
-    glayout->addWidget(_alarmLabels[3],2,2);
+    glayout->addWidget(_alarmLabels[3],2,2,1,1,Qt::AlignRight);
     glayout->addWidget(_alarmEdits[3],2,3);
 
-    glayout->addWidget(_alarmLabels[4],3,0);
+    glayout->addWidget(_alarmLabels[4],3,0,1,1,Qt::AlignRight);
     glayout->addWidget(_alarmEdits[4],3,1);
     _grpAlarm->setLayout(glayout);
 
@@ -454,7 +454,7 @@ QWidget *BMS_SystemConfigWidget::createAlarmWidget()
 
     QHBoxLayout *hlayout = new QHBoxLayout();
 
-    hlayout->setContentsMargins(5,5,5,5);
+    hlayout->setContentsMargins(2,2,2,2);
     hlayout->setSpacing(20);
     hlayout->addWidget(new QLabel(tr("儲存天數")));
     hlayout->addWidget(_storedDays);
