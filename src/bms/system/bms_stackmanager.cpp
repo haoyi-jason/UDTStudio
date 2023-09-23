@@ -87,27 +87,30 @@ void BMS_StackManager::setCanOpen(CanOpen *canoopen)
 
 void BMS_StackManager::pollState()
 {
+    BCU *b = nullptr;
+    BCU *bb = nullptr;
     if(_bcusMap.size() > 0){
         if(_bcuIterator == _bcusMap.end()){
             _bcuIterator = _bcusMap.begin();
         }
 
         _mtx_poll.lock();
-        BCU *b = _bcuIterator.value();
-        //BCU *b = _bcusMap.first();
+        b = _bcuIterator.value();
 
         if(b != nullptr && !b->isConfigReady()){
 //        if(b != nullptr && !b->isConfigReady() && !b->isConfigFail()){
             b->accessConfig();
         }
 
+        b = nullptr;
         if(_pollQueue.size() > 0){
-            BCU *bb = _pollQueue.first();
+            bb = _pollQueue.first();
             if(!bb->isTransfer()){
                 bb->startTransfer();
             }
             else{
                 if(bb->dataReady()){
+                    b = bb;
                     bb->stopTransfer();
                     validateState(bb);
                     _mbSlave->updateBcuData(bb);
@@ -496,7 +499,7 @@ void BMS_StackManager::updateStackStatus()
 
         // check if bcu lost
         int diff = QDateTime::currentDateTime().secsTo(b->lastSeen());
-        if(diff > 10){
+        if(diff < -10){
             _bcuLost = true;
         }
     }

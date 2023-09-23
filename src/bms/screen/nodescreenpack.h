@@ -126,7 +126,7 @@ private:
     int _ntcs;
 
     QString _header;
-
+    QDateTime _lastUpdate;
 
 protected:
     void odNotify(const NodeObjectId &objId, NodeOd::FlagsRequest flags) override;

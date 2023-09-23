@@ -42,7 +42,7 @@ void FocusedEditor::focusInternal()
     nPad->setMax(_max);
     nPad->setMin(_min);
     nPad->passwordMode(echoMode()==QLineEdit::Password);
-    nPad->move(nPad->x() + (nPad->width()-width())/2, nPad->y()+(nPad->height() - height())/2);
+    //nPad->move(nPad->x() + (nPad->width()-width())/2, nPad->y()+(nPad->height() - height())/2);
     //connect(nPad,&NumberPad::accepted,this,&FocusedEditor::accepted);
     //nPad->showFullScreen();
     if(nPad->exec() == QDialog::Accepted){

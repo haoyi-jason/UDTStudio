@@ -15,6 +15,7 @@
 #include "system/gsettings.h"
 #include "system/bms_alarmcriteria.h"
 #include <QDebug>
+#include <QDateTime>
 
 NodeScreenPack::NodeScreenPack(QWidget *parent)
     :NodeScreen(parent)
@@ -31,6 +32,7 @@ NodeScreenPack::NodeScreenPack(QWidget *parent)
     _configLoaded = false;
     _odError = false;
     _bcu = nullptr;
+    _lastUpdate = QDateTime::currentDateTime();
 }
 
 BCU* NodeScreenPack::bcu() const
@@ -314,6 +316,12 @@ void NodeScreenPack::updateCellData()
     if(_bcu == nullptr) return;
     if(!_bcu->isConfigReady()) return;
 
+    int diff = QDateTime::currentDateTime().msecsTo(_lastUpdate);
+    if(diff > -1000) return;
+    _lastUpdate = QDateTime::currentDateTime();
+
+
+    qDebug()<<Q_FUNC_INFO;
     QString text = _header;
     quint16 v;
     double vd;
